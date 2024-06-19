@@ -147,7 +147,7 @@ jobs:
 # Everything below here should go into a reusable workflow, and include inputs for OGCM and BLK (as per the croco runs), so we will be able to multiple forcings in parallel
 
   setup-run-dir:
-    needs: [envs]
+    needs: [envs,build-image]
     runs-on: mims1
     env:
       RUN_DIR: ${{ needs.envs.outputs.RUN_DIR }}
