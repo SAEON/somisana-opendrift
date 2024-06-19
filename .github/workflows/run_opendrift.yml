@@ -1,0 +1,191 @@
+name: Run OpenDrift
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_date:
+        description: 'Date and time for T0 for the run in format YYYYMMDD_HH'
+        required: false
+        default: ''
+        type: string
+      model_type:
+        description: 'The kind of model to run'
+        required: true
+        default: 'oil'
+        type: choice
+        options:
+          - oil
+          - leeway
+      run_model:
+        description: 'run the model'
+        required: true
+        type: boolean
+        default: true
+      plotting:
+        description: 'do the plots'
+        required: true
+        type: boolean
+        default: true
+
+# Many of the env variables reference the current branch,
+# which is set dynamically in the branch-ref job below
+# So the env variables are mostly set in the envs job below the branch-ref job
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # set some environment variables
+  envs:
+    runs-on: ubuntu-latest
+    outputs:
+      BRANCH_REF: ${{ steps.BRANCH_REF.outputs.value }}
+      RUN_DATE: ${{ steps.calculate_date.outputs.value }}
+      CONFIG_NAME: ${{ steps.config_name.outputs.value }}
+      RUN_DIR: ${{ steps.run_dir.outputs.value }}
+      IMAGE_NAME: ${{ steps.IMAGE_NAME.outputs.value }}
+    steps:
+      - name: Calculate run_date
+        id: calculate_date
+        run: |
+          input_run_date=${{ github.event.inputs.run_date || 'unspecified' }}
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' && ${input_run_date} != 'unspecified' ]]
+          then
+            run_date="${{ github.event.inputs.run_date }}"  # Use provided run_date
+          else
+            # automatically set the run_date by finding the nearest 6 hourly time stamp in the past
+            # Get the current time in UTC
+            current_time=$(date -u +'%Y%m%d_%H')
+            # Extract the hour and calculate the nearest multiple of 6 in the past
+            hour=$(echo ${current_time:9:2} | awk '{print int($1 - ($1%6))}')
+            # Correct hour formatting (ensure leading zero)
+            hour=$(printf "%02d" $hour)
+            # Assemble the run_date
+            run_date=$(echo ${current_time:0:8}_${hour})            
+          fi
+          echo "value=$run_date" >> $GITHUB_OUTPUT
+      - name: configuration name
+        id: config_name
+        run: |
+          # Use grep to find the line where the variable is defined
+          line=$(grep -m 1 -w config_name ops/${{ github.event.inputs.model_type }}/config_${{ github.event.inputs.model_type }}.py)
+          # Use awk to extract the value of the variable from the line (thanks chatgpt)
+          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+      - name: Set image name
+        id: IMAGE_NAME
+        run: |
+          echo "value=${{ env.REGISTRY }}/saeon/somisana-opendrift_${{ steps.BRANCH_REF.outputs.value }}" >> $GITHUB_OUTPUT
+      - name: Set run directory on the local server
+        id: run_dir 
+        run: |
+          echo "value=/home/somisana/ops/${{ steps.BRANCH_REF.outputs.value }}/${{ steps.calculate_date.outputs.value }}/opendrift/${{ steps.config_name.outputs.value }}" >> $GITHUB_OUTPUT 
+      # Dynamically set the branch ref to the currently executing branch
+      - name: Set the BRANCH_REF
+        id: BRANCH_REF
+        run: |
+          echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+
+  build-image:
+    needs: [envs]
+    runs-on: ubuntu-latest
+    env:
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      IMAGE_NAME: ${{ needs.envs.outputs.IMAGE_NAME }}
+      SHA: sha-${{ github.sha }}
+    outputs:
+      image: ${{ env.IMAGE_NAME }}:${{ env.SHA }}
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+      # 
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@main # change to main
+        with:
+          ref: ${{ env.BRANCH_REF }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@master
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            latest
+            ${{ env.SHA }}
+      - name: Build and push
+        uses: docker/build-push-action@master
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+  
+  pull-image-mims1:
+    needs: [envs,build-image]
+    runs-on: mims1
+    steps:
+      - name: pull latest docker image to mims server
+        run: |
+          docker pull ${{ needs.envs.outputs.IMAGE_NAME }}:latest
+
+# Everything below here should go into a reusable workflow, and include inputs for OGCM and BLK (as per the croco runs), so we will be able to multiple forcings in parallel
+
+  setup-run-dir:
+    needs: [envs]
+    runs-on: mims1
+    env:
+      RUN_DIR: ${{ needs.envs.outputs.RUN_DIR }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+    continue-on-error: true
+    steps:
+      - name: create the directory
+        run: |
+          rm -rf ${{ env.RUN_DIR }}  
+          mkdir -p ${{ env.RUN_DIR }}
+
+      - name: copy required files from the docker image to the run directory
+        run: >-
+          docker run \
+            --rm \
+            --entrypoint /bin/bash \
+            -v ${{ env.RUN_DIR }}:/tmp \
+            ghcr.io/saeon/somisana-opendrift_main:latest \
+            -c "cp -r /somisana/ops/${{ github.event.inputs.model_type }}/* /tmp/"
+
+      - name: add permissions to the files we just copied in
+        run: |
+          chown -R :runners ${{ env.RUN_DIR }}
+          chmod -R 774 ${{ env.RUN_DIR }}
+
+      - name: do sed replacement for placholders in the config file
+        run: |
+          sed -e 's/YYYMMDD_HH/'${{ env.RUN_DATE }}'/' < ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py > ${{ github.event.inputs.model_type }}.py
+          # add others as we go e.g. OGCM, BLK 
+
+  run-model:
+    needs: [build-image, envs]
+    runs-on: 
+    if: ${{ github.event.inputs.run_model == 'true' }}
+    env:
+      DATE_DIR: /home/somisana/ops/${{ needs.envs.outputs.BRANCH_REF }}/${{ needs.envs.outputs.RUN_DATE }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+    steps:
+      - name: run the model
+        run: >-
+          docker run \
+            --rm \
+            -v ${{ env.DATE_DIR }}:/tmp \
+            --entrypoint /bin/bash \
+            ghcr.io/saeon/somisana-opendrift_main:latest \
+            -c "cd /tmp/opendrift/${{ github.event.inputs.model_type }} && python run_${{ github.event.inputs.model_type }}.py"
+
+  # do some plots
+
+  # Archive output

@@ -11,10 +11,8 @@ from datetime import datetime, timedelta
 config_name = 'Test_Run'
 #
 # croco run date
-# this is intentionally a string in 'YYYYmmdd_HH' format 
-# note that only runs from the last 5 days are stored for running opendrift
-# the croco model is configured to produce output from 5 days before to 5 days after the run date
-croco_run_date = '20230728_00'
+# this is over-written as part of the operational workflow
+croco_run_date = 'YYYYMMDD_HH'
 
 # -----------
 # spill info
@@ -67,17 +65,18 @@ oil_flow_rate=oil_volume/release_dur
 # the reference datetime used in setting up the croco simulations (you shouldn't have to ever change this, unless we reconfigure it in the croco preprocessing)
 croco_ref_time = datetime(2000,1,1)
 #
-# the directories in which the croco files are stored
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those insude the docker image used to run operationally 
-croco_files = ['/home/gfearon/models/opendrift/croco-data/20230728-hourly-avg.nc']
+croco_files = ['/tmp/algoa_01/croco_v1.3.1/C01_I99_MERCATOR_GFS/output/croco_avg.nc',
+        '/tmp/swcape_02/croco_v1.3.1/C01_I99_MERCATOR_GFS/output/croco_avg.nc'
+        ]
 #
 # mercator file, as downloaded using the somisana pre-processing tools
-mercator_file = '/home/gfearon/models/opendrift/global-data/20230728_mercator.nc'
+mercator_file = '/tmp/downloaded_data/MERCATOR/mercator_YYYYMMDD_HH.nc'
 
-# gfs file, as produced by the croco pre-processing tools
-gfs_file = '/home/gfearon/models/opendrift/global-data/20230728_gfs.nc'
+# gfs file, as produced by the croco pre-processing tools after processing the downloaded grb files into a single nc file
+gfs_file = '/tmp/downloaded_data/GFS/for_croco/GFS_YYYYMMDD_HH.nc'
 
 # ------------------
 # numerical settings
