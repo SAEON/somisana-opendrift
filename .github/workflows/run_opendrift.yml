@@ -44,6 +44,10 @@ jobs:
       RUN_DIR: ${{ steps.run_dir.outputs.value }}
       IMAGE_NAME: ${{ steps.IMAGE_NAME.outputs.value }}
     steps:
+      - name: Check out source code
+        uses: actions/checkout@main
+        with:
+          ref: ${{ steps.BRANCH_REF.outputs.value }}
       - name: Calculate run_date
         id: calculate_date
         run: |
