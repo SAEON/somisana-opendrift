@@ -34,11 +34,22 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  # set some environment variables
-  envs:
+  # Dynamically set the branch ref to the currently executing branch
+  branch-ref:
     runs-on: ubuntu-latest
     outputs:
-      BRANCH_REF: ${{ steps.BRANCH_REF.outputs.value }}
+      value: ${{ steps.BRANCH_REF.outputs.value }}
+    steps:
+      - name: Set the BRANCH_REF
+        id: BRANCH_REF
+        run: |
+          echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+  # set some environment variables
+  envs:
+    needs: [branch-ref]
+    runs-on: ubuntu-latest
+    outputs:
+      BRANCH_REF: ${{ needs.branch-ref.outputs.value }}
       RUN_DATE: ${{ steps.calculate_date.outputs.value }}
       CONFIG_NAME: ${{ steps.config_name.outputs.value }}
       RUN_DIR: ${{ steps.run_dir.outputs.value }}
@@ -47,7 +58,7 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@main
         with:
-          ref: ${{ steps.BRANCH_REF.outputs.value }}
+          ref: ${{ needs.branch-ref.outputs.value }}
       - name: Calculate run_date
         id: calculate_date
         run: |
@@ -77,16 +88,11 @@ jobs:
       - name: Set image name
         id: IMAGE_NAME
         run: |
-          echo "value=${{ env.REGISTRY }}/saeon/somisana-opendrift_${{ steps.BRANCH_REF.outputs.value }}" >> $GITHUB_OUTPUT
+          echo "value=${{ env.REGISTRY }}/saeon/somisana-opendrift_${{ needs.branch-ref.outputs.value }}" >> $GITHUB_OUTPUT
       - name: Set run directory on the local server
         id: run_dir 
         run: |
-          echo "value=/home/somisana/ops/${{ steps.BRANCH_REF.outputs.value }}/${{ steps.calculate_date.outputs.value }}/opendrift/${{ steps.config_name.outputs.value }}" >> $GITHUB_OUTPUT 
-      # Dynamically set the branch ref to the currently executing branch
-      - name: Set the BRANCH_REF
-        id: BRANCH_REF
-        run: |
-          echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+          echo "value=/home/somisana/ops/${{ needs.branch-ref.outputs.value }}/${{ steps.calculate_date.outputs.value }}/opendrift/${{ steps.config_name.outputs.value }}" >> $GITHUB_OUTPUT 
 
   build-image:
     needs: [envs]
