@@ -170,7 +170,7 @@ jobs:
 
   run-model:
     needs: [build-image, envs]
-    runs-on: 
+    runs-on: mims1 
     if: ${{ github.event.inputs.run_model == 'true' }}
     env:
       DATE_DIR: /home/somisana/ops/${{ needs.envs.outputs.BRANCH_REF }}/${{ needs.envs.outputs.RUN_DATE }}
