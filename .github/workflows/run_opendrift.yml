@@ -175,7 +175,7 @@ jobs:
 
       - name: do sed replacement for placholders in the config file
         run: |
-          sed -e 's/YYYMMDD_HH/'${{ env.RUN_DATE }}'/' < ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py > ${{ github.event.inputs.model_type }}.py
+          sed -e 's/YYYMMDD_HH/'${{ env.RUN_DATE }}'/' < ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py
           # add others as we go e.g. OGCM, BLK 
 
   run-model:
@@ -194,7 +194,7 @@ jobs:
             -v ${{ env.DATE_DIR }}:/tmp \
             --entrypoint /bin/bash \
             ghcr.io/saeon/somisana-opendrift_main:latest \
-            -c "cd /tmp/opendrift/${{ github.event.inputs.model_type }} && python run_${{ github.event.inputs.model_type }}.py"
+            -c "cd /tmp/opendrift/${{ env.CONFIG_NAME }} && python run_${{ github.event.inputs.model_type }}.py"
 
   # do some plots
 
