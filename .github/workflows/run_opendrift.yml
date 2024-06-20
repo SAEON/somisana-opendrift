@@ -161,7 +161,7 @@ jobs:
           ref: ${{ env.BRANCH_REF }}
       - name: create the directory
         run: |
-          rm -rf ${{ env.RUN_DIR }}  
+          sudo rm -rf ${{ env.RUN_DIR }}  
           mkdir -p ${{ env.RUN_DIR }}
 
       - name: Copy relevant files to the local server to run the model
