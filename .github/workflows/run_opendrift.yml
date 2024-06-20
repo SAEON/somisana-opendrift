@@ -169,7 +169,7 @@ jobs:
           # the run file
           cp ops/${{ github.event.inputs.model_type }}/run_${{ github.event.inputs.model_type }}.py ${{ env.RUN_DIR }}
           # for the config file we'll do a sed replacement rather than a copy, to replace the placeholders
-          sed -e 's/YYYMMDD_HH/'${{ env.RUN_DATE }}'/' < ops/${{ github.event.inputs.model_type }}/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py
+          sed -e 's/YYYYMMDD_HH/'${{ env.RUN_DATE }}'/' < ops/${{ github.event.inputs.model_type }}/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py
           # add others as we go e.g. OGCM, BLK 
 
       - name: add permissions to the files we just copied in
