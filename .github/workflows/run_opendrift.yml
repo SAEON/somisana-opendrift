@@ -166,17 +166,16 @@ jobs:
 
       - name: Copy relevant files to the local server to run the model
         run: |
-          cp ops/${{ github.event.inputs.model_type }}/* ${{ env.RUN_DIR }}
+          # the run file
+          cp ops/${{ github.event.inputs.model_type }}/run_${{ github.event.inputs.model_type }}.py ${{ env.RUN_DIR }}
+          # for the config file we'll do a sed replacement rather than a copy, to replace the placeholders
+          sed -e 's/YYYMMDD_HH/'${{ env.RUN_DATE }}'/' < ops/${{ github.event.inputs.model_type }}/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py
+          # add others as we go e.g. OGCM, BLK 
 
       - name: add permissions to the files we just copied in
         run: |
           chown -R :runners ${{ env.RUN_DIR }}
           chmod -R 774 ${{ env.RUN_DIR }}
-
-      - name: do sed replacement for placholders in the config file
-        run: |
-          sed -e 's/YYYMMDD_HH/'${{ env.RUN_DATE }}'/' < ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py
-          # add others as we go e.g. OGCM, BLK 
 
   run-model:
     needs: [envs,setup-run-dir]
