@@ -153,16 +153,17 @@ jobs:
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       RUN_DIR: ${{ needs.envs.outputs.RUN_DIR }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-    continue-on-error: true
     steps:
       - name: Check out source code so have access to the files in the repo
         uses: actions/checkout@main
         with:
           ref: ${{ env.BRANCH_REF }}
+
       - name: create the directory
         run: |
-          sudo rm -rf ${{ env.RUN_DIR }}  
+          # rm -rf ${{ env.RUN_DIR }}  
           mkdir -p ${{ env.RUN_DIR }}
+        continue-on-error: true
 
       - name: Copy relevant files to the local server to run the model
         run: |
@@ -176,6 +177,7 @@ jobs:
         run: |
           chown -R :runners ${{ env.RUN_DIR }}
           chmod -R 774 ${{ env.RUN_DIR }}
+        continue-on-error: true
 
   run-model:
     needs: [envs,setup-run-dir]
