@@ -55,7 +55,7 @@ jobs:
       RUN_DIR: ${{ steps.run_dir.outputs.value }}
       IMAGE_NAME: ${{ steps.IMAGE_NAME.outputs.value }}
     steps:
-      - name: Check out source code
+      - name: Check out source code so have access to the files in the repo
         uses: actions/checkout@main
         with:
           ref: ${{ needs.branch-ref.outputs.value }}
@@ -147,26 +147,26 @@ jobs:
 # Everything below here should go into a reusable workflow, and include inputs for OGCM and BLK (as per the croco runs), so we will be able to multiple forcings in parallel
 
   setup-run-dir:
-    needs: [envs,build-image]
+    needs: [envs,pull-image-mims1]
     runs-on: mims1
     env:
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       RUN_DIR: ${{ needs.envs.outputs.RUN_DIR }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
     continue-on-error: true
     steps:
+      - name: Check out source code so have access to the files in the repo
+        uses: actions/checkout@main
+        with:
+          ref: ${{ env.BRANCH_REF }}
       - name: create the directory
         run: |
           rm -rf ${{ env.RUN_DIR }}  
           mkdir -p ${{ env.RUN_DIR }}
 
-      - name: copy required files from the docker image to the run directory
-        run: >-
-          docker run \
-            --rm \
-            --entrypoint /bin/bash \
-            -v ${{ env.RUN_DIR }}:/tmp \
-            ghcr.io/saeon/somisana-opendrift_main:latest \
-            -c "cp -r /somisana/ops/${{ github.event.inputs.model_type }}/* /tmp/"
+      - name: Copy relevant files to the local server to run the model
+        run: |
+          cp ops/${{ github.event.inputs.model_type }}/* ${{ env.RUN_DIR }}
 
       - name: add permissions to the files we just copied in
         run: |
@@ -179,7 +179,7 @@ jobs:
           # add others as we go e.g. OGCM, BLK 
 
   run-model:
-    needs: [build-image, envs]
+    needs: [envs,setup-run-dir]
     runs-on: mims1 
     if: ${{ github.event.inputs.run_model == 'true' }}
     env:
