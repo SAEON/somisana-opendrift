@@ -70,8 +70,8 @@ jobs:
   build_image:
     uses: ./.github/workflows/build_image.yml  # Path to your reusable workflow
 
-  # Everything below here should go into a reusable workflow, and include inputs for OGCM and BLK (as per the croco runs), so we will be able to multiple forcings in parallel
-  # the default config file needs to have OGCM and BLK as placemarkers which get over-written with sed instead of a straight copy of the config file to the lcoal server
+  # Everything below here should go into a reusable workflow, and include inputs for OGCM and WIND (as per the croco runs), so we will be able to multiple forcings in parallel
+  # the default config file needs to have OGCM and WIND as placemarkers which get over-written with sed instead of a straight copy of the config file to the lcoal server
   # this would also need us to create a sub-directory for each run with different forcing under RUN_DIR
   # using the matrix strategy, we could run all combinations of winds and currents quite easily
 
@@ -81,7 +81,7 @@ jobs:
     strategy:
       matrix:
         # matrix strategy allows us to run different model forcings in parallel
-        blk: ['GFS']
+        wind: ['GFS']
         ogcm: ['MERCATOR']
     uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
     with:
@@ -90,7 +90,7 @@ jobs:
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
-      BLK: ${{ matrix.blk }}
+      WIND: ${{ matrix.wind }}
       OGCM: ${{ matrix.ogcm }}
   
   # do some postprocessing

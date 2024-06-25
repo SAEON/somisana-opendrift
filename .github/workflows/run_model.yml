@@ -23,8 +23,8 @@ on:
         description: 'specify the runner name to determine what server we are running on'
         required: true
         type: string
-      BLK:
-        description: 'name of bulk forcing e.g. GFS' 
+      WIND:
+        description: 'name of wind forcing e.g. GFS' 
         required: true
         type: string
       OGCM:
@@ -33,7 +33,7 @@ on:
         type: string
 
 env:
-  RUN_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.BLK }}
+  RUN_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
   DATE_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}
 
 jobs:
@@ -54,8 +54,8 @@ jobs:
       - name: Copy config file to the local server to run the model
         run: |
           OGCM=${{ inputs.OGCM }}
-          BLK=${{ inputs.BLK }} 
-          sed -e 's/OGCM/'$OGCM'/' -e 's/BLK/'$BLK'/' < configs/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py
+          WIND=${{ inputs.WIND }} 
+          sed -e 's/OGCM/'$OGCM'/g' -e 's/WIND/'$WIND'/g' < configs/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py
 
       - name: add permissions to the files we just copied in
         run: |
@@ -74,5 +74,5 @@ jobs:
             -v ${{ env.DATE_DIR }}:/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               run_${{ inputs.MODEL_TYPE }}  \
-                --config_dir /tmp/opendrift/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.BLK }}
+                --config_dir /tmp/opendrift/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
 

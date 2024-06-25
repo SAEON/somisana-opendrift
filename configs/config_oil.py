@@ -68,15 +68,17 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those insude the docker image used to run operationally 
-croco_files = ['/tmp/algoa_01/croco_v1.3.1/C01_I99_OGCM_BLK/output/croco_avg.nc',
-        '/tmp/swcape_02/croco_v1.3.1/C01_I99_OGCM_BLK/output/croco_avg.nc'
+croco_files = ['/tmp/algoa_01/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc',
+        '/tmp/swcape_02/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc'
         ]
 
 # ogcm file, as downloaded using the somisana pre-processing tools
+# the operational workflow uses sed to replace OGCM with the actual string e.g. MERCATOR
 ogcm_file = '/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
 
 # atmospheric forcing file, as produced by the croco pre-processing tools prior to interpolating onto the croco model grid
-wind_file = '/tmp/downloaded_data/BLK/for_croco/BLK_'+run_date+'.nc'
+# the operational workflow uses sed to replace WIND with the actual string e.g. GFS
+wind_file = '/tmp/downloaded_data/WIND/for_croco/WIND_'+run_date+'.nc'
 
 # ------------------
 # numerical settings
