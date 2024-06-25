@@ -19,6 +19,10 @@ on:
         description: 'time of T0 of the croco workflow in format YYYYMMDD_HH - defined dynamically in run_ops.yml'
         required: true
         type: string
+      RUNNER_NAME:
+        description: 'specify the runner name to determine what server we are running on'
+        required: true
+        type: string
       BLK:
         description: 'name of bulk forcing e.g. GFS' 
         required: true
