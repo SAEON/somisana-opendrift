@@ -7,3 +7,4 @@ ADD . /somisana
 # Install somisana-opendrift
 RUN pip install -e .
 
+ENTRYPOINT ["python", "cli.py"]

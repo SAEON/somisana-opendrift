@@ -6,6 +6,7 @@ These are common to all OpenDrift applications
 
 """
 
+from datetime import datetime
 from netCDF4 import num2date
 import xarray as xr
 from opendrift.readers import reader_netCDF_CF_generic
@@ -54,34 +55,42 @@ def add_readers(o,config):
     if config.croco_files:
         for croco_file in config.croco_files:
             reader_croco = reader_ROMS_native.Reader(croco_file)
-            reader_croco = set_croco_time(reader_croco,config.croco_ref_time)
+            croco_ref_time = datetime(config.croco_Yorig,1,1)
+            reader_croco = set_croco_time(reader_croco,croco_ref_time)
             o.add_reader(reader_croco)
     
-    # ------------------
-    # MERCATOR currents
-    # ------------------
+    # -------------------------------
+    # currents from global OGCM model
+    # -------------------------------
     #
-    if config.mercator_file:
-        reader_mercator = reader_netCDF_CF_generic.Reader(config.mercator_file)
+    if config.ogcm_file:
+        reader_mercator = reader_netCDF_CF_generic.Reader(config.ogcm_file)
         o.add_reader(reader_mercator)
     
-    # ---------
-    # GFS wind
-    # ---------
+    # -------------
+    # Wind forcing
+    # -------------
     #
     # if you want to exclude wind for debugging:
     # o.set_config('environment:fallback:x_wind', 0)
     # o.set_config('environment:fallback:y_wind', 0)
     #
-    # I'm opening the file as an xarray dataset before passing to reader_netCDF_CF_generic
-    # because it had trouble with the time conversion inside the reader
-    # Doing it like this is a hack to get around this issue, as the time gets handled by xarray
-    # rather than by netCDF4's num2date function as done in the reader 
-    if config.gfs_file:
-        Dataset = xr.open_dataset(config.gfs_file, decode_times=True) # decode_times=True is the default 
-        reader_gfs = reader_netCDF_CF_generic.Reader(Dataset,
+    if config.wind_file:
+        if 'GFS' in config.wind_file:
+            # I'm opening the file as an xarray dataset before passing to reader_netCDF_CF_generic
+            # because it had trouble with the time conversion inside the reader
+            # Doing it like this is a hack to get around this issue, as the time gets handled by xarray
+            # rather than by netCDF4's num2date function as done in the reader 
+            Dataset = xr.open_dataset(config.wind_file, decode_times=True) # decode_times=True is the default 
+            reader_gfs = reader_netCDF_CF_generic.Reader(Dataset,
                                 standard_name_mapping={'uwnd': 'x_wind',
                                                        'vwnd': 'y_wind'},)    
-    o.add_reader(reader_gfs)
-    
+            o.add_reader(reader_gfs)
+        # add else if statements here for other wind forcings as needed
+        # or maybe all others could get handled in the else statement directly below?
+        else:
+            print('no wind forcing defined')
+    else:
+        print('no wind forcing defined')
+
     return o

@@ -1,0 +1,100 @@
+name: Initialise opendrift operational workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_type:
+        description: 'The kind of model to run'
+        required: true
+        default: 'oil'
+        type: choice
+        options:
+          - oil
+          - leeway
+      run_model:
+        description: 'run the model'
+        required: true
+        type: boolean
+        default: true
+      plotting:
+        description: 'do the plots'
+        required: true
+        type: boolean
+        default: true
+
+# Many of the env variables reference the current branch,
+# which is set dynamically in the branch-ref job below
+# So the env variables are mostly set in the envs job below the branch-ref job
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # Dynamically set the branch ref to the currently executing branch
+  branch-ref:
+    runs-on: ubuntu-latest
+    outputs:
+      value: ${{ steps.BRANCH_REF.outputs.value }}
+    steps:
+      - name: Set the BRANCH_REF
+        id: BRANCH_REF
+        run: |
+          echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+  # set some environment variables
+  envs:
+    needs: [branch-ref]
+    runs-on: ubuntu-latest
+    outputs:
+      BRANCH_REF: ${{ needs.branch-ref.outputs.value }}
+      RUN_DATE: ${{ steps.run_date.outputs.value }}
+      CONFIG_NAME: ${{ steps.config_name.outputs.value }}
+    steps:
+      - name: Check out source code so have access to the files in the repo
+        uses: actions/checkout@main
+        with:
+          ref: ${{ needs.branch-ref.outputs.value }}
+      - name: configuration name
+        id: config_name
+        run: |
+          # Use grep to find the line where the variable is defined
+          line=$(grep -m 1 -w config_name configs/config_${{ github.event.inputs.model_type }}.py)
+          # Use awk to extract the value of the variable from the line (thanks chatgpt)
+          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+      - name: run date 
+        id: run_date
+        run: |
+          # Use grep to find the line where the variable is defined
+          line=$(grep -m 1 -w run_date configs/config_${{ github.event.inputs.model_type }}.py)
+          # Use awk to extract the value of the variable from the line (thanks chatgpt)
+          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+
+  build_image:
+    uses: ./.github/workflows/build_image.yml  # Path to your reusable workflow
+
+  # Everything below here should go into a reusable workflow, and include inputs for OGCM and BLK (as per the croco runs), so we will be able to multiple forcings in parallel
+  # the default config file needs to have OGCM and BLK as placemarkers which get over-written with sed instead of a straight copy of the config file to the lcoal server
+  # this would also need us to create a sub-directory for each run with different forcing under RUN_DIR
+  # using the matrix strategy, we could run all combinations of winds and currents quite easily
+
+  run_model:
+    needs: [envs,build_image]
+    if: ${{ github.event.inputs.run_model == 'true' }}
+    strategy:
+      matrix:
+        # matrix strategy allows us to run different model forcings in parallel
+        blk: ['GFS']
+        ogcm: ['MERCATOR']
+    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+    with:
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims1
+      BLK: ${{ matrix.blk }}
+      OGCM: ${{ matrix.ogcm }}
+  
+  # do some postprocessing
+
+  # do some plots
+
+  # Archive output

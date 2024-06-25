@@ -1,20 +1,25 @@
 #!/usr/bin/env python
 """
-Code for running an openoil simulation
+Code for running an opendrift simulation
 
 The 'opendrift' virtual environment must be activated
 
-The directory in which this file is run must contain an accompanying config_oil.py file
+There must be an accompanying config_<model>.py file in the config_dir where the model is run
+
+All of the user-defined inputs should be in the confog_<model>.py file
 
 """
 
+import os, sys
 from datetime import datetime, timedelta
-from opendrift.models.openoil import OpenOil
-import config_oil as config
 import opendrift_tools.preprocess as pre_od
 
-def main():
-
+def oil(config_dir):
+    
+    from opendrift.models.openoil import OpenOil
+    sys.path.append(config_dir)
+    print('curent directory is ',os.getcwd())
+    import config_oil as config
     # -------------------------------------
     # initialise openoil and set up readers
     # -------------------------------------
@@ -66,7 +71,7 @@ def main():
     #o.set_config('seed:droplet_diameter_mu',1.5e-3)
     #o.set_config('seed:droplet_diameter_sigma',0.5e-3)
     #
-    time_start = config.spill_start_time-timedelta(hours=2) # for convenience input is in local time UTC+2, so convert to model time (UTC)
+    time_start = datetime.strptime(config.spill_start_time, '%Y%m%d_%H')
     time_end = time_start+timedelta(hours=config.release_dur)
     #
     # flow rate
@@ -84,11 +89,8 @@ def main():
     # run the model
     # --------------
     #
-    fname = 'trajectories.nc' # keep this generic - run info is contained in the dir name
+    fname = config_dir+'/trajectories.nc' # keeping the filename generic
     o.run(duration=timedelta(days=config.run_dur), time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
      
     del(o)
     
-if __name__ == "__main__":
-    
-    main()

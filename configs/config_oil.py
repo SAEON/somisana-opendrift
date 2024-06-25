@@ -1,18 +1,19 @@
 # Configuration file for running an OpenOil simulation 
 #
-from datetime import datetime, timedelta
+# We are intentially excluding any python package imports in this file with the 
+# intention of making it easier to transition to a gui interface at some stage
 #
-# ---------------------------------------
-# configuration name and run date to use
-# ---------------------------------------
+# --------------------------------
+# configuration name and run date
+# --------------------------------
 #
 # give a name for your configuration
 # output will be written to a directory with this name
-config_name = 'Test_Run'
+config_name='Test_Run'
 #
-# croco run date
-# this is over-written as part of the operational workflow
-croco_run_date = 'YYYYMMDD_HH'
+# define the date when the croco runs were initialised, in format YYYYMMDD_HH 
+# (this is only applicable for the operational opendrift runs)
+run_date='20240625_06'
 
 # -----------
 # spill info
@@ -40,9 +41,8 @@ radius=5
 # Or a few other generic oil types added as part of opendrift, such as 'GENERIC INTERMEDIATE FUEL OIL 180'
 oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
 #
-# start time of spill - use local time (UTC+2)
-#spill_start_time=datetime.now() # change to whenever the spill should be 
-spill_start_time=datetime(2023,7,25,5,30,0)
+# start time of spill, in format YYYYMMDD_HH, in UTC
+spill_start_time='20240625_06'
 #
 # duration of the release of oil in hours
 release_dur=3
@@ -62,32 +62,29 @@ oil_flow_rate=oil_volume/release_dur
 #
 # you can just comment files which you don't want to include in the forcing
 #
-# the reference datetime used in setting up the croco simulations (you shouldn't have to ever change this, unless we reconfigure it in the croco preprocessing)
-croco_ref_time = datetime(2000,1,1)
+# the Yorig variable used in setting up the croco simulations (used for getting croco file time into real datetimes)
+croco_Yorig=2000
 #
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those insude the docker image used to run operationally 
-croco_files = ['/tmp/algoa_01/croco_v1.3.1/C01_I99_MERCATOR_GFS/output/croco_avg.nc',
-        '/tmp/swcape_02/croco_v1.3.1/C01_I99_MERCATOR_GFS/output/croco_avg.nc'
+croco_files = ['/tmp/algoa_01/croco_v1.3.1/C01_I99_OGCM_BLK/output/croco_avg.nc',
+        '/tmp/swcape_02/croco_v1.3.1/C01_I99_OGCM_BLK/output/croco_avg.nc'
         ]
-#
-# mercator file, as downloaded using the somisana pre-processing tools
-mercator_file = '/tmp/downloaded_data/MERCATOR/mercator_YYYYMMDD_HH.nc'
 
-# gfs file, as produced by the croco pre-processing tools after processing the downloaded grb files into a single nc file
-gfs_file = '/tmp/downloaded_data/GFS/for_croco/GFS_YYYYMMDD_HH.nc'
+# ogcm file, as downloaded using the somisana pre-processing tools
+ogcm_file = '/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
+
+# atmospheric forcing file, as produced by the croco pre-processing tools prior to interpolating onto the croco model grid
+wind_file = '/tmp/downloaded_data/BLK/for_croco/BLK_'+run_date+'.nc'
 
 # ------------------
 # numerical settings
 # ------------------
 #
 # run duration in days
-# limit this automatically to avoid run crash at the end of the available model data
-run_dur = 10
-run_time_max = datetime.strptime(croco_run_date, '%Y%m%d_%H')+timedelta(days=5)
-run_dur_max = (run_time_max - spill_start_time).total_seconds()/86400
-run_dur=min(run_dur,run_dur_max)
+# make sure the run duration doesn't exceed the temporal range of your inputs!
+run_dur = 5
 #
 # number of particles to release
 # generally the more the better, but there are computational limits
@@ -109,22 +106,3 @@ hz_diff = 1
 # fraction of the 10 m wind speed used to advect surface particles
 wind_drift_factor=0.03
 
-# -------------
-# grdding info
-# -------------
-#
-# placeholder for now - we can have options for gridding the output here 
-# e.g. what grid size to use, what spatial extent
-
-# --------------
-# plotting info
-# --------------
-plot_extents=[25.5,26.5,-34.2,-33.6] # [lon1,lon2,lat1,lat2]
-figsize=(8,4) # resize as needed to match the shape of extents below
-time_x=0.1 # placement of time label, in axes coordinates
-time_y=0.9
-vmin=-50   # the z variable is animated so this is your max depth
-cmap='Spectral_r' #'Spectral_r' 
-plot_cbar=True #True
-cbar_loc=(0.9, 0.15, 0.01, 0.7)
-croco_dirs_plot=None # croco_dirs
