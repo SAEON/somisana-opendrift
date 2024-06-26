@@ -108,3 +108,36 @@ hz_diff = 1
 # fraction of the 10 m wind speed used to advect surface particles
 wind_drift_factor=0.03
 
+# -----------------
+# plotting options
+# -----------------
+#
+# this section is only here for doing plots as part of the operational work flow
+#
+fname='/tmp/opendrift/'+config_name+'/OGCM_WIND/trajectories.nc'
+tstep=0 # the step to plot, or the first step to animate.
+# options related to the figure layout
+figsize=(6,6) # (hz,vt)
+extents = [25.5,26.5,-34.1,-33.6] # spatial extent to plot [lon0,lon1,lat0,lat1]
+# options relating to the release location
+lon_release=None
+lat_release=None
+size_release = 50
+# options relating to the dispaly of data, colormap and colorbar
+size_scat = 20 # size of the scatter data to be plotted
+var_str='z' # variable to plot
+ticks = [0,5,10,15,20,25,30] # the ticks to plot relating to the colormap (can be irregularly spaced)
+cmap = 'Spectral_r' # colormap to use
+plot_cbar = True
+cbar_loc = [0.9, 0.2, 0.02, 0.6] # where on the plot to put the colorbar
+cbar_label = 'depth (m)'
+# options related to the plot output file
+jpg_out=None # filename of the jpg file
+write_jpg=False
+# options related to the animation
+gif_out='/tmp/opendrift/'+config_name+'/OGCM_WIND/trajectories_z.gif' # filename of the gif file
+write_gif=True
+skip_time = 1 # every nth time-step will be animated (if provided)
+tstep_end=None # The last timestep to animate. Only used if write_gif = True.
+
+

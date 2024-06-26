@@ -10,7 +10,7 @@ All of the user-defined inputs should be in the confog_<model>.py file
 
 """
 
-import os, sys
+import sys
 from datetime import datetime, timedelta
 import opendrift_tools.preprocess as pre_od
 
@@ -18,8 +18,7 @@ def oil(config_dir):
     
     from opendrift.models.openoil import OpenOil
     sys.path.append(config_dir)
-    print('curent directory is ',os.getcwd())
-    import config_oil as config
+    import config
     # -------------------------------------
     # initialise openoil and set up readers
     # -------------------------------------

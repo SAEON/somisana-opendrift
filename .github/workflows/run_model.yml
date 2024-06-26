@@ -1,4 +1,4 @@
-name: run opendrift
+name: run the model
 
 on:
   workflow_call:
@@ -55,7 +55,7 @@ jobs:
         run: |
           OGCM=${{ inputs.OGCM }}
           WIND=${{ inputs.WIND }} 
-          sed -e 's/OGCM/'$OGCM'/g' -e 's/WIND/'$WIND'/g' < configs/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config_${{ github.event.inputs.model_type }}.py
+          sed -e 's/OGCM/'$OGCM'/g' -e 's/WIND/'$WIND'/g' < configs/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config.py
 
       - name: add permissions to the files we just copied in
         run: |
@@ -65,7 +65,7 @@ jobs:
 
   run-model:
     needs: [setup-run-dir]
-    runs-on: mims1 
+    runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: run the model
         run: >-

@@ -1,4 +1,4 @@
-name: Initialise opendrift operational workflow
+name: operational opendrift workflow
 
 on:
   workflow_dispatch:
