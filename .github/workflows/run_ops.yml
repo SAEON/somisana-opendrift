@@ -12,12 +12,12 @@ on:
           - oil
           - leeway
       run_model:
-        description: 'run the model'
+        description: 'run the model?'
         required: true
         type: boolean
         default: true
-      plotting:
-        description: 'do the plots'
+      do_plots:
+        description: 'do the plots?'
         required: true
         type: boolean
         default: true
@@ -96,5 +96,22 @@ jobs:
   # do some postprocessing
 
   # do some plots
+  do_plots:
+    needs: [envs,run_model]
+    if: ${{ always() && github.event.inputs.do_plots == 'true' }}
+    strategy:
+      matrix:
+        # matrix strategy allows us to run different model forcings in parallel
+        wind: ['GFS']
+        ogcm: ['MERCATOR']
+    uses: ./.github/workflows/do_plots.yml  # Path to your reusable workflow
+    with:
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims1
+      WIND: ${{ matrix.wind }}
+      OGCM: ${{ matrix.ogcm }}
 
   # Archive output

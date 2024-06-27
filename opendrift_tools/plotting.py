@@ -1,24 +1,17 @@
 """
 functions for plotting / animating opendrift output
 (there are some plotting methods as part of opendrift source code
- but we'd like to do our own tailor made ones)
+ but we'd like to do our own tailor made ones for more flexibility)
 """
 
-import sys, os, glob
 import numpy as np
 from datetime import datetime, timedelta
 import xarray as xr
-import opendrift
 import matplotlib.pyplot as plt
 import matplotlib.colors as mplc
 import matplotlib.cm as cm
 from matplotlib.animation import FuncAnimation
-from copy import copy
-import xarray as xr
-from xhistogram.xarray import histogram
-import cartopy
 import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 import pandas as pd
 import opendrift_tools.postprocess as post
 import matplotlib.path as mplPath
@@ -45,10 +38,13 @@ def extents_2_polygon(extents):
                                     [extents[0], extents[3]]]))
     return extents_poly
 
-def setup_plot(ax, lon, lat, extents=[]):
+def setup_plot(ax, lon, lat, extents=[], lscale='auto'):
     '''
     generic stuff applicable to all 2D plots
+    lon = array of longitudes being plotted
+    lat = array of latitudes being plotted
     extents = [lon_min, lon_max, lat_min, lat_max]
+    lscale = resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
     '''
     # first need to get the domain extents if it's not set autmatically
     if len(extents) == 0:
@@ -66,17 +62,9 @@ def setup_plot(ax, lon, lat, extents=[]):
         lat_max=extents[3]
     ax.set_extent(extents)
     
-    # ax.add_feature(cfeature.LAND, zorder=0, edgecolor='black')
-    # land = LandmaskFeature(scale=lscale, facecolor=land_color, globe=globe)
-
-    # ax.add_feature(land, zorder=2,
-    #                facecolor=land_color,
-    #                edgecolor='black')
-    
-    # lscale (string): resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto'). default is 'auto'.
-    
+    # using opendrifts landmask plotting routine...
     reader_global_landmask.plot_land(ax, lon_min, lat_min, lon_max,
-                                                 lat_max, False, lscale = 'h')
+                                                 lat_max, False, lscale = lscale)
     
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                       linewidth=1, color='dimgrey', alpha=0.5, linestyle=':')
@@ -100,7 +88,7 @@ def get_time_txt(ax,
     
     return tx_time
 
-def plot_text(ax,
+def add_text(ax,
                  tx,
                  loc=[0.5,1.01],
                  ):
@@ -140,6 +128,7 @@ def plot_particles(fname,
         # options related to the figure layout
         figsize=(6,6), # (hz,vt)        
         extents = [], # [lon0,lon1,lat0,lat1]
+        lscale = 'auto', # resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
         # options relating to the release location
         lon_release=None, 
         lat_release=None,
@@ -187,7 +176,7 @@ def plot_particles(fname,
     # set up the plot
     fig = plt.figure(figsize=figsize) 
     ax = plt.axes(projection=ccrs.Mercator())
-    setup_plot(ax,lon,lat,extents)
+    setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
     
     # set up the cmap to handle non-uniform input ticks
     if len(ticks)==0:
@@ -211,9 +200,9 @@ def plot_particles(fname,
         ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
     
     tx_time = get_time_txt(ax, time_plot, time_start)
-    time_plt = plot_text(ax,tx_time,loc=[0.5,1.01])
+    time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     
-    if plot_cbar is not None:
+    if plot_cbar:
         add_cbar(scat,label=cbar_label,ticks=ticks,loc=cbar_loc)
     
     # write a jpg if specified

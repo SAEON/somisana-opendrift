@@ -1,4 +1,4 @@
-name: run the model
+name: do plots
 
 on:
   workflow_call:
@@ -37,42 +37,15 @@ env:
   DATE_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}
 
 jobs:
-  setup-run-dir:
+  do-plots:
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
-      - name: Check out source code so have access to the files in the repo
-        uses: actions/checkout@main
-        with:
-          ref: ${{ inputs.BRANCH_REF }}
-
-      - name: create the directory
-        run: |
-          # rm -rf ${{ env.RUN_DIR }}  
-          mkdir -p ${{ env.RUN_DIR }}
-        continue-on-error: true
-
-      - name: Copy config file to the local server to run the model
-        run: |
-          OGCM=${{ inputs.OGCM }}
-          WIND=${{ inputs.WIND }} 
-          sed -e 's/OGCM/'$OGCM'/g' -e 's/WIND/'$WIND'/g' < configs/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config.py
-
-      - name: add permissions to the files we just copied in
-        run: |
-          chown -R :runners ${{ env.RUN_DIR }}
-          chmod -R 774 ${{ env.RUN_DIR }}
-        continue-on-error: true
-
-  run-model:
-    needs: [setup-run-dir]
-    runs-on: ${{ inputs.RUNNER_NAME }}
-    steps:
-      - name: run the model
+      - name: make animation of the particles
         run: >-
           docker run \
             --rm \
             -v ${{ env.DATE_DIR }}:/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              run_${{ inputs.MODEL_TYPE }}  \
+              plot_particles  \
                 --config_dir /tmp/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
 

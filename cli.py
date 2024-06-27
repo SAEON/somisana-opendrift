@@ -49,6 +49,7 @@ def main():
                         tstep=config.tstep,
                         figsize=config.figsize,
                         extents=config.extents,
+                        lscale=config.lscale,
                         lon_release=config.lon_release,
                         lat_release=config.lat_release,
                         size_release=config.size_release,
