@@ -108,7 +108,7 @@ def grid_surface_oil(iteration_dir,dx_m=25000,extents=[16,34,-40,-28],time_facto
     # TODO: add minimum time to oiling like we do for the stranding?
     #
     # compute the maximum surface thickness over the run
-    # TODO: MAYBE WE WANT TO KEEP THE SURFACE THICKNESS AT EACH TIME-STEP? same applies for stranded and subsurface 
+    # TODO: MAYBE WE WANT TO KEEP THE SURFACE THICKNESS AT EACH TIME-STEP? same applies for stranded
     h_surf_max=h_surf.max(('time'))
     h_surf_max=h_surf_max.rename('maximum')
     h_surf_max.attrs["standard_name"] = 'maximum_surface_oil_thickness'

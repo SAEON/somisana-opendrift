@@ -47,9 +47,8 @@ jobs:
 
       - name: create the directory
         run: |
-          # rm -rf ${{ env.RUN_DIR }}  
+          rm -rf ${{ env.RUN_DIR }}  
           mkdir -p ${{ env.RUN_DIR }}
-        continue-on-error: true
 
       - name: Copy config file to the local server to run the model
         run: |
@@ -57,9 +56,8 @@ jobs:
           WIND=${{ inputs.WIND }} 
           sed -e 's/OGCM/'$OGCM'/g' -e 's/WIND/'$WIND'/g' < configs/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config.py
 
-      - name: add permissions to the files we just copied in
+      - name: add permissions to the config file
         run: |
-          chown -R :runners ${{ env.RUN_DIR }}
           chmod -R 774 ${{ env.RUN_DIR }}
         continue-on-error: true
 
@@ -69,8 +67,10 @@ jobs:
     steps:
       - name: run the model
         run: >-
+          # we're specifying --user $(id -u):$(id -g) to avoid the output having root permissions
           docker run \
             --rm \
+            --user $(id -u):$(id -g)
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               run_${{ inputs.MODEL_TYPE }}  \
