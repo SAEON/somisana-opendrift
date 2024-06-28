@@ -41,7 +41,7 @@ jobs:
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: make animation of the particles
-        run: >-
+        run: |
           # we're specifying --user $(id -u):$(id -g) to avoid the output having root permissions
           docker run \
             --rm \
