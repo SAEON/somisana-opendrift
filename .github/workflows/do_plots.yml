@@ -45,7 +45,7 @@ jobs:
           # we're specifying --user $(id -u):$(id -g) to avoid the output having root permissions
           docker run \
             --rm \
-            --user $(id -u):$(id -g)
+            --user $(id -u):$(id -g) \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               plot_particles  \
