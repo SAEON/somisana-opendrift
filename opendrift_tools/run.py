@@ -4,9 +4,9 @@ Code for running an opendrift simulation
 
 The 'opendrift' virtual environment must be activated
 
-There must be an accompanying config_<model>.py file in the config_dir where the model is run
+There must be an accompanying config.py file in the config_dir where the model is run
 
-All of the user-defined inputs should be in the confog_<model>.py file
+Anything in here which we want to make configurable should be moved to the config.py file
 
 """
 
@@ -17,6 +17,7 @@ import opendrift_tools.preprocess as pre_od
 def oil(config_dir):
     
     from opendrift.models.openoil import OpenOil
+    print('config_dir is '+config_dir)
     sys.path.append(config_dir)
     import config
     # -------------------------------------
