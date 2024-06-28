@@ -55,6 +55,7 @@ jobs:
           docker run \
             --rm \
             --user root \
+            --entrypoint /bin/bash \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               -c "chown -R $(id -u):$(id -g) /mnt/tmp/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}"
