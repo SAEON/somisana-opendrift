@@ -67,17 +67,17 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those insude the docker image used to run operationally 
-croco_files = ['/tmp/algoa_01/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc',
-        '/tmp/swcape_02/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc'
+croco_files = ['/mnt/tmp/algoa_01/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc',
+        '/mnt/tmp/swcape_02/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc'
         ]
 
 # ogcm file, as downloaded using the somisana pre-processing tools
 # the operational workflow uses sed to replace OGCM with the actual string e.g. MERCATOR
-ogcm_file = '/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
+ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
 
 # atmospheric forcing file, as produced by the croco pre-processing tools prior to interpolating onto the croco model grid
 # the operational workflow uses sed to replace WIND with the actual string e.g. GFS
-wind_file = '/tmp/downloaded_data/WIND/for_croco/WIND_'+run_date+'.nc'
+wind_file = '/mnt/tmp/downloaded_data/WIND/for_croco/WIND_'+run_date+'.nc'
 
 # ------------------
 # numerical settings
@@ -113,7 +113,7 @@ wind_drift_factor=0.03
 #
 # options for doing plots as part of the operational work flow
 #
-fname='/tmp/opendrift/'+config_name+'/OGCM_WIND/trajectories.nc'
+fname='/mnt/tmp/opendrift_oil/'+config_name+'/OGCM_WIND/trajectories.nc'
 tstep=0 # the step to plot, or the first step to animate.
 # options related to the figure layout
 figsize=(8,4) # (hz,vt)
@@ -135,7 +135,7 @@ cbar_label = 'depth (m)'
 jpg_out=None # filename of the jpg file
 write_jpg=False
 # options related to the animation
-gif_out='/tmp/opendrift/'+config_name+'/OGCM_WIND/trajectories_z.gif' # filename of the gif file
+gif_out='/mnt/tmp/opendrift_oil/'+config_name+'/OGCM_WIND/trajectories_z.gif' # filename of the gif file
 write_gif=True
 skip_time = 1 # every nth time-step will be animated (if provided)
 tstep_end=None # The last timestep to animate. Only used if write_gif = True. If None, then it'll animate to the end of the file

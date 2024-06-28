@@ -71,8 +71,8 @@ jobs:
         run: >-
           docker run \
             --rm \
-            -v ${{ env.DATE_DIR }}:/tmp \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               run_${{ inputs.MODEL_TYPE }}  \
-                --config_dir /tmp/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
+                --config_dir /mnt/tmp/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
 

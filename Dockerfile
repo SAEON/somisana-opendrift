@@ -7,4 +7,6 @@ ADD . /somisana
 # Install somisana-opendrift
 RUN pip install -e .
 
-ENTRYPOINT ["python", "cli.py"]
+# run cli.py as the default behaviour
+# (I had to use the full path to the python exe otherwise it wouldn't find it, which I don't understand as /opt/conda/bin is in $PATH?)
+ENTRYPOINT ["/opt/conda/bin/python", "cli.py"]
