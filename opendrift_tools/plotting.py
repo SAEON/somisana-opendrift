@@ -181,7 +181,6 @@ def plot_particles(fname,
     # set up the cmap to handle non-uniform input ticks
     if len(ticks)==0:
         ticks = np.linspace(min(np.ravel(var_data)),max(np.ravel(var_data)),num=20)
-    n_levels = len(ticks)
     levs = np.array(ticks)
     cmap_norm = mplc.BoundaryNorm(boundaries=levs, ncolors=256)
     
@@ -245,6 +244,143 @@ def plot_particles(fname,
         if gif_out is None:
             gif_out = fname.split('.nc')[0]+'_'+var_str+'.gif'
         anim.save(gif_out, writer='imagemagick')
+
+def lonlat_2_corners(lon,lat):
+    '''
+    take lon lat data from gridded output and return new lon,lat data which
+    represent the grid cell corners instead of the centre of the grid cell
+    this is useful to rather 
+    '''
+    # Calculate the spacing between original lon and lat points
+    lon_diff = np.diff(lon)
+    lat_diff = np.diff(lat)
+      
+    # Create empty grids with one extra element in each dimension
+    lon_out = np.zeros((len(lon)+1,), dtype=float)
+    lat_out = np.zeros((len(lat)+1,), dtype=float)
+    
+    # Fill the interior grid points with averages of original coordinates
+    lon_out[1:-1] = lon[:-1] + lon_diff/2
+    lat_out[1:-1] = lat[:-1] + lat_diff/2
+    
+    # add the end points
+    lon_out[0] = lon[0] - lon_diff[0]/2
+    lat_out[0] = lat[0] - lat_diff[0]/2
+    lon_out[-1] = lon[-1] + lon_diff[-1]/2
+    lat_out[-1] = lat[-1] + lat_diff[-1]/2
+    
+    # lon_out,lat_out = np.meshgrid(lon_out,lat_out)
+    
+    return lon_out,lat_out
+
+def plot_gridded(fname,
+        var_str='particle_density', # variable to plot
+        tstep=0, # the step to plot, or the first step to animate.
+        # options related to the figure layout
+        figsize=(6,6), # (hz,vt)        
+        extents = [], # [lon0,lon1,lat0,lat1]
+        lscale = 'auto', # resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
+        # options relating to the release location
+        lon_release=None, 
+        lat_release=None,
+        size_release = 50,
+        # options relating to the dispaly of data, colormap and colorbar
+        ticks = np.linspace(0,0.5,num=11), # the ticks to plot relating to the colormap (can be irregularly spaced)
+        cmap = 'Spectral_r', # colormap to use
+        plot_cbar = False,
+        cbar_loc = [0.9, 0.2, 0.02, 0.6], # where on the plot to put the colorbar
+        cbar_label = 'particle density (-)',
+        # options related to the plot output file
+        jpg_out=None, # filename of the jpg file
+        write_jpg=False,
+        # options related to the animation
+        gif_out=None, # filename of the gif file
+        write_gif=False,
+        skip_time = 1, # every nth time-step will be animated (if provided)
+        tstep_end=None, # The last timestep to animate. Only used if write_gif = True.
+        ):
+    '''
+    this is a convenience function for doing a quick 2D plot of gridded output with minimal coding.
+    this might also be used as example code for doing your own plots 
+    there's also an option to turn the plot into an animation
+    '''
+    
+    # get the data
+    ds = xr.open_dataset(fname)
+    time_start = ds.time.data[0]
+    
+    # only plot where data shows up
+    ds=ds.where(ds[var_str]>0.0)
+    
+    # subset to the time-step
+    ds_tstep = post.subset_tstep(ds,tstep)
+    time_plot = ds_tstep.time.values
+    lon=ds_tstep.lon_bin.values
+    lat=ds_tstep.lat_bin.values
+    lon,lat=lonlat_2_corners(lon,lat)
+    var_data = ds_tstep[var_str].values
+    
+    
+    # set up the plot
+    fig = plt.figure(figsize=figsize) 
+    ax = plt.axes(projection=ccrs.Mercator())
+    setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
+    
+    # set up the cmap to handle non-uniform input ticks
+    if len(ticks)==0:
+        ticks = np.linspace(min(np.ravel(var_data)),max(np.ravel(var_data)),num=20)
+    levs = np.array(ticks)
+    cmap_norm = mplc.BoundaryNorm(boundaries=levs, ncolors=256)
+    
+    # plot the data
+    var_plt = ax.pcolormesh(lon,
+                              lat,
+                              var_data,
+                              cmap=cmap,
+                              norm=cmap_norm,
+                              transform=ccrs.PlateCarree())
+    
+    if lon_release is not None:
+        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
+    
+    tx_time = get_time_txt(ax, time_plot, time_start)
+    time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
+    
+    if plot_cbar:
+        add_cbar(var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
+    
+    # write a jpg if specified
+    if write_jpg:
+        if jpg_out is None:
+            # automatically come up with a file name
+            jpg_out = fname.split('.nc')[0]+'_'+var_str+'_'+pd.to_datetime(time_plot).strftime("%Y%m%d_%H")+'.jpg'
+        plt.savefig(jpg_out,dpi=500,bbox_inches = 'tight')
+    
+    # and/or write a gif if specified
+    if write_gif: # do the animation
+        def plot_tstep(i):
+            
+            ds_tstep = post.subset_tstep(ds,i)
+            time_plot = ds_tstep.time.values
+            var_i = ds_tstep[var_str].values
+            var_plt.set_array(var_i.ravel())
+            
+            # update the time label
+            tx_time = get_time_txt(ax, time_plot, time_start)
+            time_plt.set_text(tx_time)
+            
+        
+        # animate
+        if tstep_end is None: # if not defined then animate to end of file 
+            tstep_end = len(ds.time) - 1
+        
+        anim = FuncAnimation(
+            fig, plot_tstep, frames=range(tstep,tstep_end,skip_time)) 
+        
+        if gif_out is None:
+            gif_out = fname.split('.nc')[0]+'_'+var_str+'.gif'
+        anim.save(gif_out, writer='imagemagick')
+
 
 # if __name__ == "__main__":
     
