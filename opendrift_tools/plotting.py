@@ -134,10 +134,10 @@ def plot_particles(fname,
         lat_release=None,
         size_release = 50,
         # options relating to the dispaly of data, colormap and colorbar
-        size_scat = 10, # size of the scatter data to be plotted
-        ticks = np.linspace(0,30,num=16), # the ticks to plot relating to the colormap (can be irregularly spaced)
-        cmap = 'Spectral_r', # colormap to use
-        plot_cbar = True,
+        size_scat = 20, # size of the scatter data to be plotted
+        ticks = [-9999,-9998], # the ticks to plot relating to the colormap (can be irregularly spaced)
+        cmap = 'Greys', # colormap to use
+        plot_cbar = False,
         cbar_loc = [0.9, 0.2, 0.02, 0.6], # where on the plot to put the colorbar
         cbar_label = 'depth (m)',
         # options related to the plot output file
@@ -285,7 +285,7 @@ def plot_gridded(fname,
         lat_release=None,
         size_release = 50,
         # options relating to the dispaly of data, colormap and colorbar
-        ticks = np.linspace(0,0.5,num=11), # the ticks to plot relating to the colormap (can be irregularly spaced)
+        ticks = np.linspace(0,0.2,num=11), # the ticks to plot relating to the colormap (can be irregularly spaced)
         cmap = 'Spectral_r', # colormap to use
         plot_cbar = False,
         cbar_loc = [0.9, 0.2, 0.02, 0.6], # where on the plot to put the colorbar

@@ -80,174 +80,156 @@ def extents_from_lonlat(lon,lat,factor=0.01):
     
     return extents
 
-def grid_particles(fname,fname_out,extents=[],dx_m=3000,normalise=5000):
+def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,max_only=False):
     '''
     compute a eulerian particle density map from the output of an opendrift simulation
     fname = the file to do the gridding on
     fname_out = output netcdf filename
-    extents = the spatial extent of the grid [lon0,lon1,lat0,lat1]
-    dx_m = grid size in meters
-    normalise = the number to normalise by. If you specify this as the number of particles released, the sum over the heat map should add up to 1
+    grid_type = what kind of gridding to do. Options are 'density', 'surface_oil', 'stranded_oil'
+    extents = the spatial extent of the grid [lon0,lon1,lat0,lat1]. If None, then this is automatically determined from the geographic extent of the particles
+    dx_m = grid size in meters, if None, then a 50 x 50 regular grid is generated
+    max_only = option to only write the maximum over the entire file to save disk space (boolean)
     '''
     
     # get the data
     ds = xr.open_dataset(fname)
     ds = fill_deactivated(ds)
+    lon = ds.lon.values
+    lat = ds.lat.values
     
-    if len(extents) == 0:
-        extents = extents_from_lonlat(ds.lon.values,ds.lat.values)
+    if extents is None:
+        extents = extents_from_lonlat(lon,lat)
     
-    lonbin, latbin = get_lonlat_bins(extents,dx_m)
-    
-    # compute the histogram of the particle locations
-    h = histogram(ds.lon,
-                  ds.lat,
-                  bins=[lonbin, latbin],
-                  dim=['trajectory'],
-                  density=False)
-    # transpose to standard time,lat,lon ordering
-    h = h.transpose("time", "lat_bin", "lon_bin")
-    # normalise
-    h = h / normalise
-    
-    # convert oil volume per grid cell into oil thickness in micron
-    h=h.rename('particle_density')
-    h.attrs["units"] = '-'
-    
-    h.to_netcdf(fname_out)
-
-def grid_surface_oil(fname,fname_out,extents=[],dx_m=3000,max_only=False):
-    '''
-    compute the surface oil thickness on a regular grid, in microns, from the output of an openoil simulation
-    fname = the file to do the gridding on
-    fname_out = output netcdf filename
-    extents = the spatial extent of the grid [lon0,lon1,lat0,lat1]
-    dx_m = grid size in meters
-    max_only = option to only write the maximum thickness over the entire file to save disk space (boolean)
-    '''
-    
-    # get the data
-    ds = xr.open_dataset(fname)
-    ds = fill_deactivated(ds)
-    
-    if len(extents) == 0:
-        extents = extents_from_lonlat(ds.lon.values,ds.lat.values)
-    
-    lonbin, latbin = get_lonlat_bins(extents,dx_m)
-    
-    # identify stranded particles
-    stranded_flag = get_stranded_flag(ds)
-
-    # get data for computing surface thickness
-    ds_surf=ds.where(ds.z==0.0)
-    
-    # remove stranded data (grid_stranded_oil() handles the stranded oil separately)
-    ds_surf=ds_surf.where(~(ds_surf.status==stranded_flag)) 
-    
-    # compute the oil volume (m3) per surface particle
-    # note we are using mass of the oil emulsion into account (see openoil.get_oil_budget)
-    # mass_emulsion = mass_oil / (1 - water_fraction)
-    surf_volume=(ds_surf.mass_oil / (1 - ds_surf.water_fraction))/ds_surf.density  
-    
-    # compute the histogram of surface volume
-    # histogram omputes the number of particles per grid cell
-    # setting 'weights=surf_volume' converts this to volume of surface oil per grid cell
-    h_surf = histogram(ds_surf.lon,
-                  ds_surf.lat,
-                  bins=[lonbin, latbin],
-                  dim=['trajectory'],
-                  weights=surf_volume,
-                  density=False)
-    # transpose to standard time,lat,lon ordering
-    h_surf = h_surf.transpose("time", "lat_bin", "lon_bin")
-    
-    # convert oil volume per grid cell into oil thickness in micron
-    h_surf = h_surf/(np.power(dx_m,2))*1e6
-    h_surf.attrs["standard_name"] = 'surface_oil_thickness'
-    h_surf.attrs["units"] = 'micron'
-
-    # compute the maximum surface thickness over the run
-    h_surf_max=h_surf.max(('time'))
-    h_surf_max=h_surf_max.rename('maximum')
-    h_surf_max.attrs["standard_name"] = 'maximum_surface_oil_thickness'
-    h_surf_max.attrs["units"] = 'micron'
-    
-    if max_only:
-        h_surf_max.to_netcdf(fname_out)
+    if dx_m is None:
+        num_x = 50 # default number of grid points in each direction
+        lonbin = np.linspace(extents[0], extents[1], num=num_x)
+        latbin = np.linspace(extents[2], extents[3], num=num_x)
     else:
-        ds_out = xr.Dataset({'surface_thickness': h_surf,'maximum': h_surf_max})
-        ds_out.to_netcdf(fname_out)
-
-def grid_stranded_oil(fname,fname_out,extents=[],dx_m=3000,max_only=False):
-    '''
-    compute the stranded oil concentration, in g/m2, from the output of an openoil simulation
-    fname = the file to do the gridding on
-    fname_out = output netcdf filename
-    extents = the spatial extent of the grid [lon0,lon1,lat0,lat1]
-    dx_m = grid size in meters
-    max_only = option to only write the maximum thickness over the entire file to save disk space (boolean)
-    '''
-    # get the data
-    ds = xr.open_dataset(fname)
-    ds = fill_deactivated(ds)
+        lonbin, latbin = get_lonlat_bins(extents,dx_m)
     
-    if len(extents) == 0:
-        extents = extents_from_lonlat(ds.lon.values,ds.lat.values)
+    if grid_type == 'density':
+        # compute the histogram of the particle locations
+        # this will add up all the particles in each bin
+        h = histogram(ds.lon,
+                      ds.lat,
+                      bins=[lonbin, latbin],
+                      dim=['trajectory'],
+                      density=False)
+        # transpose to standard time,lat,lon ordering
+        h = h.transpose("time", "lat_bin", "lon_bin")
+        # normalise so that the data represents the particle density
+        # i.e. the sum over the heat map should add up to 1
+        h = h / len(lon)
+        
+        # convert oil volume per grid cell into oil thickness in micron
+        h=h.rename('particle_density')
+        h.attrs["units"] = '-'
+        
+        h.to_netcdf(fname_out)
+        
+    elif grid_type == 'surface_oil':
     
-    lonbin, latbin = get_lonlat_bins(extents,dx_m)
+        # identify stranded particles
+        stranded_flag = get_stranded_flag(ds)
     
-    # identify stranded particles
-    stranded_flag = get_stranded_flag(ds)
-
-    # get data for computing stranded oil concentration
-    ds_strand=ds.where(ds.status==stranded_flag)
+        # get data for computing surface thickness
+        ds_surf=ds.where(ds.z==0.0)
+        
+        # remove stranded data (grid_stranded_oil() handles the stranded oil separately)
+        ds_surf=ds_surf.where(~(ds_surf.status==stranded_flag)) 
+        
+        # compute the oil volume (m3) per surface particle
+        # note we are using mass of the oil emulsion into account (see openoil.get_oil_budget)
+        # mass_emulsion = mass_oil / (1 - water_fraction)
+        surf_volume=(ds_surf.mass_oil / (1 - ds_surf.water_fraction))/ds_surf.density  
+        
+        # compute the histogram of surface volume
+        # histogram omputes the number of particles per grid cell
+        # setting 'weights=surf_volume' converts this to volume of surface oil per grid cell
+        h_surf = histogram(ds_surf.lon,
+                      ds_surf.lat,
+                      bins=[lonbin, latbin],
+                      dim=['trajectory'],
+                      weights=surf_volume,
+                      density=False)
+        # transpose to standard time,lat,lon ordering
+        h_surf = h_surf.transpose("time", "lat_bin", "lon_bin")
+        
+        # convert oil volume per grid cell into oil thickness in micron
+        h_surf = h_surf/(np.power(dx_m,2))*1e6
+        h_surf.attrs["standard_name"] = 'surface_oil_thickness'
+        h_surf.attrs["units"] = 'micron'
     
-    # get the stranded mass per particle
-    strand_mass=(ds_strand.mass_oil / (1 - ds_strand.water_fraction)) 
+        # compute the maximum surface thickness over the run
+        h_surf_max=h_surf.max(('time'))
+        h_surf_max=h_surf_max.rename('maximum')
+        h_surf_max.attrs["standard_name"] = 'maximum_surface_oil_thickness'
+        h_surf_max.attrs["units"] = 'micron'
+        
+        if max_only:
+            h_surf_max.to_netcdf(fname_out)
+        else:
+            ds_out = xr.Dataset({'surface_thickness': h_surf,'maximum': h_surf_max})
+            ds_out.to_netcdf(fname_out)
     
-    # compute the histogram of stranded oil
-    # histogram omputes the number of particles per grid cell
-    # setting 'weights=strand_mass' converts this to the mass of stranded oil per grid cell
-    h_strand = histogram(ds_strand.lon,
-                  ds_strand.lat,
-                  bins=[lonbin, latbin],
-                  dim=['trajectory'],
-                  weights=strand_mass,
-                  density=False)
-    # transpose to standard time,lat,lon ordering
-    h_strand = h_strand.transpose("time", "lat_bin", "lon_bin")
+    elif grid_type == 'stranded_oil':
     
-    # convert mass of oil per grid cell from kg into g/m2
-    beach_width_m=30 # m 1.5 m tidal range and 1:20 beach slope
-    h_strand = h_strand*1000/dx_m/beach_width_m
-    h_strand.attrs["standard_name"] = 'stranded_oil_concentration'
-    h_strand.attrs["units"] = 'g/m2'
+        # identify stranded particles
+        stranded_flag = get_stranded_flag(ds)
     
-    # compute the minimum time to stranding
-    days_since_start = (h_strand.time.data-h_strand.time.data[0]).astype('timedelta64[s]').astype(np.int32)/3600/24 # seriously convoluted but it works. Timedelta64 is not ideals
-    h_strand_time=xr.full_like(h_strand, 10e6) # using 10e6 as an arbitrary large number
-    # loop through time and replace stranded grid cells with time in days since spill start
-    for ii, days in enumerate(days_since_start):
-        h_strand_time.data[ii,:,:]=xr.where(h_strand.data[ii,:,:]>0,days,10e6)
-    
-    # compute the minimum stranding time
-    h_strand_time_min=h_strand_time.min(('time'))
-    h_strand_time_min=h_strand_time_min.rename('minimum_time')
-    h_strand_time_min.attrs["standard_name"] = 'minimum_time_to_stranding'
-    h_strand_time_min.attrs["units"] = '_days_' # using underscores to avoid xarray reading this variable as a timedelta64 later
-    
-    # compute the maximum stranded concentration over the run
-    h_strand_max=h_strand.max(('time'))
-    h_strand_max=h_strand_max.rename('maximum')
-    h_strand_max.attrs["standard_name"] = 'maximum_stranded_oil_concentration'
-    h_strand_max.attrs["units"] = 'g/m2'
-    
-    if max_only:
-        ds_out = xr.Dataset({'minimum_time': h_strand_time_min,'maximum': h_strand_max})
-        ds_out.to_netcdf(fname_out)
+        # get data for computing stranded oil concentration
+        ds_strand=ds.where(ds.status==stranded_flag)
+        
+        # get the stranded mass per particle
+        strand_mass=(ds_strand.mass_oil / (1 - ds_strand.water_fraction)) 
+        
+        # compute the histogram of stranded oil
+        # histogram omputes the number of particles per grid cell
+        # setting 'weights=strand_mass' converts this to the mass of stranded oil per grid cell
+        h_strand = histogram(ds_strand.lon,
+                      ds_strand.lat,
+                      bins=[lonbin, latbin],
+                      dim=['trajectory'],
+                      weights=strand_mass,
+                      density=False)
+        # transpose to standard time,lat,lon ordering
+        h_strand = h_strand.transpose("time", "lat_bin", "lon_bin")
+        
+        # convert mass of oil per grid cell from kg into g/m2
+        beach_width_m=30 # m 1.5 m tidal range and 1:20 beach slope
+        h_strand = h_strand*1000/dx_m/beach_width_m
+        h_strand.attrs["standard_name"] = 'stranded_oil_concentration'
+        h_strand.attrs["units"] = 'g/m2'
+        
+        # compute the minimum time to stranding
+        days_since_start = (h_strand.time.data-h_strand.time.data[0]).astype('timedelta64[s]').astype(np.int32)/3600/24 # seriously convoluted but it works. Timedelta64 is not ideals
+        h_strand_time=xr.full_like(h_strand, 10e6) # using 10e6 as an arbitrary large number
+        # loop through time and replace stranded grid cells with time in days since spill start
+        for ii, days in enumerate(days_since_start):
+            h_strand_time.data[ii,:,:]=xr.where(h_strand.data[ii,:,:]>0,days,10e6)
+        
+        # compute the minimum stranding time
+        h_strand_time_min=h_strand_time.min(('time'))
+        h_strand_time_min=h_strand_time_min.rename('minimum_time')
+        h_strand_time_min.attrs["standard_name"] = 'minimum_time_to_stranding'
+        h_strand_time_min.attrs["units"] = '_days_' # using underscores to avoid xarray reading this variable as a timedelta64 later
+        
+        # compute the maximum stranded concentration over the run
+        h_strand_max=h_strand.max(('time'))
+        h_strand_max=h_strand_max.rename('maximum')
+        h_strand_max.attrs["standard_name"] = 'maximum_stranded_oil_concentration'
+        h_strand_max.attrs["units"] = 'g/m2'
+        
+        if max_only:
+            ds_out = xr.Dataset({'minimum_time': h_strand_time_min,'maximum': h_strand_max})
+            ds_out.to_netcdf(fname_out)
+        else:
+            ds_out = xr.Dataset({'stranded_oil':h_strand, 'minimum_time': h_strand_time_min,'maximum': h_strand_max})
+            ds_out.to_netcdf(fname_out)
+            
     else:
-        ds_out = xr.Dataset({'stranded_oil':h_strand, 'minimum_time': h_strand_time_min,'maximum': h_strand_max})
-        ds_out.to_netcdf(fname_out)
+        print('grid_type input of '+grid_type+' is not supported')
+        print('valid options are density, surface_oil and stranded_oil')
 
 def get_trajectories_oil_budget(iteration_dir):
     os.chdir(iteration_dir)

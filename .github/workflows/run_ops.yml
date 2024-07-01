@@ -69,12 +69,7 @@ jobs:
 
   build_image:
     uses: ./.github/workflows/build_image.yml  # Path to your reusable workflow
-
-  # Everything below here should go into a reusable workflow, and include inputs for OGCM and WIND (as per the croco runs), so we will be able to multiple forcings in parallel
-  # the default config file needs to have OGCM and WIND as placemarkers which get over-written with sed instead of a straight copy of the config file to the lcoal server
-  # this would also need us to create a sub-directory for each run with different forcing under RUN_DIR
-  # using the matrix strategy, we could run all combinations of winds and currents quite easily
-
+  
   run_model:
     needs: [envs,build_image]
     if: ${{ github.event.inputs.run_model == 'true' }}
@@ -93,10 +88,8 @@ jobs:
       WIND: ${{ matrix.wind }}
       OGCM: ${{ matrix.ogcm }}
   
-  # do some postprocessing
-
-  # do some plots
-  do_plots:
+  # do some postprocessing and plotting
+  post_plot:
     needs: [envs,run_model]
     if: ${{ always() && github.event.inputs.do_plots == 'true' }}
     strategy:
@@ -104,7 +97,7 @@ jobs:
         # matrix strategy allows us to run different model forcings in parallel
         wind: ['GFS']
         ogcm: ['MERCATOR']
-    uses: ./.github/workflows/do_plots.yml  # Path to your reusable workflow
+    uses: ./.github/workflows/post_plot.yml  # Path to your reusable workflow
     with:
       MODEL_TYPE: ${{ github.event.inputs.model_type }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}

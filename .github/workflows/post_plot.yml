@@ -1,4 +1,4 @@
-name: run the model
+name: postprocess and plot
 
 on:
   workflow_call:
@@ -49,12 +49,7 @@ jobs:
         with:
           ref: ${{ inputs.BRANCH_REF }}
 
-      - name: create the directory
-        run: |
-          rm -rf ${{ env.RUN_DIR }}  
-          mkdir -p ${{ env.RUN_DIR }}
-
-      - name: Copy config file to the local server to run the model
+      - name: replace the config file on the local server - this is here in case the user wants to update the configurable plot options without re-running the model each time
         run: |
           OGCM=${{ inputs.OGCM }}
           WIND=${{ inputs.WIND }} 
@@ -65,11 +60,11 @@ jobs:
           chmod -R 774 ${{ env.RUN_DIR }}
         continue-on-error: true
 
-  run-model:
+  gridding:
     needs: [setup-run-dir]
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
-      - name: run the model
+      - name: go from particle trajectories to a Eulerian grid of particle density
         run: |
           # we're specifying --user root due to permission issues I wasn't clever enough to solve
           docker run \
@@ -77,11 +72,36 @@ jobs:
             --user root \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              run_${{ inputs.MODEL_TYPE }}  \
+              grid_particles  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }}
+
+  plotting:
+    needs: [gridding]
+    runs-on: ${{ inputs.RUNNER_NAME }}
+    steps:
+      - name: make animation of the particles
+        run: |
+          # we're specifying --user root due to permission issues I wasn't clever enough to solve
+          # animation of the particles
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              plot_particles  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }}
+          
+          # animation of the gridded output
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              plot_gridded  \
                 --config_dir ${{ env.RUN_DIR_DOCKER }}
 
   permissions:
-    needs: [run-model]
+    needs: [gridding,plotting]
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: set permissions of output

@@ -1,7 +1,6 @@
 # Configuration file for running an OpenOil simulation 
 #
-# We are intentially excluding any python package imports in this file with the 
-# intention of making it easier to transition to a gui interface at some stage
+# We are intentially excluding any python package imports in this configuration file 
 #
 # --------------------------------
 # configuration name and run date
@@ -13,19 +12,17 @@ config_name='Test_Run'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
 # (this is only applicable for the operational opendrift runs)
-run_date='20240627_06'
+run_date='20240701_06'
 
 # -----------
 # spill info
 # -----------
 #
 # coordinates of the spill (in geographical degrees)
-lon_spill=25.74
-lat_spill=-33.855
+lon_release=25.74
+lat_release=-33.855
 #
 # depth of the release
-# For a surface release I prefer to put a small negative number like z=-0.001
-# this effectively means the weathering is applied after mixing in the first time-step (not a big deal in the end)
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
 z=-0.001
 #
@@ -42,7 +39,7 @@ radius=5
 oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
 #
 # start time of spill, in format YYYYMMDD_HH, in UTC
-spill_start_time='20240627_06'
+spill_start_time='20240701_06'
 #
 # duration of the release of oil in hours
 release_dur=3
@@ -60,23 +57,25 @@ oil_flow_rate=oil_volume/release_dur
 # -------------
 #
 # you can just comment files which you don't want to include in the forcing
+# the operational workflow uses a sed replcements for OGCM and WIND below to change 
+# them to the strings specified in the operational run e.g. MERCATOR and GFS
+# For a local run, you of course need to edit the strings to point to the files
+# you are forcing with
 #
 # the Yorig variable used in setting up the croco simulations (used for getting croco file time into real datetimes)
 croco_Yorig=2000
 #
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
-# The default locations are those insude the docker image used to run operationally 
+# The default locations are those inside the docker image used to run operationally 
 croco_files = ['/mnt/tmp/algoa_01/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc',
         '/mnt/tmp/swcape_02/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc'
         ]
 
 # ogcm file, as downloaded using the somisana pre-processing tools
-# the operational workflow uses sed to replace OGCM with the actual string e.g. MERCATOR
 ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
 
 # atmospheric forcing file, as produced by the croco pre-processing tools prior to interpolating onto the croco model grid
-# the operational workflow uses sed to replace WIND with the actual string e.g. GFS
 wind_file = '/mnt/tmp/downloaded_data/WIND/for_croco/WIND_'+run_date+'.nc'
 
 # ------------------
@@ -108,36 +107,41 @@ hz_diff = 1
 wind_drift_factor=0.03
 
 # -----------------
+# gridding options
+# -----------------
+#
+# options for converting partcle locations into a eulerian grid of particle concentrations
+# (used in cli.py for calling the grid_particles function as part of the operational workflow
+# for local work, it'll be easier to call the grid_particles function directly in your own python script)
+#
+run_dir='/mnt/tmp/opendrift_oil/'+config_name+'/OGCM_WIND/'
+fname_gridded=run_dir+'gridded_density.nc'
+grid_extents=None # the spatial extent of the grid [lon0,lon1,lat0,lat1]. If None, then this is automatically determined from the geographic extent of the particles
+dx_m=None # grid size in meters, if None, then a 100 x 100 regular grid is generated
+max_only=False # option to only write the maximum over the entire file to save disk space (boolean)
+
+# -----------------
 # plotting options
 # -----------------
 #
-# options for doing plots as part of the operational work flow
+# options for doing some standardised animations as part of the operational work flow
+# the options here are non-exhaustive and are mostly related to the sizing of the plot
+# (used in cli.py for calling the plot_particles and plot_gridded functions as part of the operational workflow
+# for local work, it'll be easier to call the functions directly in your own python script)
 #
-fname='/mnt/tmp/opendrift_oil/'+config_name+'/OGCM_WIND/trajectories.nc'
-tstep=0 # the step to plot, or the first step to animate.
+fname=run_dir+'trajectories.nc'
 # options related to the figure layout
 figsize=(8,4) # (hz,vt)
-extents = [25.5,26.5,-34.1,-33.6] # spatial extent to plot [lon0,lon1,lat0,lat1]
+plot_extents = [25.5,26.5,-34.1,-33.6] # spatial extent to plot [lon0,lon1,lat0,lat1]
 lscale = 'h' # resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
-# options relating to the release location
-lon_release=lon_spill
-lat_release=lat_spill
 size_release = 50
-# options relating to the dispaly of data, colormap and colorbar
+# options relating to the dispaly of data
 size_scat = 20 # size of the scatter data to be plotted
-var_str='z' # variable to plot
-ticks = [-1,0] #[0,5,10,15,20,25,30] # the ticks to plot relating to the colormap (can be irregularly spaced)
-cmap = 'Greys' #'Spectral_r' # colormap to use
-plot_cbar = False
-cbar_loc = [0.85, 0.2, 0.02, 0.6] # where on the plot to put the colorbar [x,y,width,height]
-cbar_label = 'depth (m)'
-# options related to the plot output file
-jpg_out=None # filename of the jpg file
-write_jpg=False
+# by default the particles will just be plotted as black
 # options related to the animation
-gif_out='/mnt/tmp/opendrift_oil/'+config_name+'/OGCM_WIND/trajectories_z.gif' # filename of the gif file
 write_gif=True
 skip_time = 1 # every nth time-step will be animated (if provided)
 tstep_end=None # The last timestep to animate. Only used if write_gif = True. If None, then it'll animate to the end of the file
-
+gif_out_particles=run_dir+'trajectories.gif' # filename of the gif file
+gif_out_gridded=run_dir+'gridded_density.gif' # filename of the gif file
 

@@ -10,7 +10,9 @@ Feel free to add more functions from the repo as we need them in the cli
 import sys
 import argparse
 from opendrift_tools.run import oil as run_oil
+from opendrift_tools.postprocess import grid_particles
 from opendrift_tools.plotting import plot_particles
+from opendrift_tools.plotting import plot_gridded
 
 def parse_list(value):
     return [x.strip() for x in value.split(',')]
@@ -27,45 +29,75 @@ def main():
     # ----------------
     parser_run_oil = subparsers.add_parser('run_oil', 
             help='Run an OpenOil simulation')
-    parser_run_oil.add_argument('--config_dir', required=True, type=str, help='Directory where the config_oil.py file is located')
+    parser_run_oil.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
     def run_oil_handler(args):
         run_oil(args.config_dir)
     parser_run_oil.set_defaults(func=run_oil_handler)
     
-    # -----------------------
-    # do a plot or animation
-    # -----------------------
+    # -------------------------
+    # grid the particle output
+    # -------------------------
+    parser_grid_particles = subparsers.add_parser('grid_particles', 
+            help='convert the particle output of an OpenDrift simulation to a eulerian grid')
+    parser_grid_particles.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
+    def grid_particles_handler(args):
+        sys.path.append(args.config_dir)
+        import config
+        grid_particles(config.fname,
+                       config.fname_gridded,
+                       extents=config.grid_extents,
+                       dx_m=config.dx_m,
+                       max_only=config.max_only)
+    parser_grid_particles.set_defaults(func=grid_particles_handler)
+    
+    # ----------------------------------------------
+    # do a plot or animation of the particle output
+    # ----------------------------------------------
     parser_plot_particles = subparsers.add_parser('plot_particles', 
             help='do a plot or an animation of the particle output of an OpenDrift simulation')
-    parser_plot_particles.add_argument('--config_dir', required=True, type=str, help='Directory where the config_oil.py file is located')
+    parser_plot_particles.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
     def plot_particles_handler(args):
-        # for now I would prefer the functionality of parsing all the info in the config file to the plot_particles() function
-        # rather than just reading all the variables from the config file inside the function as it is done in run.py
-        # maybe we should change this at some point and use the config file for everything to minimise function inputs?
+        # the input options passed by the cli is not exhaustive
+        # just intended to provide a quick animation as part of the operational workflow
         sys.path.append(args.config_dir)
         import config
         plot_particles(config.fname,
-                        var_str=config.var_str,
-                        tstep=config.tstep,
                         figsize=config.figsize,
-                        extents=config.extents,
+                        extents=config.plot_extents,
                         lscale=config.lscale,
                         lon_release=config.lon_release,
                         lat_release=config.lat_release,
                         size_release=config.size_release,
                         size_scat=config.size_scat,
-                        ticks=config.ticks,
-                        cmap=config.cmap,
-                        plot_cbar=config.plot_cbar,
-                        cbar_loc=config.cbar_loc,
-                        cbar_label=config.cbar_label,
-                        jpg_out=config.jpg_out,
-                        write_jpg=config.write_jpg,
-                        gif_out=config.gif_out,
+                        gif_out=config.gif_out_particles,
                         write_gif=config.write_gif,
                         skip_time=config.skip_time,
                         tstep_end=config.tstep_end)
     parser_plot_particles.set_defaults(func=plot_particles_handler)
+    
+    # ----------------------------------------------
+    # do a plot or animation of the gridded output
+    # ----------------------------------------------
+    parser_plot_gridded = subparsers.add_parser('plot_gridded', 
+            help='do a plot or an animation of the gridded output from the grid_particles function')
+    parser_plot_gridded.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
+    def plot_gridded_handler(args):
+        # the input options passed by the cli is not exhaustive
+        # just intended to provide a quick animation as part of the operational workflow
+        sys.path.append(args.config_dir)
+        import config
+        plot_gridded(config.fname_gridded,
+                        figsize=config.figsize,
+                        extents=config.plot_extents,
+                        lscale=config.lscale,
+                        lon_release=config.lon_release,
+                        lat_release=config.lat_release,
+                        size_release=config.size_release,
+                        gif_out=config.gif_out_gridded,
+                        write_gif=config.write_gif,
+                        skip_time=config.skip_time,
+                        tstep_end=config.tstep_end)
+    parser_plot_gridded.set_defaults(func=plot_gridded_handler)
     
     args = parser.parse_args()
     if hasattr(args, 'func'):

@@ -78,7 +78,7 @@ def oil(config_dir):
     o.set_config('seed:m3_per_hour', config.oil_flow_rate); 
     #
     # seed the elements
-    o.seed_elements(lon=config.lon_spill, lat=config.lat_spill, z=config.z,
+    o.seed_elements(lon=config.lon_release, lat=config.lat_release, z=config.z,
                     radius=config.radius, 
                     time=[time_start,time_end], 
                     number=config.num_part,
