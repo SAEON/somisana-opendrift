@@ -46,42 +46,45 @@ def add_readers(o,config):
     # -----------------------------
     # CROCO files covering the run
     # -----------------------------
-    # 
-    # if you want to exclude currents for debugging:
-    #o.set_config('environment:fallback:x_sea_water_velocity', 0)
-    #o.set_config('environment:fallback:y_sea_water_velocity', 0)
     #
     # use the reader_ROMS_native reader
-    if config.croco_files:
-        for croco_file in config.croco_files:
+    try:
+        croco_files = config.croco_files
+        for croco_file in croco_files:
             reader_croco = reader_ROMS_native.Reader(croco_file)
             croco_ref_time = datetime(config.croco_Yorig,1,1)
             reader_croco = set_croco_time(reader_croco,croco_ref_time)
             o.add_reader(reader_croco)
+    except:
+        print('CROCO currents not defined, running without them')
     
     # -------------------------------
     # currents from global OGCM model
     # -------------------------------
     #
-    if config.ogcm_file:
-        reader_mercator = reader_netCDF_CF_generic.Reader(config.ogcm_file)
-        o.add_reader(reader_mercator)
+    try:
+        ogcm_file=config.ogcm_file
+        reader_ogcm = reader_netCDF_CF_generic.Reader(ogcm_file)
+        o.add_reader(reader_ogcm)
+    except:
+        print('ogcm currents not defined, using a fallback of ZERO')
+        # if you want to exclude for debugging:
+        o.set_config('environment:fallback:x_sea_water_velocity', 0)
+        o.set_config('environment:fallback:y_sea_water_velocity', 0)
     
     # -------------
     # Wind forcing
     # -------------
     #
-    # if you want to exclude wind for debugging:
-    # o.set_config('environment:fallback:x_wind', 0)
-    # o.set_config('environment:fallback:y_wind', 0)
-    #
-    if config.wind_file:
-        if 'GFS' in config.wind_file:
+    try:
+        wind_file=config.wind_file # this will fail if wind_file is not defined
+        if 'GFS' in wind_file:
+            # Assume we're using the netcdf file on the gfs native grid created during croco preprocessing 
             # I'm opening the file as an xarray dataset before passing to reader_netCDF_CF_generic
             # because it had trouble with the time conversion inside the reader
             # Doing it like this is a hack to get around this issue, as the time gets handled by xarray
             # rather than by netCDF4's num2date function as done in the reader 
-            Dataset = xr.open_dataset(config.wind_file, decode_times=True) # decode_times=True is the default 
+            Dataset = xr.open_dataset(wind_file, decode_times=True) # decode_times=True is the default 
             reader_gfs = reader_netCDF_CF_generic.Reader(Dataset,
                                 standard_name_mapping={'uwnd': 'x_wind',
                                                        'vwnd': 'y_wind'},)    
@@ -90,7 +93,12 @@ def add_readers(o,config):
         # or maybe all others could get handled in the else statement directly below?
         else:
             print('no wind forcing defined')
-    else:
-        print('no wind forcing defined')
+            reader_wind = reader_netCDF_CF_generic.Reader(wind_file)
+            o.add_reader(reader_wind)
+    except:
+        print('no wind forcing defined, running without wind')
+        # if you want to exclude wind for debugging:
+        o.set_config('environment:fallback:x_wind', 0)
+        o.set_config('environment:fallback:y_wind', 0)
 
     return o
