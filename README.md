@@ -18,7 +18,7 @@ Once you've set up your opendrift environment, you can clone this repo to your l
 Then navigate to the root directory of the repo, and install the code into your `opendrift` environment:
 
 ```sh
-cd somisana-croco
+cd somisana-opendrift
 conda activate opendrift
 pip install --no-deps -e .
 ```
