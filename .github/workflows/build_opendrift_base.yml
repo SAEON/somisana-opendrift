@@ -1,0 +1,62 @@
+name: build OpenDrift base image for a specific release tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'OpenDrift release tag to build from'
+        required: true
+        default: v1.11.0
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  envs:
+    runs-on: ubuntu-latest
+    outputs:
+      IMAGE_NAME: ${{ steps.IMAGE_NAME.outputs.value }}
+    steps:
+      - name: Set image name
+        id: IMAGE_NAME
+        run: |
+          echo "value=${{ env.REGISTRY }}/saeon/opendrift:${{ inputs.tag }}" >> $GITHUB_OUTPUT
+
+  build-image:
+    needs: [envs]
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ${{ needs.envs.outputs.IMAGE_NAME }}
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout the OpenDrift repository
+        uses: actions/checkout@main
+        with:
+          repository: OpenDrift/opendrift
+          ref: v1.11.0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@master
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@master
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}
+  
+  pull-image-mims1:
+    needs: [envs,build-image]
+    runs-on: mims1
+    steps:
+      - name: pull latest docker image to mims server
+        run: |
+          docker pull ${{ needs.envs.outputs.IMAGE_NAME }}
+
