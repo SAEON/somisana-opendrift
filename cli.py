@@ -7,12 +7,20 @@ But it's also handy if you want to execute a python function from inside a bash 
 The only functions I'm adding here are ones which produce an output e.g. a netcdf file
 Feel free to add more functions from the repo as we need them in the cli
 '''
-import sys
+import sys, os
 import argparse
+from datetime import datetime
 from opendrift_tools.run import oil as run_oil
 from opendrift_tools.postprocess import grid_particles
-from opendrift_tools.plotting import plot_particles
-from opendrift_tools.plotting import plot_gridded
+from opendrift_tools.plotting import plot_particles, plot_gridded
+from opendrift_tools.stochastic import run_stochastic, grid_stochastic
+
+# functions to help parsing string input to object types needed by python functions
+def parse_datetime(value):
+    try:
+        return datetime.strptime(value, '%Y%m%d_%H')
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid datetime format. Please use 'YYYYMMDD_HH'.")
 
 def parse_list(value):
     return [x.strip() for x in value.split(',')]
@@ -24,6 +32,45 @@ def main():
 
     # just keep adding new subparsers for each new function as we go...
 
+    # ----------------
+    # run_stochastic
+    # ----------------
+    parser_run_stochastic = subparsers.add_parser('run_stochastic', 
+            help='Run stochastic OpenDrift simulations')
+    parser_run_stochastic.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
+    parser_run_stochastic.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
+    parser_run_stochastic.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
+    parser_run_stochastic.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
+    parser_run_stochastic.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
+    parser_run_stochastic.add_argument('--model_type', required=False, type=str, default='oil', help='type of model to run')
+    def run_stochastic_handler(args):
+        stoch = run_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, model_type=args.model_type)
+        stoch.run_all()
+    parser_run_stochastic.set_defaults(func=run_stochastic_handler)
+    
+    # ----------------
+    # grid_stochastic
+    # ----------------
+    parser_grid_stochastic = subparsers.add_parser('grid_stochastic', 
+            help='Grid the output of stochastic OpenDrift simulations')
+    parser_grid_stochastic.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
+    parser_grid_stochastic.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
+    parser_grid_stochastic.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
+    parser_grid_stochastic.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
+    parser_grid_stochastic.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
+    def grid_stochastic_handler(args):
+        sys.path.append(args.run_dir)
+        import config
+        stoch = grid_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, 
+                                # grid configuration defined in the config.py file in run_dir
+                                fname_gridded=config.fname_gridded,
+                                grid_type=config.grid_type,
+                                extents=config.grid_extents,
+                                dx_m=config.dx_m,
+                                max_only=config.max_only)
+        stoch.grid_all()
+    parser_grid_stochastic.set_defaults(func=grid_stochastic_handler)
+    
     # ----------------
     # run_oil
     # ----------------
@@ -43,8 +90,10 @@ def main():
     def grid_particles_handler(args):
         sys.path.append(args.config_dir)
         import config
-        grid_particles(config.fname,
-                       config.fname_gridded,
+        fname = os.path.join(args.config_dir,args.fname)
+        fname_gridded = os.path.join(args.config_dir,args.fname_gridded)
+        grid_particles(fname,
+                       fname_gridded,
                        extents=config.grid_extents,
                        dx_m=config.dx_m,
                        max_only=config.max_only)
@@ -61,7 +110,9 @@ def main():
         # just intended to provide a quick animation as part of the operational workflow
         sys.path.append(args.config_dir)
         import config
-        plot_particles(config.fname,
+        fname = os.path.join(args.config_dir,args.fname)
+        gif_out_particles = os.path.join(args.config_dir,args.gif_out_particles)
+        plot_particles(fname,
                         figsize=config.figsize,
                         extents=config.plot_extents,
                         lscale=config.lscale,
@@ -69,7 +120,7 @@ def main():
                         lat_release=config.lat_release,
                         size_release=config.size_release,
                         size_scat=config.size_scat,
-                        gif_out=config.gif_out_particles,
+                        gif_out=gif_out_particles,
                         write_gif=config.write_gif,
                         skip_time=config.skip_time,
                         tstep_end=config.tstep_end)
@@ -86,14 +137,16 @@ def main():
         # just intended to provide a quick animation as part of the operational workflow
         sys.path.append(args.config_dir)
         import config
-        plot_gridded(config.fname_gridded,
+        fname_gridded = os.path.join(args.config_dir,args.fname_gridded)
+        gif_out_gridded = os.path.join(args.config_dir,args.gif_out_gridded)
+        plot_gridded(fname_gridded,
                         figsize=config.figsize,
                         extents=config.plot_extents,
                         lscale=config.lscale,
                         lon_release=config.lon_release,
                         lat_release=config.lat_release,
                         size_release=config.size_release,
-                        gif_out=config.gif_out_gridded,
+                        gif_out=gif_out_gridded,
                         write_gif=config.write_gif,
                         skip_time=config.skip_time,
                         tstep_end=config.tstep_end)

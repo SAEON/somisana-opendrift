@@ -91,6 +91,26 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
     max_only = option to only write the maximum over the entire file to save disk space (boolean)
     '''
     
+    def get_time_min(h):
+        '''
+        sub-function to extract the minimum time to occurence of a substance/object, 
+        '''
+        # compute the minimum time to oiling
+        days_since_start = (h.time.data-h.time.data[0]).astype('timedelta64[s]').astype(np.int32)/3600/24 # seriously convoluted but it works. Timedelta64 is not ideals
+        h_time=xr.full_like(h, 10e6) # using 10e6 as an arbitrary large number
+        # loop through time and replace valid grid cells with time in days since spill start
+        for ii, days in enumerate(days_since_start):
+            h_time.data[ii,:,:]=xr.where(h.data[ii,:,:]>0,days,10e6)
+        
+        # compute the minimum surface oiling time
+        h_time_min=h_time.min(('time'))
+        h_time_min = h_time_min.where(h_time_min != 10e6)
+        h_time_min=h_time_min.rename('minimum_time')
+        h_time_min.attrs["standard_name"] = 'minimum_time_to_occurrence'
+        h_time_min.attrs["units"] = '_days_' # using underscores to avoid xarray automatically reading this variable as a timedelta64 later
+        
+        return h_time_min
+    
     # get the data
     ds = xr.open_dataset(fname)
     ds = fill_deactivated(ds)
@@ -125,7 +145,20 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         h=h.rename('particle_density')
         h.attrs["units"] = '-'
         
-        h.to_netcdf(fname_out)
+        h_time_min = get_time_min(h)
+        
+        # compute the maximum density over the run
+        h_max=h.max(('time'))
+        h_max=h_max.rename('maximum')
+        h_max.attrs["standard_name"] = 'maximum_particle_density'
+        h_max.attrs["units"] = 'micron'
+        
+        if max_only:
+            ds_out = xr.Dataset({'minimum_time': h_time_min, 'maximum': h_max})
+            ds_out.to_netcdf(fname_out)
+        else:
+            ds_out = xr.Dataset({'particle_density': h, 'minimum_time': h_time_min, 'maximum': h_max})
+            ds_out.to_netcdf(fname_out)
         
     elif grid_type == 'surface_oil':
     
@@ -159,7 +192,9 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         h_surf = h_surf/(np.power(dx_m,2))*1e6
         h_surf.attrs["standard_name"] = 'surface_oil_thickness'
         h_surf.attrs["units"] = 'micron'
-    
+        
+        h_surf_time_min = get_time_min(h_surf)
+        
         # compute the maximum surface thickness over the run
         h_surf_max=h_surf.max(('time'))
         h_surf_max=h_surf_max.rename('maximum')
@@ -167,9 +202,10 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         h_surf_max.attrs["units"] = 'micron'
         
         if max_only:
-            h_surf_max.to_netcdf(fname_out)
+            ds_out = xr.Dataset({'minimum_time': h_surf_time_min, 'maximum': h_surf_max})
+            ds_out.to_netcdf(fname_out)
         else:
-            ds_out = xr.Dataset({'surface_thickness': h_surf,'maximum': h_surf_max})
+            ds_out = xr.Dataset({'surface_thickness': h_surf, 'minimum_time': h_surf_time_min, 'maximum': h_surf_max})
             ds_out.to_netcdf(fname_out)
     
     elif grid_type == 'stranded_oil':
@@ -201,18 +237,7 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         h_strand.attrs["standard_name"] = 'stranded_oil_concentration'
         h_strand.attrs["units"] = 'g/m2'
         
-        # compute the minimum time to stranding
-        days_since_start = (h_strand.time.data-h_strand.time.data[0]).astype('timedelta64[s]').astype(np.int32)/3600/24 # seriously convoluted but it works. Timedelta64 is not ideals
-        h_strand_time=xr.full_like(h_strand, 10e6) # using 10e6 as an arbitrary large number
-        # loop through time and replace stranded grid cells with time in days since spill start
-        for ii, days in enumerate(days_since_start):
-            h_strand_time.data[ii,:,:]=xr.where(h_strand.data[ii,:,:]>0,days,10e6)
-        
-        # compute the minimum stranding time
-        h_strand_time_min=h_strand_time.min(('time'))
-        h_strand_time_min=h_strand_time_min.rename('minimum_time')
-        h_strand_time_min.attrs["standard_name"] = 'minimum_time_to_stranding'
-        h_strand_time_min.attrs["units"] = '_days_' # using underscores to avoid xarray reading this variable as a timedelta64 later
+        h_strand_time_min = get_time_min(h_strand)
         
         # compute the maximum stranded concentration over the run
         h_strand_max=h_strand.max(('time'))
@@ -231,9 +256,7 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         print('grid_type input of '+grid_type+' is not supported')
         print('valid options are density, surface_oil and stranded_oil')
 
-def get_trajectories_oil_budget(iteration_dir):
-    os.chdir(iteration_dir)
-    fname = 'trajectories.nc'
+def get_oil_budget(fname,fname_out):
     
     # # read the data
     oa = opendrift.open_xarray(fname)
@@ -266,12 +289,13 @@ def get_trajectories_oil_budget(iteration_dir):
     ds_surf=ds_surf.where(~(ds_surf.status==stranded_flag)) 
     surf_mass=ds_surf.mass_oil.sum(dim='trajectory').rename('surface')
     
+    # evaporated
     evap_mass=ds.mass_evaporated.sum(dim='trajectory').rename('evaporated')
     
     budget=xr.merge([evap_mass, surf_mass, sub_mass, strand_mass])
     budget.attrs["units"] = 'kg'
     
-    budget.to_netcdf('trajectories_oil_budget.nc')
+    budget.to_netcdf(fname_out)
     
 # if __name__ == "__main__":
     

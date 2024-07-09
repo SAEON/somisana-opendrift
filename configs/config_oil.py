@@ -2,6 +2,9 @@
 #
 # We are intentially excluding any python package imports in this configuration file 
 #
+# The options here are far from exhaustive, but are a few which we've decided to make configurable
+# feel free to add more options here, and adjust the run.py file accordingly to read these options
+#
 # --------------------------------
 # configuration name and run date
 # --------------------------------
@@ -18,7 +21,7 @@ run_date='20240701_06'
 # spill info
 # -----------
 #
-# coordinates of the spill (in geographical degrees)
+# coordinates of the release (in geographical degrees)
 lon_release=25.74
 lat_release=-33.855
 #
@@ -39,7 +42,7 @@ radius=5
 oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
 #
 # start time of spill, in format YYYYMMDD_HH, in UTC
-spill_start_time='20240701_06'
+release_start_time='20240701_06'
 #
 # duration of the release of oil in hours
 release_dur=3
@@ -51,6 +54,17 @@ oil_volume=50
 #
 # oil flow rate in m3/hr
 oil_flow_rate=oil_volume/release_dur
+#
+# initial droplet sizes
+# this get's over-ridden by the wave entrainment DSD when pushed into the water column due to wave entrainment
+# so this input is not important for a surface release
+dsd='uniform' # 'unifrom' or 'lognormal'
+# if 'uniform' dsd_param1 is the min diamter (m)
+# if 'lognormal' dsd_param1 is the mean diameter (m)
+dsd_param1=0.001
+# if 'uniform' dsd_param2 is the max diameter (m)
+# if 'lognormal' dsd_param2 is the standard deviation (m)
+dsd_param2=0.001
 
 # -------------
 # forcing files
@@ -78,13 +92,39 @@ ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
 # atmospheric forcing file, as produced by the croco pre-processing tools prior to interpolating onto the croco model grid
 wind_file = '/mnt/tmp/downloaded_data/WIND/for_croco/WIND_'+run_date+'.nc'
 
+# -------------------
+# physical processes
+# -------------------
+#
+# coastline interaction - 'stranding' or 'previous'
+coastline_action='stranding'
+#
+# seafloor_action - ‘previous’: particles are moved back to previous location - ‘deactivate’: particles are deactivated - ‘lift_to_seafloor’: particles are lifted vertically to seafloor level
+seafloor_action='lift_to_seafloor'
+#
+# include vertical mixing? (boolean)
+vert_mix=True
+#
+# what to use in case the forcing files don't have vertical diffusivity (m2/s)
+vert_mix_fallback=0.001
+#
+# inclide vertical advection? (boolean)
+vert_adv=False
+#
+# constant horizontal diffusivity (m2/s)
+hz_diff = 1
+#
+# wind drift factor
+# fraction of the 10 m wind speed used to advect surface particles
+wind_drift_factor=0.03
+
 # ------------------
 # numerical settings
 # ------------------
 #
 # run duration in days
 # make sure the run duration doesn't exceed the temporal range of your inputs!
-run_dur = 5
+run_dur = 0.25
 #
 # number of particles to release
 # generally the more the better, but there are computational limits
@@ -95,16 +135,11 @@ num_part=5000
 # opendrift timestep for particle integration in minutes
 time_step=15
 #
+# vertical mixing tstep in seconds
+vert_mix_tstep=60
+#
 # output timestep in minutes
 time_step_output=60
-#
-# constant horizontal diffusivity (m2/s)
-# this is applied to the random walk component of the particle motion
-hz_diff = 1
-#
-# wind drift factor
-# fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.03
 
 # -----------------
 # gridding options
