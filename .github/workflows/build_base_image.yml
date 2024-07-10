@@ -66,6 +66,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
+            latest
             ${{ env.SHA }}
       - name: Build and push
         uses: docker/build-push-action@master
