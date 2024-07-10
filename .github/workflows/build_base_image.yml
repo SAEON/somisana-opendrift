@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: ${{ needs.envs.outputs.IMAGE_NAME }}
+      SHA: sha-${{ github.sha }}
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
       contents: read
@@ -59,19 +60,26 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            ${{ env.SHA }}
       - name: Build and push
         uses: docker/build-push-action@master
         with:
           context: .
           file: Dockerfile.base
           push: true
-          tags: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.meta.outputs.tags }}
   
-  pull-image-mims1:
-    needs: [envs,build-image]
-    runs-on: mims1
-    steps:
-      - name: pull latest docker image to mims server
-        run: |
-          docker pull ${{ needs.envs.outputs.IMAGE_NAME }}
+#  pull-image-mims1:
+#    needs: [envs,build-image]
+#    runs-on: mims1
+#    steps:
+#      - name: pull latest docker image to mims server
+#        run: |
+#    docker pull ${{ needs.envs.outputs.IMAGE_NAME }}
 
