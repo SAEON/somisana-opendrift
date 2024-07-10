@@ -1,10 +1,12 @@
-name: build OpenDrift base image for a specific release tag
+name: build OpenDrift base image
+# this ensures that we have an image for a specific tag that we want
+# this workflow is needed so that our operational tool is always stable 
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'OpenDrift release tag to build from'
+        description: 'OpenDrift release tag to build from (make sure this is reflected in Dockerfile.base)'
         required: true
         default: v1.11.0
         type: string
@@ -33,12 +35,24 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout the OpenDrift repository
-        uses: actions/checkout@main
+      # this step where we cheout the OpenDrift repo for the specific tag totally works but there is a problem-
+      # at the time of building, numpy had a major update so the python environment created durnig the image build
+      # is not compatible with the opendrift code we are using
+      # so we had to create our own Dockerfile.base to create the base image
+      # I'm leaving this code here for a future time when we can remove the Dockerfile.base file and 
+      # build from the OpenDrift release without the need for any edits
+      #- name: Checkout the OpenDrift repository
+      #  uses: actions/checkout@main
+      #  with:
+      #    repository: OpenDrift/opendrift
+      #    ref: ${{ inputs.tag }}
+      #    token: ${{ secrets.GITHUB_TOKEN }}
+      #
+      - name: Check out source code
+        # this wouldn't be needed if we didn't need to make a small edit to the OpenDrift environment.yml file
+        uses: actions/checkout@main 
         with:
-          repository: OpenDrift/opendrift
-          ref: v1.11.0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
       - name: Log in to the Container registry
         uses: docker/login-action@master
         with:
@@ -49,6 +63,7 @@ jobs:
         uses: docker/build-push-action@master
         with:
           context: .
+          file: Dockerfile.base
           push: true
           tags: ${{ env.IMAGE_NAME }}
   

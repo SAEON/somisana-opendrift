@@ -1,0 +1,28 @@
+# We're specifically not using the opendrift/opendrift:latest base image, to avoid changes which might cause our operational image to stop working (this happened!)
+# So we need to revert to an older stable tag release, but opendrift doesn't store all the older tags (as far as I can tell)
+# So we meed to build our base opendrift image from scratch
+
+FROM condaforge/mambaforge
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Clone the specific release tag of the repository
+RUN git clone --branch v1.11.0 https://github.com/OpenDrift/opendrift.git /code
+
+WORKDIR /code
+
+# Unfortunately, at the time of doing this, numpy released a newer version which is not compatible with the OpenDrift release we want to use
+# So here's a hack to fix the numpy compatibility issue by changing the environment.yml file
+RUN sed -i 's/numpy>=1.17/numpy>=1.17,<2.0/' environment.yml
+
+# Install opendrift environment into base conda environment
+RUN mamba env update -n base -f environment.yml
+
+# Cache cartopy maps
+RUN /bin/bash -c "echo -e \"import cartopy\nfor s in ('c', 'l', 'i', 'h', 'f'): cartopy.io.shapereader.gshhs(s)\" | python"
+
+# Install opendrift
+RUN pip install -e .
+
+# Test installation
+RUN /bin/bash -c "echo -e \"import opendrift\" | python"
