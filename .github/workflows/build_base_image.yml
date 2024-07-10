@@ -23,7 +23,7 @@ jobs:
       - name: Set image name
         id: IMAGE_NAME
         run: |
-          echo "value=${{ env.REGISTRY }}/saeon/opendrift:${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          echo "value=${{ env.REGISTRY }}/saeon/opendrift_${{ inputs.tag }}" >> $GITHUB_OUTPUT
 
   build-image:
     needs: [envs]
