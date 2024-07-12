@@ -11,6 +11,8 @@ import sys, os
 import argparse
 from datetime import datetime
 from opendrift_tools.run import oil as run_oil
+from opendrift_tools.run import leeway as run_leeway
+from opendrift_tools.run import oceandrift as run_oceandrift
 from opendrift_tools.postprocess import grid_particles
 from opendrift_tools.plotting import plot_particles, plot_gridded
 from opendrift_tools.stochastic import run_stochastic, grid_stochastic
@@ -42,7 +44,7 @@ def main():
     parser_run_stochastic.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
     parser_run_stochastic.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
     parser_run_stochastic.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
-    parser_run_stochastic.add_argument('--model_type', required=False, type=str, default='oil', help='type of model to run')
+    parser_run_stochastic.add_argument('--model_type', required=False, type=str, default='oil', help='type of model to run- options are \'oceandrift\', \'oil\' or \'leeway\'')
     def run_stochastic_handler(args):
         stoch = run_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, model_type=args.model_type)
         stoch.run_all()
@@ -72,14 +74,22 @@ def main():
     parser_grid_stochastic.set_defaults(func=grid_stochastic_handler)
     
     # ----------------
-    # run_oil
+    # run_model
     # ----------------
-    parser_run_oil = subparsers.add_parser('run_oil', 
-            help='Run an OpenOil simulation')
-    parser_run_oil.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
-    def run_oil_handler(args):
-        run_oil(args.config_dir)
-    parser_run_oil.set_defaults(func=run_oil_handler)
+    parser_run_model = subparsers.add_parser('run_model', 
+            help='Run an OpenDrift simulation')
+    parser_run_model.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
+    parser_run_model.add_argument('--model_type', required=True, type=str, default='oil', help='type of model to run- options are \'oceandrift\', \'oil\' or \'leeway\'')
+    def run_model_handler(args):
+        if args.model_type == 'oil':
+            run_oil(args.config_dir)
+        elif args.model_type == 'leeway':
+            run_leeway(args.config_dir)
+        elif args.model_type == 'oceandrift':
+            run_oceandrift(args.config_dir)
+        else:
+            print('model_type not recognised: ' + args.model_type)
+    parser_run_model.set_defaults(func=run_model_handler)
     
     # -------------------------
     # grid the particle output
@@ -110,8 +120,8 @@ def main():
         # just intended to provide a quick animation as part of the operational workflow
         sys.path.append(args.config_dir)
         import config
-        fname = os.path.join(args.config_dir,args.fname)
-        gif_out_particles = os.path.join(args.config_dir,args.gif_out_particles)
+        fname = os.path.join(args.config_dir,config.fname)
+        gif_out_particles = os.path.join(args.config_dir,config.gif_out_particles)
         plot_particles(fname,
                         figsize=config.figsize,
                         extents=config.plot_extents,

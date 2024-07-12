@@ -1,4 +1,4 @@
-# Configuration file for running an OpenOil simulation 
+# Configuration file for running a Leeway simulation 
 #
 # We are intentially excluding any python package imports in this configuration file 
 #
@@ -17,54 +17,27 @@ config_name='Test_Run'
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
 run_date='20240701_06'
 
-# -----------
-# spill info
-# -----------
+# ------------
+# object info
+# ------------
 #
 # coordinates of the release (in geographical degrees)
 lon_release=25.74
 lat_release=-33.855
 #
-# depth of the release
-# for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
-z=-0.001
-#
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
-# this allows for some initial spreading at location of the initialised particles 
-# for a subsea blowout this could be hundereds of meters, but a surface spill it will be small, in the order of meters
+# this allows for some initial spreading at location of the initialised particles
 radius=5
 #
-# specify the oil type - important for weathering properties
-# Can choose any oil name from https://adios.orr.noaa.gov/oils/
-# Or some Norgegain oils from https://opendrift.github.io/oil_types.html
-# Or a few other generic oil types added as part of opendrift, such as 'GENERIC INTERMEDIATE FUEL OIL 180'
-oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
-#
+# specify the object type - important for drift properties
+# see references here - https://opendrift.github.io/autoapi/opendrift/models/leeway/index.html#module-opendrift.models.leeway
+# and object types here - https://github.com/OpenDrift/opendrift/blob/master/opendrift/models/OBJECTPROP.DAT
+# user must specify an integer corresponding to the object type number in the table
+object_type=26
+
 # start time of spill, in format YYYYMMDD_HH, in UTC
 release_start_time='20240701_06'
-#
-# duration of the release of oil in hours
-release_dur=3
-#
-# volume of oil spilled in m3
-# This is not used directly in the model - it's only used here to get the oil flow rate below
-# so you can also specify the 'oil_flow_rate' directly and comment 'oil_volume' if that is convenient 
-oil_volume=50
-#
-# oil flow rate in m3/hr
-oil_flow_rate=oil_volume/release_dur
-#
-# initial droplet sizes
-# this get's over-ridden by the wave entrainment DSD when pushed into the water column due to wave entrainment
-# so this input is not important for a surface release
-dsd='uniform' # 'uniform' or 'lognormal'
-# if 'uniform' dsd_param1 is the min diamter (m)
-# if 'lognormal' dsd_param1 is the mean diameter (m)
-dsd_param1=0.001
-# if 'uniform' dsd_param2 is the max diameter (m)
-# if 'lognormal' dsd_param2 is the standard deviation (m)
-dsd_param2=0.001
 
 # -------------
 # forcing files
@@ -97,26 +70,10 @@ wind_file = '/mnt/tmp/downloaded_data/WIND/for_croco/WIND_'+run_date+'.nc'
 # -------------------
 #
 # coastline interaction - 'stranding' or 'previous'
-coastline_action='stranding'
-#
-# seafloor_action - ‘previous’: particles are moved back to previous location - ‘deactivate’: particles are deactivated - ‘lift_to_seafloor’: particles are lifted vertically to seafloor level
-seafloor_action='lift_to_seafloor'
-#
-# include vertical mixing? (boolean)
-vert_mix=True
-#
-# what to use in case the forcing files don't have vertical diffusivity (m2/s)
-vert_mix_fallback=0.001
-#
-# inclide vertical advection? (boolean)
-vert_adv=False
+coastline_action='previous'
 #
 # constant horizontal diffusivity (m2/s)
 hz_diff = 1
-#
-# wind drift factor
-# fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.03
 
 # ------------------
 # numerical settings
@@ -128,7 +85,7 @@ loglevel = 50
 #
 # run duration in days
 # make sure the run duration doesn't exceed the temporal range of your inputs!
-run_dur = 0.25
+run_dur = 0.5
 #
 # number of particles to release
 # generally the more the better, but there are computational limits
@@ -138,9 +95,6 @@ num_part=5000
 #
 # opendrift timestep for particle integration in minutes
 time_step=15
-#
-# vertical mixing tstep in seconds
-vert_mix_tstep=60
 #
 # output timestep in minutes
 time_step_output=60

@@ -1,5 +1,8 @@
 """
 functions for plotting / animating opendrift output
+
+The 'opendrift' virtual environment must be activated
+
 (there are some plotting methods as part of opendrift source code
  but we'd like to do our own tailor made ones for more flexibility)
 """

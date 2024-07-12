@@ -50,7 +50,6 @@ class run_stochastic(base_stochastic):
         Run a single deterministic OpenDrift run as part of a stochasitc ensemble
         This includes setting up the run directory and using the template config.py
         file to create a new one with an updated release_start_time
-
         '''
         # ---------------------------------------------------
         # prepare the iteration directory and config.py file
@@ -76,9 +75,13 @@ class run_stochastic(base_stochastic):
         #
         if self.model_type == 'oil':
             run_oil(self.iteration_dir)
+        elif self.model_type == 'leeway':
+            run_leeway(self.iteration_dir)
+        elif self.model_type == 'oceandrift':
+            run_oceandrift(self.iteration_dir)
         # elif other model types...
         else:
-            print('model type not recognised: ' + self.model_type)
+            print('model_type not recognised: ' + self.model_type)
     
     def run_all(self):
         '''
