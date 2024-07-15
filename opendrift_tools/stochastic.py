@@ -124,7 +124,6 @@ class grid_stochastic(base_stochastic):
         Loop through the specified run_id's and run the model for each'
         '''
         while self.run_id <= self.run_id_end:
-            print('working on run'+ str(self.run_id).zfill(3))
             self.grid_iteration()
             self.run_id += 1
             self.update_iteration_dir()
@@ -212,12 +211,11 @@ class gridded_stats(base_stochastic):
         previous_minimum_time=self.stats.minimum_time.data
         self.stats.minimum_time.data=np.minimum(iteration_minimum_time,previous_minimum_time)
     
-    def compute_stats_all(self):
+    def update_stats_all(self):
         '''
         Loop through the specified run_id's and compute the stats over all runs
         '''
         while self.run_id <= self.run_id_end:
-            print('working on run'+ str(self.run_id).zfill(3))
             self.update_stats()
             self.run_id += 1
             self.update_iteration_dir()
