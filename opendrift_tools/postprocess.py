@@ -256,7 +256,7 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         print('grid_type input of '+grid_type+' is not supported')
         print('valid options are density, surface_oil and stranded_oil')
 
-def get_oil_budget(fname,fname_out):
+def oil_massbal(fname,fname_out):
     
     # # read the data
     oa = opendrift.open_xarray(fname)

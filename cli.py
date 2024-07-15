@@ -13,9 +13,9 @@ from datetime import datetime
 from opendrift_tools.run import oil as run_oil
 from opendrift_tools.run import leeway as run_leeway
 from opendrift_tools.run import oceandrift as run_oceandrift
-from opendrift_tools.postprocess import grid_particles
+from opendrift_tools.postprocess import grid_particles, oil_massbal
 from opendrift_tools.plotting import plot_particles, plot_gridded
-from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats
+from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats, stochasitic_massbal
 
 # functions to help parsing string input to object types needed by python functions
 def parse_datetime(value):
@@ -77,6 +77,20 @@ def main():
                        dx_m=args.dx_m,
                        max_only=args.max_only)
     parser_grid_particles.set_defaults(func=grid_particles_handler)
+    
+    # -------------------------------------------
+    # get the oil mass balance of an OpenOil run
+    # -------------------------------------------
+    parser_oil_massbal = subparsers.add_parser('oil_massbal', 
+            help='compute the mass balance for an OpenOil simulation')
+    parser_oil_massbal.add_argument('--config_dir', required=True, type=str, help='Directory where the OpenOil output is located')
+    parser_oil_massbal.add_argument('--fname', required=False, type=str, default='trajectories.nc', help='the OpenOil output filename')
+    parser_oil_massbal.add_argument('--fname_out', required=False, type=str, default='gridded.nc', help='the mass balance filename')
+    def oil_massbal_handler(args):
+        fname = os.path.join(args.config_dir,args.fname)
+        fname_out = os.path.join(args.config_dir,args.fname_out)
+        oil_massbal(fname, fname_out)
+    parser_oil_massbal.set_defaults(func=oil_massbal_handler)
     
     # ----------------------------------------------
     # do a plot or animation of the particle output
@@ -192,6 +206,26 @@ def main():
                                 threshold=args.threshold)
         stoch.update_stats_all()
     parser_gridded_stats.set_defaults(func=gridded_stats_handler)
+    
+    # -----------------------
+    # stohastic mass balance
+    # -----------------------
+    parser_stoch_massbal = subparsers.add_parser('stochastic_massbal', 
+            help='Compute statistics on gridded output from stochastic OpenDrift simulations')
+    parser_stoch_massbal.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
+    parser_stoch_massbal.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
+    parser_stoch_massbal.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
+    parser_stoch_massbal.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
+    parser_stoch_massbal.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
+    parser_stoch_massbal.add_argument('--out_dir', required=False, type=str,default='summary_stats', help='output directory name (this gets appended onto run_dir)')
+    parser_stoch_massbal.add_argument('--fname_massbal', required=False, type=str, default='oil_massbal.nc', help='the mass balance filename')
+    def stoch_massbal_handler(args):
+        stoch = stochasitic_massbal(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, 
+                                out_dir = args.out_dir,
+                                fname_massbal=args.fname_massbal
+                                )
+        stoch.update_massbal_all()
+    parser_stoch_massbal.set_defaults(func=stoch_massbal_handler)
     
     args = parser.parse_args()
     if hasattr(args, 'func'):

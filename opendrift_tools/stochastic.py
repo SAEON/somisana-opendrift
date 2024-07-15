@@ -8,7 +8,9 @@ import numpy as np
 from datetime import datetime, timedelta
 import xarray as xr
 from opendrift_tools.run import oil as run_oil
-from opendrift_tools.postprocess import grid_particles
+from opendrift_tools.run import leeway as run_leeway
+from opendrift_tools.run import oceandrift as run_oceandrift
+from opendrift_tools.postprocess import grid_particles, oil_massbal
 
 class base_stochastic:
     '''
@@ -47,7 +49,7 @@ class run_stochastic(base_stochastic):
             
     def run_iteration(self):
         '''
-        Run a single deterministic OpenDrift run as part of a stochasitc ensemble
+        Run a single deterministic OpenDrift run as part of a stochasitic ensemble
         This includes setting up the run directory and using the template config.py
         file to create a new one with an updated release_start_time
         '''
@@ -113,7 +115,7 @@ class grid_stochastic(base_stochastic):
             
     def grid_iteration(self):
         '''
-        Grid the output of a single deterministic OpenDrift run as part of a stochasitc ensemble
+        Grid the output of a single deterministic OpenDrift run as part of a stochasitic ensemble
         '''
         fname = os.path.join(self.iteration_dir,'trajectories.nc')
         fname_gridded = os.path.join(self.iteration_dir,self.fname_gridded)
@@ -226,36 +228,52 @@ class gridded_stats(base_stochastic):
         fname_out = self.fname_gridded.split('.nc')[0]+'_threshold'+str(self.threshold)+'.nc'
         self.stats.to_netcdf(os.path.join(self.out_dir,fname_out))
     
-class mass_balance(base_stochastic):
+class stochasitic_massbal(base_stochastic):
     '''
     class used to compute the stochastic mass balance
     '''
     def __init__(self, run_dir, date_start, run_id, increment_days, run_id_end, 
                  out_dir = '/summary_stats/', # this gets appended onto run_dir
-                 filename_massbal='oil_budget.nc'):
+                 fname_massbal='oil_massbal.nc'):
         super().__init__(run_dir, date_start, run_id, increment_days, run_id_end) # this is where the base_stochastic class is inherited
         
         self.out_dir = os.path.join(run_dir,out_dir)
         os.makedirs(self.out_dir, exist_ok=True)
-        self.filename_massbal = filename_massbal
+        self.fname_massbal = fname_massbal
+        # initialise with the mass balance of the first run_id
+        self.massbal_iteration()
         ds = self.get_ds_massbal()
         self.budget = ds
     
+    def massbal_iteration(self):
+        '''
+        do the mass balance of a single deterministic OpenOil run as part of a stochasitic ensemble
+        '''
+        fname = os.path.join(self.iteration_dir,'trajectories.nc')
+        fname_massbal = os.path.join(self.iteration_dir,self.fname_massbal)
+        oil_massbal(fname,fname_massbal)
+    
     def get_ds_massbal(self):
-        with xr.open_dataset(self.iteration_dir+self.filename_massbal) as ds:
+        with xr.open_dataset(os.path.join(self.iteration_dir,self.fname_massbal)) as ds:
             # replace the times with time since start of run for comparison with other runs
             days_since_start = (ds.time.data-ds.time.data[0]).astype('timedelta64[s]').astype(np.int32)/3600/24 # seriously convoluted but it works. Timedelta64 is not ideals
             ds = ds.assign(time = days_since_start)
             return ds
     
-    def update_massbal(self):
-        # add data for generating the stochastic budget
-        if self.num_it>1:
-            # but only if we're not on the first iteration
+    def update_massbal_all(self):
+        '''
+        Loop through the specified run_id's and compute the mass balance over all runs
+        '''
+        while self.run_id <= self.run_id_end:
+            if self.num_it>1: # but only if we're not on the first iteration (this has already been added in __init__)
+                self.massbal_iteration()
+                ds = self.get_ds_massbal()
+                self.budget=xr.concat([self.budget, ds], dim="iteration")
+            self.run_id += 1
             self.update_iteration_dir()
-            ds = self.get_ds_massbal()
-            self.budget=xr.concat([self.budget, ds], dim="iteration")
-
+            self.num_it += 1
+        self.__to_netcdf__()
+        
     def __to_netcdf__(self):
         self.budget.to_netcdf(os.path.join(self.out_dir,self.fname_massbal))
         
