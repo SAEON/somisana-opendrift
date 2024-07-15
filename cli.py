@@ -15,7 +15,7 @@ from opendrift_tools.run import leeway as run_leeway
 from opendrift_tools.run import oceandrift as run_oceandrift
 from opendrift_tools.postprocess import grid_particles
 from opendrift_tools.plotting import plot_particles, plot_gridded
-from opendrift_tools.stochastic import run_stochastic, grid_stochastic
+from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats
 
 # functions to help parsing string input to object types needed by python functions
 def parse_datetime(value):
@@ -25,7 +25,10 @@ def parse_datetime(value):
         raise argparse.ArgumentTypeError("Invalid datetime format. Please use 'YYYYMMDD_HH'.")
 
 def parse_list(value):
-    return [x.strip() for x in value.split(',')]
+    if value is not None:
+        return [float(x.strip()) for x in value.split(',')]
+    else:
+        return None
 
 def main():
     
@@ -34,45 +37,6 @@ def main():
 
     # just keep adding new subparsers for each new function as we go...
 
-    # ----------------
-    # run_stochastic
-    # ----------------
-    parser_run_stochastic = subparsers.add_parser('run_stochastic', 
-            help='Run stochastic OpenDrift simulations')
-    parser_run_stochastic.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
-    parser_run_stochastic.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
-    parser_run_stochastic.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
-    parser_run_stochastic.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
-    parser_run_stochastic.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
-    parser_run_stochastic.add_argument('--model_type', required=False, type=str, default='oil', help='type of model to run- options are \'oceandrift\', \'oil\' or \'leeway\'')
-    def run_stochastic_handler(args):
-        stoch = run_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, model_type=args.model_type)
-        stoch.run_all()
-    parser_run_stochastic.set_defaults(func=run_stochastic_handler)
-    
-    # ----------------
-    # grid_stochastic
-    # ----------------
-    parser_grid_stochastic = subparsers.add_parser('grid_stochastic', 
-            help='Grid the output of stochastic OpenDrift simulations')
-    parser_grid_stochastic.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
-    parser_grid_stochastic.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
-    parser_grid_stochastic.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
-    parser_grid_stochastic.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
-    parser_grid_stochastic.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
-    def grid_stochastic_handler(args):
-        sys.path.append(args.run_dir)
-        import config
-        stoch = grid_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, 
-                                # grid configuration defined in the config.py file in run_dir
-                                fname_gridded=config.fname_gridded,
-                                grid_type=config.grid_type,
-                                extents=config.grid_extents,
-                                dx_m=config.dx_m,
-                                max_only=config.max_only)
-        stoch.grid_all()
-    parser_grid_stochastic.set_defaults(func=grid_stochastic_handler)
-    
     # ----------------
     # run_model
     # ----------------
@@ -96,17 +60,22 @@ def main():
     # -------------------------
     parser_grid_particles = subparsers.add_parser('grid_particles', 
             help='convert the particle output of an OpenDrift simulation to a eulerian grid')
-    parser_grid_particles.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
+    parser_grid_particles.add_argument('--config_dir', required=True, type=str, help='Directory where the OpenDrift output is located')
+    parser_grid_particles.add_argument('--fname', required=False, type=str, default='trajectories.nc', help='the OpenDrift output filename')
+    parser_grid_particles.add_argument('--fname_gridded', required=False, type=str, default='gridded.nc', help='the gridded filename')
+    parser_grid_particles.add_argument('--grid_type', required=False, type=str, default='density', help='what kind of gridding to do. Options are \'density\', \'surface_oil\', \'stranded_oil\'')
+    parser_grid_particles.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the grid in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
+    parser_grid_particles.add_argument('--dx_m', required=False, type=float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
+    parser_grid_particles.add_argument('--max_only', required=False, type=bool, default=False, help='option to only write the maximum over the entire file to save disk space (True or False)')
     def grid_particles_handler(args):
-        sys.path.append(args.config_dir)
-        import config
         fname = os.path.join(args.config_dir,args.fname)
         fname_gridded = os.path.join(args.config_dir,args.fname_gridded)
         grid_particles(fname,
                        fname_gridded,
-                       extents=config.grid_extents,
-                       dx_m=config.dx_m,
-                       max_only=config.max_only)
+                       grid_type=args.grid_type,
+                       extents=args.extents,
+                       dx_m=args.dx_m,
+                       max_only=args.max_only)
     parser_grid_particles.set_defaults(func=grid_particles_handler)
     
     # ----------------------------------------------
@@ -161,6 +130,68 @@ def main():
                         skip_time=config.skip_time,
                         tstep_end=config.tstep_end)
     parser_plot_gridded.set_defaults(func=plot_gridded_handler)
+    
+    # ----------------
+    # run_stochastic
+    # ----------------
+    parser_run_stochastic = subparsers.add_parser('run_stochastic', 
+            help='Run stochastic OpenDrift simulations')
+    parser_run_stochastic.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
+    parser_run_stochastic.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
+    parser_run_stochastic.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
+    parser_run_stochastic.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
+    parser_run_stochastic.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
+    parser_run_stochastic.add_argument('--model_type', required=False, type=str, default='oil', help='type of model to run- options are \'oceandrift\', \'oil\' or \'leeway\'')
+    def run_stochastic_handler(args):
+        stoch = run_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, model_type=args.model_type)
+        stoch.run_all()
+    parser_run_stochastic.set_defaults(func=run_stochastic_handler)
+    
+    # ----------------
+    # grid_stochastic
+    # ----------------
+    parser_grid_stochastic = subparsers.add_parser('grid_stochastic', 
+            help='Grid the output of stochastic OpenDrift simulations')
+    parser_grid_stochastic.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
+    parser_grid_stochastic.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
+    parser_grid_stochastic.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
+    parser_grid_stochastic.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
+    parser_grid_stochastic.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
+    parser_grid_particles.add_argument('--fname_gridded', required=False, type=str, default='gridded.nc', help='the gridded filename')
+    parser_grid_particles.add_argument('--grid_type', required=False, type=str, default='density', help='what kind of gridding to do. Options are \'density\', \'surface_oil\', \'stranded_oil\'')
+    parser_grid_particles.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the grid in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
+    parser_grid_particles.add_argument('--dx_m', required=False, type=float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
+    parser_grid_particles.add_argument('--max_only', required=False, type=bool, default=False, help='option to only write the maximum over the entire file to save disk space (True or False)')
+    def grid_stochastic_handler(args):
+        stoch = grid_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, 
+                                fname_gridded=args.fname_gridded,
+                                grid_type=args.grid_type,
+                                extents=args.extents,
+                                dx_m=args.dx_m,
+                                max_only=args.max_only)
+        stoch.grid_all()
+    parser_grid_stochastic.set_defaults(func=grid_stochastic_handler)
+    
+    # --------------
+    # gridded_stats
+    # --------------
+    parser_gridded_stats = subparsers.add_parser('gridded_stats', 
+            help='Compute statistics on gridded output from stochastic OpenDrift simulations')
+    parser_gridded_stats.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
+    parser_gridded_stats.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
+    parser_gridded_stats.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
+    parser_gridded_stats.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
+    parser_gridded_stats.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
+    parser_gridded_stats.add_argument('--out_dir', required=False, type=str,default='summary_stats', help='output directory name (this gets appended onto run_dir)')
+    parser_gridded_stats.add_argument('--fname_gridded', required=True, type=str, help='the gridded filename common to all run directories')
+    parser_gridded_stats.add_argument('--threshold', required=True, type=float, help='only data over this value are used in computing statistics')
+    def gridded_stats_handler(args):
+        stoch = gridded_stats(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, 
+                                out_dir = args.out_dir,
+                                fname_gridded=args.fname_gridded,
+                                threshold=args.threshold)
+        stoch.grid_all()
+    parser_gridded_stats.set_defaults(func=gridded_stats_handler)
     
     args = parser.parse_args()
     if hasattr(args, 'func'):

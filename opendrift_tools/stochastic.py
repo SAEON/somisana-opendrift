@@ -137,7 +137,8 @@ class gridded_stats(base_stochastic):
     def __init__(self, run_dir, date_start, run_id, increment_days, run_id_end, 
                  out_dir = '/summary_stats/', # this gets appended onto run_dir
                  fname_gridded='gridded.nc', # the gridded filename common to all run directories
-                 threshold=0):
+                 threshold=0 # only data over this value are used in computing statistics
+                 ):
         super().__init__(run_dir, date_start, run_id, increment_days, run_id_end) # this is where the base_stochastic class is inherited
       
         self.out_dir = os.path.join(run_dir,out_dir)
@@ -224,7 +225,8 @@ class gridded_stats(base_stochastic):
         self.__to_netcdf__()
     
     def __to_netcdf__(self):
-        self.stats.to_netcdf(os.path.join(self.out_dir,self.fname_gridded))
+        fname_out = self.fname_gridded.split('.nc')[0]+'_threshold'+str(self.threshold)+'.nc'
+        self.stats.to_netcdf(os.path.join(self.out_dir,fname_out))
     
 class mass_balance(base_stochastic):
     '''
