@@ -272,6 +272,9 @@ class stochasitic_massbal(base_stochastic):
             self.run_id += 1
             self.update_iteration_dir()
             self.num_it += 1
+        # fill missing values with the last valid data
+        # (to account for simulations which finish early due to all particles being deactivated)
+        self.budget=self.budget.ffill('time')
         self.__to_netcdf__()
         
     def __to_netcdf__(self):
