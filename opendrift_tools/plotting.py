@@ -450,6 +450,69 @@ def plot_gridded_stats(fname,
             jpg_out = fname.split('.nc')[0]+'_'+var_str+'.jpg'
         plt.savefig(jpg_out,dpi=500,bbox_inches = 'tight')
     
+def plot_stochastic_budget(fname, fname_out,
+                figsize=(8,4),
+                xlims=[],
+                ylims=[],
+                legend_loc="upper right",
+                ):
+    
+    ds = xr.open_dataset(fname)
+    
+    # ds_mean = ds.mean(dim='iteration')
+    # ds_std = ds.std(dim='iteration')
+    # ds_5ptile = ds.quantile(0.05,dim='iteration')
+    ds_25ptile = ds.quantile(0.25,dim='iteration')
+    ds_median = ds.quantile(0.5,dim='iteration')
+    ds_75ptile = ds.quantile(0.75,dim='iteration')
+    # ds_95ptile = ds.quantile(0.95,dim='iteration')
+    
+    ds_total = ds.subsurface+ds.surface+ds.stranded+ds.evaporated
+    # the total mass should be exactly the same in all iterations so just calculating mean and std as a check
+    ds_total_mean = ds_total.mean(dim='iteration')
+    
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    ax.plot(ds.time, ds_median.subsurface, label='subsurface', color = 'blue')
+    plt.fill_between(ds.time,
+                     ds_25ptile.subsurface,
+                     ds_75ptile.subsurface,
+                     alpha = 0.2, color = 'blue', label='_nolegend_')
+    
+    ax.plot(ds.time, ds_median.surface, label='surface', color = 'green')
+    plt.fill_between(ds.time,
+                     ds_25ptile.surface,
+                     ds_75ptile.surface,
+                     alpha = 0.2, color = 'green', label='_nolegend_')
+    
+    ax.plot(ds.time, ds_median.evaporated, label='evaporated', color = 'orange')
+    plt.fill_between(ds.time,
+                     ds_25ptile.evaporated,
+                     ds_75ptile.evaporated,
+                     alpha = 0.2, color = 'orange', label='_nolegend_')
+    
+    ax.plot(ds.time, ds_median.stranded, label='stranded', color = 'red')
+    plt.fill_between(ds.time,
+                     ds_25ptile.stranded,
+                     ds_75ptile.stranded,
+                     alpha = 0.2, color = 'red', label='_nolegend_')
+    
+    ax.plot(ds.time, ds_total_mean, label='total', color = 'purple')
+    # (total oil should have no variability)
+    
+    ax.set_xlabel('time (days since start of spill)',fontsize=12)
+    if xlims:
+        ax.set_xlim(xlims[0], xlims[1])
+    ax.set_ylabel('mass of oil (kg)',fontsize=12)
+    if ylims:
+        ax.set_ylim(ylims[0], ylims[1])
+    ax.grid(linestyle='-', linewidth=0.3)
+    ax.legend(loc=legend_loc, frameon=False)
+    
+    ds.close()
+    
+    plt.savefig(fname_out,dpi=500,bbox_inches = 'tight')
+
 # if __name__ == "__main__":
     
 
