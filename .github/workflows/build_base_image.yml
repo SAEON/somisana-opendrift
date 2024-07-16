@@ -37,9 +37,9 @@ jobs:
       packages: write
     steps:
       # this step where we cheout the OpenDrift repo for the specific tag totally works but there is a problem-
-      # at the time of building, numpy had a major update so the python environment created durnig the image build
-      # is not compatible with the opendrift code we are using
-      # so we had to create our own Dockerfile.base to create the base image
+      # at the time of building, numpy had a major update so the python environment created during the image build
+      # is not compatible with the opendrift code for this release
+      # so we had to create our own Dockerfile.base to create the base image which handles the package dependency issue
       # I'm leaving this code here for a future time when we can remove the Dockerfile.base file and 
       # build from the OpenDrift release without the need for any edits
       #- name: Checkout the OpenDrift repository
@@ -76,11 +76,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
   
-#  pull-image-mims1:
-#    needs: [envs,build-image]
-#    runs-on: mims1
-#    steps:
-#      - name: pull latest docker image to mims server
-#        run: |
-#    docker pull ${{ needs.envs.outputs.IMAGE_NAME }}
-

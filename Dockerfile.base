@@ -1,6 +1,7 @@
 # We're specifically not using the opendrift/opendrift:latest base image, to avoid changes which might cause our operational image to stop working (this happened!)
 # So we need to revert to an older stable tag release, but opendrift doesn't store all the older tags (as far as I can tell)
 # So we meed to build our base opendrift image from scratch
+# this is done in .github/workflows/build_base_image.yml, and creates an image which can be pulled from anywhere
 
 FROM condaforge/mambaforge
 

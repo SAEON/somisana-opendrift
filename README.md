@@ -80,7 +80,9 @@ But if you want to personalise your plot more, it's best to do your own thing, p
 
 # Running the docker image
 
-As mentioned above, the command line interface (cli.py) in the root directory of this repo allows one command line access to various functions in this repo. This is the entry point for the Docker image which can be built from this repo. Have a look at the `Dockerfile` to see how it is built. To build the docker image locally you could do:
+As mentioned above, the command line interface (cli.py) in the root directory of this repo allows one command line access to various functions in this repo. This is the entry point for the Docker image which can be built from this repo. Have a look at the `Dockerfile` to see how it is built. At the time of writing, we are building on top of the `ghcr.io/saeon/opendrift_v1.11.0` base image, which is created using Dockerfile.base in this repo (see the explanatory text in there).
+
+To build the docker image locally you could do:
 
 ```sh
 docker build -t somisana_opendrift .
