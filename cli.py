@@ -211,7 +211,7 @@ def main():
     # stohastic mass balance
     # -----------------------
     parser_stoch_massbal = subparsers.add_parser('stochastic_massbal', 
-            help='Compute statistics on gridded output from stochastic OpenDrift simulations')
+            help='Compute the stochasitc mass balance from stochastic OpenOil simulations')
     parser_stoch_massbal.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
     parser_stoch_massbal.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
     parser_stoch_massbal.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
