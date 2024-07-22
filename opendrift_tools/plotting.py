@@ -67,7 +67,8 @@ def setup_plot(ax, lon, lat, extents=[], lscale='auto'):
     
     # using opendrifts landmask plotting routine...
     reader_global_landmask.plot_land(ax, lon_min, lat_min, lon_max,
-                                                 lat_max, False, lscale = lscale)
+                                                 lat_max, False, lscale = lscale,
+                                                 land_color=('k', 0))
     
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
                       linewidth=1, color='dimgrey', alpha=0.5, linestyle=':')
@@ -126,6 +127,7 @@ def add_cbar(var_plt,
     return cbar_plt
 
 def plot_particles(fname,
+        ax=None, # allowing for adding to an existing axis
         var_str='z', # variable to plot
         tstep=0, # the step to plot, or the first step to animate.
         # options related to the figure layout
@@ -177,10 +179,11 @@ def plot_particles(fname,
     lat_strand=ds_strand_tstep.lat.values
     
     # set up the plot
-    fig = plt.figure(figsize=figsize) 
-    ax = plt.axes(projection=ccrs.Mercator())
-    setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
-    
+    if ax is None:
+        fig = plt.figure(figsize=figsize) 
+        ax = plt.axes(projection=ccrs.Mercator())
+        setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
+        
     # set up the cmap to handle non-uniform input ticks
     if len(ticks)==0:
         ticks = np.linspace(min(np.ravel(var_data)),max(np.ravel(var_data)),num=20)
@@ -213,6 +216,8 @@ def plot_particles(fname,
             # automatically come up with a file name
             jpg_out = fname.split('.nc')[0]+'_'+var_str+'_'+pd.to_datetime(time_plot).strftime("%Y%m%d_%H")+'.jpg'
         plt.savefig(jpg_out,dpi=500,bbox_inches = 'tight')
+    else: # return the figure for further edits
+        return ax
     
     # and/or write a gif if specified
     if write_gif: # do the animation
@@ -274,6 +279,7 @@ def lonlat_2_corners(lon,lat):
     return lon_out,lat_out
 
 def plot_gridded(fname,
+        ax=None, # allowing for adding to an existing axis
         var_str='particle_density', # variable to plot
         tstep=0, # the step to plot, or the first step to animate.
         # options related to the figure layout
@@ -321,9 +327,10 @@ def plot_gridded(fname,
     var_data = ds_tstep[var_str].values
     
     # set up the plot
-    fig = plt.figure(figsize=figsize) 
-    ax = plt.axes(projection=ccrs.Mercator())
-    setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
+    if ax is None:
+        fig = plt.figure(figsize=figsize) 
+        ax = plt.axes(projection=ccrs.Mercator())
+        setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
     
     # set up the cmap to handle non-uniform input ticks
     if len(ticks)==0:
@@ -354,6 +361,8 @@ def plot_gridded(fname,
             # automatically come up with a file name
             jpg_out = fname.split('.nc')[0]+'_'+var_str+'_'+pd.to_datetime(time_plot).strftime("%Y%m%d_%H")+'.jpg'
         plt.savefig(jpg_out,dpi=500,bbox_inches = 'tight')
+    else: # return the figure for further edits
+        return ax
     
     # and/or write a gif if specified
     if write_gif: # do the animation
@@ -368,7 +377,6 @@ def plot_gridded(fname,
             tx_time = get_time_txt(ax, time_plot, time_start)
             time_plt.set_text(tx_time)
             
-        
         # animate
         if tstep_end is None: # if not defined then animate to end of file 
             tstep_end = len(ds.time) - 1
@@ -381,6 +389,7 @@ def plot_gridded(fname,
         anim.save(gif_out, writer='imagemagick')
 
 def plot_gridded_stats(fname,
+        ax=None, # allowing for adding to an existing axis
         var_str='probability', # variable to plot
         # options related to the figure layout
         figsize=(6,6), # (hz,vt)        
@@ -403,7 +412,6 @@ def plot_gridded_stats(fname,
     '''
     this is a convenience function for doing a quick 2D plot of summary stats gridded output with minimal coding.
     this might also be used as example code for doing your own plots 
-    there's also an option to turn the plot into an animation
     '''
     
     # get the data
@@ -419,9 +427,10 @@ def plot_gridded_stats(fname,
     var_data = ds[var_str].values
     
     # set up the plot
-    fig = plt.figure(figsize=figsize) 
-    ax = plt.axes(projection=ccrs.Mercator())
-    setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
+    if ax is None:
+        fig = plt.figure(figsize=figsize) 
+        ax = plt.axes(projection=ccrs.Mercator())
+        setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
     
     # set up the cmap to handle non-uniform input ticks
     if len(ticks)==0:
@@ -449,6 +458,8 @@ def plot_gridded_stats(fname,
             # automatically come up with a file name
             jpg_out = fname.split('.nc')[0]+'_'+var_str+'.jpg'
         plt.savefig(jpg_out,dpi=500,bbox_inches = 'tight')
+    else: # return the figure for further edits
+        return ax
     
 def plot_stochastic_budget(fname, fname_out,
                 figsize=(8,4),
