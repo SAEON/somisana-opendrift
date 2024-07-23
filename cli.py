@@ -66,7 +66,7 @@ def main():
     parser_grid_particles.add_argument('--grid_type', required=False, type=str, default='density', help='what kind of gridding to do. Options are \'density\', \'surface_oil\', \'stranded_oil\'')
     parser_grid_particles.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the grid in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
     parser_grid_particles.add_argument('--dx_m', required=False, type=float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
-    parser_grid_particles.add_argument('--max_only', required=False, type=bool, default=False, help='option to only write the maximum over the entire file to save disk space (True or False)')
+    parser_grid_particles.add_argument('--max_only', required=False, action='store_true', help='option to only write the maximum over the entire file to save disk space (set this flag to enable)')
     def grid_particles_handler(args):
         fname = os.path.join(args.config_dir,args.fname)
         fname_gridded = os.path.join(args.config_dir,args.fname_gridded)
@@ -175,7 +175,7 @@ def main():
     parser_grid_stochastic.add_argument('--grid_type', required=False, type=str, default='density', help='what kind of gridding to do. Options are \'density\', \'surface_oil\', \'stranded_oil\'')
     parser_grid_stochastic.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the grid in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
     parser_grid_stochastic.add_argument('--dx_m', required=False, type=float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
-    parser_grid_stochastic.add_argument('--max_only', required=False, type=bool, default=False, help='option to only write the maximum over the entire file to save disk space (True or False)')
+    parser_grid_stochastic.add_argument('--max_only', required=False, action='store_true', help='option to only write the maximum over the entire file to save disk space (set this flag to enable)')
     def grid_stochastic_handler(args):
         stoch = grid_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, 
                                 fname_gridded=args.fname_gridded,
