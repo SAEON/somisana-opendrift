@@ -216,8 +216,6 @@ def plot_particles(fname,
             # automatically come up with a file name
             jpg_out = fname.split('.nc')[0]+'_'+var_str+'_'+pd.to_datetime(time_plot).strftime("%Y%m%d_%H")+'.jpg'
         plt.savefig(jpg_out,dpi=500,bbox_inches = 'tight')
-    else: # return the figure for further edits
-        return ax
     
     # and/or write a gif if specified
     if write_gif: # do the animation
@@ -252,6 +250,8 @@ def plot_particles(fname,
         if gif_out is None:
             gif_out = fname.split('.nc')[0]+'_'+var_str+'.gif'
         anim.save(gif_out, writer='imagemagick')
+
+    return ax
 
 def lonlat_2_corners(lon,lat):
     '''
@@ -361,8 +361,6 @@ def plot_gridded(fname,
             # automatically come up with a file name
             jpg_out = fname.split('.nc')[0]+'_'+var_str+'_'+pd.to_datetime(time_plot).strftime("%Y%m%d_%H")+'.jpg'
         plt.savefig(jpg_out,dpi=500,bbox_inches = 'tight')
-    else: # return the figure for further edits
-        return ax
     
     # and/or write a gif if specified
     if write_gif: # do the animation
@@ -387,6 +385,8 @@ def plot_gridded(fname,
         if gif_out is None:
             gif_out = fname.split('.nc')[0]+'_'+var_str+'.gif'
         anim.save(gif_out, writer='imagemagick')
+
+    return ax
 
 def plot_gridded_stats(fname,
         ax=None, # allowing for adding to an existing axis
@@ -458,8 +458,8 @@ def plot_gridded_stats(fname,
             # automatically come up with a file name
             jpg_out = fname.split('.nc')[0]+'_'+var_str+'.jpg'
         plt.savefig(jpg_out,dpi=500,bbox_inches = 'tight')
-    else: # return the figure for further edits
-        return ax
+    
+    return ax
     
 def plot_stochastic_budget(fname, fname_out,
                 figsize=(8,4),

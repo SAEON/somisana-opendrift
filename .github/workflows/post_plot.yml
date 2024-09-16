@@ -42,6 +42,7 @@ env:
 
 jobs:
   setup-run-dir:
+  # this is partly a repeat of what was already done in run_model.yml, but it's here in case the user wants to update the configurable plot options without re-running the model each time   
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: Check out source code so have access to the files in the repo
@@ -49,7 +50,7 @@ jobs:
         with:
           ref: ${{ inputs.BRANCH_REF }}
 
-      - name: replace the config file on the local server - this is here in case the user wants to update the configurable plot options without re-running the model each time
+      - name: replace the config file on the local server 
         run: |
           OGCM=${{ inputs.OGCM }}
           WIND=${{ inputs.WIND }} 

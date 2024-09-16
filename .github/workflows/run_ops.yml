@@ -6,9 +6,10 @@ on:
       model_type:
         description: 'The kind of model to run'
         required: true
-        default: 'oil'
+        default: 'oceandrift'
         type: choice
         options:
+          - oceandrift
           - oil
           - leeway
       run_model:
