@@ -77,7 +77,8 @@ jobs:
             --user root \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              run_${{ inputs.MODEL_TYPE }}  \
+              run_model \
+                --model_type ${{ inputs.MODEL_TYPE }} \
                 --config_dir ${{ env.RUN_DIR_DOCKER }}
 
   permissions:
