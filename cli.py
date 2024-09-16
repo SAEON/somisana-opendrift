@@ -130,8 +130,8 @@ def main():
         # just intended to provide a quick animation as part of the operational workflow
         sys.path.append(args.config_dir)
         import config
-        fname_gridded = os.path.join(args.config_dir,args.fname_gridded)
-        gif_out_gridded = os.path.join(args.config_dir,args.gif_out_gridded)
+        fname_gridded = os.path.join(args.config_dir,config.fname_gridded)
+        gif_out_gridded = os.path.join(args.config_dir,config.gif_out_gridded)
         plot_gridded(fname_gridded,
                         figsize=config.figsize,
                         extents=config.plot_extents,
