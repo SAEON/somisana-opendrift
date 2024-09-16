@@ -15,7 +15,7 @@
 config_name='Test_Run'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20240701_06'
+run_date='20240916_12'
 
 # -------------
 # release info
@@ -34,8 +34,8 @@ z=0
 # this allows for some initial spreading at location of the initialised particles 
 radius=5
 #
-# start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20240701_06'
+# start time of release, in format YYYYMMDD_HH, in UTC
+release_start_time='20240916_12'
 #
 # duration of the release of particles in hours
 release_dur=3
