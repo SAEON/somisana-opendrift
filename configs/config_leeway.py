@@ -102,20 +102,6 @@ time_step=15
 time_step_output=60
 
 # -----------------
-# gridding options
-# -----------------
-#
-# options for converting partcle locations into a eulerian grid of particle concentrations
-# (used in cli.py for calling the grid_particles function as part of the operational workflow
-# for local work, it'll be easier to call the grid_particles function directly in your own python script)
-#
-grid_type='density' # what kind of gridding to do. Options are 'density', 'surface_oil', 'stranded_oil'
-fname_gridded='gridded_density.nc'
-grid_extents=None # the spatial extent of the grid [lon0,lon1,lat0,lat1]. If None, then this is automatically determined from the geographic extent of the particles
-dx_m=None # grid size in meters, if None, then a 100 x 100 regular grid is generated
-max_only=False # option to only write the maximum over the entire file to save disk space (boolean)
-
-# -----------------
 # plotting options
 # -----------------
 #
@@ -125,6 +111,7 @@ max_only=False # option to only write the maximum over the entire file to save d
 # for local work, it'll be easier to call the functions directly in your own python script)
 #
 fname='trajectories.nc'
+fname_gridded='gridded_density.nc'
 # options related to the figure layout
 figsize=(8,4) # (hz,vt)
 plot_extents = [25.5,26.5,-34.1,-33.6] # spatial extent to plot [lon0,lon1,lat0,lat1]
