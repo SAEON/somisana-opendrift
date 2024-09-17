@@ -77,9 +77,12 @@ def oceandrift(config_dir):
     # run the model
     # --------------
     #
+    if config.run_dur is None:
+        duration=config.run_dur
+    else:
+        duration=timedelta(days=config.run_dur)
     fname = config_dir+'/trajectories.nc' # keeping the filename generic
-    #o.run(duration=timedelta(days=config.run_dur), time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
-    o.run(time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
+    o.run(duration=duration, time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
     
     # --------
     # cleanup
@@ -180,8 +183,12 @@ def oil(config_dir):
     # run the model
     # --------------
     #
+    if config.run_dur is None:
+        duration=config.run_dur
+    else:
+        duration=timedelta(days=config.run_dur)
     fname = config_dir+'/trajectories.nc' # keeping the filename generic
-    o.run(duration=timedelta(days=config.run_dur), time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
+    o.run(duration=duration, time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
     
     # --------
     # cleanup
@@ -243,8 +250,12 @@ def leeway(config_dir):
     # run the model
     # --------------
     #
+    if config.run_dur is None:
+        duration=config.run_dur
+    else:
+        duration=timedelta(days=config.run_dur)
     fname = config_dir+'/trajectories.nc' # keeping the filename generic
-    lw.run(duration=timedelta(days=config.run_dur), time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
+    lw.run(duration=duration, time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
     
     # --------
     # cleanup

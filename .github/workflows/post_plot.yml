@@ -133,5 +133,7 @@ jobs:
               sudo mkdir -p ${{ env.ARCHIVE_DIR }}
               sudo chmod -R 775 ${{ env.ARCHIVE_DIR }}
             fi
-            sudo cp -f ${{ env.RUN_DIR }}/* ${{ env.ARCHIVE_DIR }}
+            sudo cp -f ${{ env.RUN_DIR }}/config.py ${{ env.ARCHIVE_DIR }}
+            sudo cp -f ${{ env.RUN_DIR }}/*.nc ${{ env.ARCHIVE_DIR }}
+            sudo cp -f ${{ env.RUN_DIR }}/*.gif ${{ env.ARCHIVE_DIR }}
           fi

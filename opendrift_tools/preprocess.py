@@ -83,7 +83,13 @@ def add_readers(o,config):
     try:
         wind_files = config.wind_files
         for wind_file in wind_files:
-            reader_wind = reader_netCDF_CF_generic.Reader(wind_file)
+            # Assume we're using the netcdf file on the gfs native grid created during croco preprocessing 
+            # I'm opening the file as an xarray dataset before passing to reader_netCDF_CF_generic
+            # because it had trouble with the time conversion inside the reader
+            # Doing it like this is a hack to get around this issue, as the time gets handled by xarray
+            # rather than by netCDF4's num2date function as done in the reader 
+            Dataset = xr.open_dataset(wind_file, decode_times=True) # decode_times=True is the default 
+            reader_wind = reader_netCDF_CF_generic.Reader(Dataset)    
             o.add_reader(reader_wind)
     except:
         print('no wind forcing defined, running without wind')

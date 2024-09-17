@@ -82,8 +82,8 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those inside the docker image used to run operationally 
-croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc',
-        '/mnt/tmp/sa_west_02/croco_v1.3.1/C01_I99_OGCM_WIND/output/croco_avg.nc'
+croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C03_I99_OGCM_WIND/output/croco_avg.nc',
+        '/mnt/tmp/sa_west_02/croco_v1.3.1/C03_I99_OGCM_WIND/output/croco_avg.nc'
         ]
 
 # ogcm file, as downloaded using the somisana pre-processing tools
@@ -129,8 +129,9 @@ wind_drift_factor=0.03
 loglevel = 50
 #
 # run duration in days
-# make sure the run duration doesn't exceed the temporal range of your inputs!
-run_dur = 0.25
+# default is None, in which case it will be dynamically defined based on the input forcing
+# if explicitly defined, make sure the run duration doesn't exceed the temporal range of your inputs!
+run_dur = None 
 #
 # number of particles to release
 # generally the more the better, but there are computational limits
