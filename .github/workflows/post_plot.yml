@@ -119,7 +119,7 @@ jobs:
 
   # copy data over to where it will be archived
   archive:
-    needs: [gridding,gridding,permissions,plotting]
+    needs: [gridding,permissions,plot_gridded, plot_particles]
     runs-on: ${{ inputs.RUNNER_NAME }}
     env:
       ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}-${{ inputs.WIND }}
