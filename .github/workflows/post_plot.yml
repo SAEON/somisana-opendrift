@@ -88,6 +88,8 @@ jobs:
     needs: [gridding]
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
+      - name: make animation of the gridded output
+        run: |
           # animation of the gridded output
           docker run \
             --rm \
