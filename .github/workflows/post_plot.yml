@@ -66,8 +66,7 @@ jobs:
                 --extents ${{ inputs.EXTENTS }} \
                 --dx_m ${{ inputs.DX_M }}
 
-  plotting:
-    needs: [gridding]
+  plot_particles:
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: make animation of the particles
@@ -82,8 +81,13 @@ jobs:
               animate  \
                 --type particles \
                 --config_dir ${{ env.RUN_DIR_DOCKER }} \
-                --extents ${{ inputs.EXTENTS }}
+                --extents ${{ inputs.EXTENTS }} \
+                --gif_out trajectories.gif
           
+  plot_gridded:
+    needs: [gridding]
+    runs-on: ${{ inputs.RUNNER_NAME }}
+    steps:
           # animation of the gridded output
           docker run \
             --rm \
@@ -93,10 +97,11 @@ jobs:
               animate  \
                 --type gridded  \
                 --config_dir ${{ env.RUN_DIR_DOCKER }} \
-                --extents ${{ inputs.EXTENTS }}
+                --extents ${{ inputs.EXTENTS }} \
+                --gif_out gridded.gif
 
   permissions:
-    needs: [gridding,plotting]
+    needs: [gridding,plot_gridded,plot_particles]
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: set permissions of output
