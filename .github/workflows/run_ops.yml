@@ -17,8 +17,8 @@ on:
         required: true
         type: boolean
         default: true
-      do_plots:
-        description: 'do the plots?'
+      do_post:
+        description: 'do the postprocessing?'
         required: true
         type: boolean
         default: true
@@ -90,9 +90,10 @@ jobs:
       OGCM: ${{ matrix.ogcm }}
   
   # do some postprocessing and plotting
+  # (could maybe separate the gridding, plotting and archiving into different jobs?)
   post_plot:
     needs: [envs,run_model]
-    if: ${{ always() && github.event.inputs.do_plots == 'true' }}
+    if: ${{ always() && github.event.inputs.do_post == 'true' }}
     strategy:
       matrix:
         # matrix strategy allows us to run different model forcings in parallel
@@ -108,4 +109,4 @@ jobs:
       WIND: ${{ matrix.wind }}
       OGCM: ${{ matrix.ogcm }}
 
-  # Archive output
+  # get some combined output from runs with different forcings?

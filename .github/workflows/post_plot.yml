@@ -127,11 +127,11 @@ jobs:
         run: |
           # only copy if we're on the main branch
           # we need to use sudo since the archive directory is owned by root
+          # we have set up the somisana user to be able to do this without the need for a password
           if [ ${{ inputs.BRANCH_REF }} = "main" ]; then
             if [ ! -d ${{ env.ARCHIVE_DIR }} ]; then
               sudo mkdir -p ${{ env.ARCHIVE_DIR }}
               sudo chmod -R 775 ${{ env.ARCHIVE_DIR }}
             fi
-            # we have set up the somisana user to be able to do this without the need for a password
-            sudo cp ${{ env.RUN_DIR }}/* ${{ env.ARCHIVE_DIR }}
+            sudo cp -f ${{ env.RUN_DIR }}/* ${{ env.ARCHIVE_DIR }}
           fi

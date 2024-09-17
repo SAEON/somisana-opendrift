@@ -110,7 +110,7 @@ loglevel = 50
 #
 # run duration in days
 # make sure the run duration doesn't exceed the temporal range of your inputs!
-run_dur = 0.25
+# run_dur = 0.25
 #
 # number of particles to release
 # generally the more the better, but there are computational limits

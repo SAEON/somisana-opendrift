@@ -78,7 +78,8 @@ def oceandrift(config_dir):
     # --------------
     #
     fname = config_dir+'/trajectories.nc' # keeping the filename generic
-    o.run(duration=timedelta(days=config.run_dur), time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
+    #o.run(duration=timedelta(days=config.run_dur), time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
+    o.run(time_step=timedelta(minutes=config.time_step), time_step_output=timedelta(minutes=config.time_step_output), outfile=fname) 
     
     # --------
     # cleanup
