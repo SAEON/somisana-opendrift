@@ -25,10 +25,30 @@ def parse_datetime(value):
         raise argparse.ArgumentTypeError("Invalid datetime format. Please use 'YYYYMMDD_HH'.")
 
 def parse_list(value):
-    if value is not None:
-        return [float(x.strip()) for x in value.split(',')]
-    else:
+    if value is None or value == 'None':
         return None
+    else:
+        return [float(x.strip()) for x in value.split(',')]
+
+def parse_float(value):
+    if value is None or value == 'None':
+        return None
+    else:
+        return float(value)
+
+def parse_bool(s: str) -> bool:
+    try:
+        return {'true':True, 'false':False}[s.lower()]
+    except KeyError:
+        raise argparse.ArgumentTypeError(f'expect true/false, got: {s}')
+
+def parse_str(value):
+    if value is None:
+        return None
+    try:
+        return str(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid string: {value}")
 
 def main():
     
@@ -52,7 +72,7 @@ def main():
         elif args.model_type == 'oceandrift':
             run_oceandrift(args.config_dir)
         else:
-            print('model_type not recognised: ' + args.model_type)
+            raise argparse.ArgumentTypeError(f"Invalid model_type: {args.model_type}")
     parser_run_model.set_defaults(func=run_model_handler)
     
     # -------------------------
@@ -62,11 +82,12 @@ def main():
             help='convert the particle output of an OpenDrift simulation to a eulerian grid')
     parser_grid_particles.add_argument('--config_dir', required=True, type=str, help='Directory where the OpenDrift output is located')
     parser_grid_particles.add_argument('--fname', required=False, type=str, default='trajectories.nc', help='the OpenDrift output filename')
-    parser_grid_particles.add_argument('--fname_gridded', required=False, type=str, default='gridded_density.nc', help='the gridded filename')
+    parser_grid_particles.add_argument('--fname_gridded', required=False, type=str, default='gridded.nc', help='the gridded filename')
     parser_grid_particles.add_argument('--grid_type', required=False, type=str, default='density', help='what kind of gridding to do. Options are \'density\', \'surface_oil\', \'stranded_oil\'')
     parser_grid_particles.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the grid in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
-    parser_grid_particles.add_argument('--dx_m', required=False, type=float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
-    parser_grid_particles.add_argument('--max_only', required=False, action='store_true', help='option to only write the maximum over the entire file to save disk space (set this flag to enable)')
+    parser_grid_particles.add_argument('--dx_m', required=False, type=parse_float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
+    parser_grid_particles.add_argument('--max_only', required=False, type=parse_bool, default=False,
+            help='option to only write the maximum over the entire file to save disk space (set to true or false)')
     def grid_particles_handler(args):
         fname = os.path.join(args.config_dir,args.fname)
         fname_gridded = os.path.join(args.config_dir,args.fname_gridded)
@@ -92,58 +113,46 @@ def main():
         oil_massbal(fname, fname_out)
     parser_oil_massbal.set_defaults(func=oil_massbal_handler)
     
-    # ----------------------------------------------
-    # do a plot or animation of the particle output
-    # ----------------------------------------------
-    parser_plot_particles = subparsers.add_parser('plot_particles', 
-            help='do a plot or an animation of the particle output of an OpenDrift simulation')
-    parser_plot_particles.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
-    def plot_particles_handler(args):
-        # the input options passed by the cli is not exhaustive
-        # just intended to provide a quick animation as part of the operational workflow
-        sys.path.append(args.config_dir)
-        import config
-        fname = os.path.join(args.config_dir,config.fname)
-        gif_out_particles = os.path.join(args.config_dir,config.gif_out_particles)
-        plot_particles(fname,
-                        figsize=config.figsize,
-                        extents=config.plot_extents,
-                        lscale=config.lscale,
-                        lon_release=config.lon_release,
-                        lat_release=config.lat_release,
-                        size_release=config.size_release,
-                        size_scat=config.size_scat,
-                        gif_out=gif_out_particles,
-                        write_gif=config.write_gif,
-                        skip_time=config.skip_time,
-                        tstep_end=config.tstep_end)
-    parser_plot_particles.set_defaults(func=plot_particles_handler)
-    
-    # ----------------------------------------------
-    # do a plot or animation of the gridded output
-    # ----------------------------------------------
-    parser_plot_gridded = subparsers.add_parser('plot_gridded', 
-            help='do a plot or an animation of the gridded output from the grid_particles function')
-    parser_plot_gridded.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
-    def plot_gridded_handler(args):
-        # the input options passed by the cli is not exhaustive
-        # just intended to provide a quick animation as part of the operational workflow
-        sys.path.append(args.config_dir)
-        import config
-        fname_gridded = os.path.join(args.config_dir,config.fname_gridded)
-        gif_out_gridded = os.path.join(args.config_dir,config.gif_out_gridded)
-        plot_gridded(fname_gridded,
-                        figsize=config.figsize,
-                        extents=config.plot_extents,
-                        lscale=config.lscale,
-                        lon_release=config.lon_release,
-                        lat_release=config.lat_release,
-                        size_release=config.size_release,
-                        gif_out=gif_out_gridded,
-                        write_gif=config.write_gif,
-                        skip_time=config.skip_time,
-                        tstep_end=config.tstep_end)
-    parser_plot_gridded.set_defaults(func=plot_gridded_handler)
+    # -----------------------------------------------
+    # do an animation of the particle/gridded output
+    # -----------------------------------------------
+    parser_animate = subparsers.add_parser('animate', 
+            help='do an animation of the particle/gridded output')
+    parser_animate.add_argument('--type', required=True, type=str, help='either gridded or particles')
+    parser_animate.add_argument('--config_dir', required=True, type=str, help='Directory where the output files are located')
+    parser_animate.add_argument('--fname_gridded', required=False, type=str, default='gridded.nc', help='the gridded filename')
+    parser_animate.add_argument('--fname_particles', required=False, type=str, default='trajectories.nc', help='the raw OpenDrift particle output filename')
+    parser_animate.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the plot in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
+    parser_animate.add_argument('--lscale', required=False, type=str, default='h', help='land resolution, with options c,l,i,h,f and auto')
+    parser_animate.add_argument('--write_gif', required=False, type=parse_bool, default=True, help='write a gif? (true or false)')
+    parser_animate.add_argument('--gif_out', required=False, type=parse_str, default=None, help='the output gif filename')
+    def animate_handler(args):
+        # the input options passed by the cli is not exhaustive to the plotting functions
+        # this is just intended to provide a quick animation as part of the operational workflow
+        # the input cli arguments could easily be extended if deemed necessary
+        fname_gridded = os.path.join(args.config_dir,args.fname_gridded)
+        fname_particles = os.path.join(args.config_dir,args.fname_particles)
+        if args.gif_out is None: # we need this if/else to ensure the os.path.join() gets a string, not a None
+            gif_out = None
+        else:
+            gif_out = os.path.join(args.config_dir,args.gif_out)
+        
+        if args.type == 'gridded':
+            plot_gridded(fname_gridded,
+                            fname_particles=fname_particles,
+                            extents=args.extents,
+                            lscale=args.lscale,
+                            gif_out=gif_out,
+                            write_gif=args.write_gif)
+        elif args.type == 'particles':
+            plot_particles(fname_particles,
+                            extents=args.extents,
+                            lscale=args.lscale,
+                            gif_out=gif_out,
+                            write_gif=args.write_gif)
+        else:
+            raise argparse.ArgumentTypeError(f"Invalid animation type: {args.type}")
+    parser_animate.set_defaults(func=animate_handler)
     
     # ----------------
     # run_stochastic
@@ -175,7 +184,8 @@ def main():
     parser_grid_stochastic.add_argument('--grid_type', required=False, type=str, default='density', help='what kind of gridding to do. Options are \'density\', \'surface_oil\', \'stranded_oil\'')
     parser_grid_stochastic.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the grid in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
     parser_grid_stochastic.add_argument('--dx_m', required=False, type=float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
-    parser_grid_stochastic.add_argument('--max_only', required=False, action='store_true', help='option to only write the maximum over the entire file to save disk space (set this flag to enable)')
+    parser_grid_stochastic.add_argument('--max_only', required=False, type=parse_bool, default=False,
+            help='option to only write the maximum over the entire file to save disk space (set to true or false)')
     def grid_stochastic_handler(args):
         stoch = grid_stochastic(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, 
                                 fname_gridded=args.fname_gridded,

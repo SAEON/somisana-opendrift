@@ -148,29 +148,3 @@ vert_mix_tstep=60
 # output timestep in minutes
 time_step_output=60
 
-# -----------------
-# plotting options
-# -----------------
-#
-# options for doing some standardised animations as part of the operational work flow
-# the options here are non-exhaustive and are mostly related to the sizing of the plot
-# (used in cli.py for calling the plot_particles and plot_gridded functions as part of the operational workflow
-# for local work, it'll be easier to call the functions directly in your own python script)
-#
-fname='trajectories.nc'
-fname_gridded='gridded_density.nc'
-# options related to the figure layout
-figsize=(8,4) # (hz,vt)
-plot_extents = [25.5,26.5,-34.1,-33.6] # spatial extent to plot [lon0,lon1,lat0,lat1]
-lscale = 'h' # resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
-size_release = 50
-# options relating to the dispaly of data
-size_scat = 20 # size of the scatter data to be plotted
-# by default the particles will just be plotted as black
-# options related to the animation
-write_gif=True
-skip_time = 1 # every nth time-step will be animated (if provided)
-tstep_end=None # The last timestep to animate. Only used if write_gif = True. If None, then it'll animate to the end of the file
-gif_out_particles='trajectories.gif' # filename of the gif file
-gif_out_gridded='gridded_density.gif' # filename of the gif file
-

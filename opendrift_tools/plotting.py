@@ -41,29 +41,34 @@ def extents_2_polygon(extents):
                                     [extents[0], extents[3]]]))
     return extents_poly
 
-def setup_plot(ax, lon, lat, extents=[], lscale='auto'):
+def get_extents(lon, lat):
+    lon_min = np.nanmin(np.ravel(lon))
+    lon_max = np.nanmax(np.ravel(lon))
+    lat_min = np.nanmin(np.ravel(lat))
+    lat_max = np.nanmax(np.ravel(lat))
+    factor=0.05 # factor of domain size used to get dl
+    dl = 0.5 * (lon_max - lon_min + lat_max - lat_min) * factor
+    extents=[lon_min-dl,lon_max+dl,lat_min-dl,lat_max+dl]
+    return extents
+
+def setup_plot(ax, lon, lat, extents=None, lscale='auto'):
     '''
     generic stuff applicable to all 2D plots
     lon = array of longitudes being plotted
     lat = array of latitudes being plotted
-    extents = [lon_min, lon_max, lat_min, lat_max]
+    extents = [lon_min, lon_max, lat_min, lat_max], set dynamically if None
     lscale = resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
     '''
     # first need to get the domain extents if it's not set autmatically
-    if len(extents) == 0:
-        lon_min = min(np.ravel(lon))
-        lon_max = max(np.ravel(lon))
-        lat_min = min(np.ravel(lat))
-        lat_max = max(np.ravel(lat))
-        factor=0.05 # factor of domain size used to get dl
-        dl = 0.5 * (lon_max - lon_min + lat_max - lat_min) * factor
-        extents=[lon_min-dl,lon_max+dl,lat_min-dl,lat_max+dl]
-    else:
-        lon_min=extents[0]
-        lon_max=extents[1]
-        lat_min=extents[2]
-        lat_max=extents[3]
+    if extents is None:
+        extents = get_extents(lon, lat)
+    
     ax.set_extent(extents)
+    
+    lon_min=extents[0]
+    lon_max=extents[1]
+    lat_min=extents[2]
+    lat_max=extents[3]
     
     # using opendrifts landmask plotting routine...
     reader_global_landmask.plot_land(ax, lon_min, lat_min, lon_max,
@@ -105,19 +110,27 @@ def add_text(ax,
     
     return time_plt
 
-def add_cbar(var_plt,
+def plot_cbar(ax,var_plt,
              ticks=[],
              tick_font = 12,
              label='values',
              label_font=14,
-             loc=[1., 0.2, 0.02, 0.6], # [left, bottom, width, height]
+             loc=None, # [left, bottom, width, height]
+             aspect_ratio=1,
              orientation='vertical'):
     
     '''
     Add a colorbar to a plot
     '''
+    if loc is None:
+        # dynamically position to colorbar
+        colorbar_offset = 0.05  # Fixed offset from the right of the plot
+        x_position = 0.8 + colorbar_offset * (1 / aspect_ratio)
+        x_thickness = 0.02/aspect_ratio
+        loc = [x_position, 0.2, x_thickness, 0.6]
     
     cbarax = plt.gcf().add_axes(loc) 
+    
     cbar_plt = plt.colorbar(var_plt, cbarax,
                         ticks=ticks,
                         orientation=orientation)
@@ -129,21 +142,17 @@ def add_cbar(var_plt,
 def plot_particles(fname,
         ax=None, # allowing for adding to an existing axis
         var_str='z', # variable to plot
-        tstep=0, # the step to plot, or the first step to animate.
-        # options related to the figure layout
-        figsize=(6,6), # (hz,vt)        
-        extents = [], # [lon0,lon1,lat0,lat1]
+        tstep=0, # the step to plot, or the first step to animate.    
+        extents = None, # [lon0,lon1,lat0,lat1]
         lscale = 'auto', # resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
         # options relating to the release location
-        lon_release=None, 
-        lat_release=None,
         size_release = 50,
         # options relating to the dispaly of data, colormap and colorbar
         size_scat = 20, # size of the scatter data to be plotted
         ticks = [-9999,-9998], # the ticks to plot relating to the colormap (can be irregularly spaced)
         cmap = 'Greys', # colormap to use
-        plot_cbar = False,
-        cbar_loc = [0.9, 0.2, 0.02, 0.6], # where on the plot to put the colorbar
+        add_cbar = False,
+        cbar_loc = None, # where on the plot to put the colorbar
         cbar_label = 'depth (m)',
         # options related to the plot output file
         jpg_out=None, # filename of the jpg file
@@ -163,7 +172,31 @@ def plot_particles(fname,
     # get the data
     ds = xr.open_dataset(fname)
     ds = post.fill_deactivated(ds)
-    time_start = ds.time.data[0]
+    lon=ds.lon.values
+    lat=ds.lat.values
+    time_start = ds.time.data[0] # start of the release, not the time of the plot
+    
+    # automatically set the figure size based on the aspect ratio of the domain being plotted
+    if extents is None:
+        extents = get_extents(lon, lat)
+    d_lon = extents[1] - extents[0]
+    d_lat = extents[3] - extents[2]
+    aspect_ratio = d_lon/d_lat
+    # set figsize according to the aspect ratio of the data
+    if aspect_ratio>1:
+        figsize = (6*aspect_ratio,6)
+    else:
+        figsize = (6,6/aspect_ratio)
+    #
+    if ax is None:
+        fig = plt.figure(figsize=figsize) 
+        ax = plt.axes(projection=ccrs.Mercator())
+        setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
+        
+    # dynamically get the release location from the particle locations at the first time-step
+    ds_start = ds.isel(time=0)
+    lon_release=np.nanmean(ds_start.lon.values)
+    lat_release=np.nanmean(ds_start.lat.values)
     
     # subset to the time-step
     ds_tstep = post.subset_tstep(ds,tstep)
@@ -177,12 +210,6 @@ def plot_particles(fname,
     ds_strand_tstep=ds_tstep.where(ds_tstep.status==stranded_flag)
     lon_strand=ds_strand_tstep.lon.values
     lat_strand=ds_strand_tstep.lat.values
-    
-    # set up the plot
-    if ax is None:
-        fig = plt.figure(figsize=figsize) 
-        ax = plt.axes(projection=ccrs.Mercator())
-        setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
         
     # set up the cmap to handle non-uniform input ticks
     if len(ticks)==0:
@@ -201,15 +228,14 @@ def plot_particles(fname,
     scat_strand = ax.scatter(lon_strand,lat_strand, s=size_scat, color='r', 
                       transform=ccrs.PlateCarree())
     
-    if lon_release is not None:
-        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
+    ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
     
     tx_time = get_time_txt(ax, time_plot, time_start)
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     
-    if plot_cbar:
-        add_cbar(scat,label=cbar_label,ticks=ticks,loc=cbar_loc)
-    
+    if add_cbar:
+        plot_cbar(ax,scat,label=cbar_label,ticks=ticks,loc=cbar_loc,aspect_ratio=aspect_ratio)
+        
     # write a jpg if specified
     if write_jpg:
         if jpg_out is None:
@@ -279,23 +305,19 @@ def lonlat_2_corners(lon,lat):
     return lon_out,lat_out
 
 def plot_gridded(fname,
+        fname_particles='trajectories.nc', # used for extracting the release location of the particles
         ax=None, # allowing for adding to an existing axis
         var_str='particle_density', # variable to plot
         tstep=0, # the step to plot, or the first step to animate.
-        # options related to the figure layout
-        figsize=(6,6), # (hz,vt)        
-        extents = [], # [lon0,lon1,lat0,lat1]
+        extents = None, # [lon0,lon1,lat0,lat1]
         lscale = 'auto', # resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
-        # options relating to the release location
-        lon_release=None, 
-        lat_release=None,
         size_release = 50,
         # options relating to the dispaly of data, colormap and colorbar
-        ticks = np.linspace(0,0.2,num=11), # the ticks to plot relating to the colormap (can be irregularly spaced)
+        ticks = [0,1,2,3,5,10,15], # np.linspace(0,0.2,num=11), # the ticks to plot relating to the colormap (can be irregularly spaced)
         cmap = 'Spectral_r', # colormap to use
-        plot_cbar = False,
-        cbar_loc = [0.9, 0.2, 0.02, 0.6], # where on the plot to put the colorbar
-        cbar_label = 'particle density (-)',
+        add_cbar = True,
+        cbar_loc = None, # where on the plot to put the colorbar
+        cbar_label = 'particle density (%)',
         # options related to the plot output file
         jpg_out=None, # filename of the jpg file
         write_jpg=False,
@@ -314,16 +336,33 @@ def plot_gridded(fname,
     # get the data
     ds = xr.open_dataset(fname)
     time_start = ds.time.data[0]
+    lon=ds.lon_bin.values
+    lat=ds.lat_bin.values
+    lon,lat=lonlat_2_corners(lon,lat)
     
     # only plot where data shows up
     ds=ds.where(ds[var_str]>0.0)
     
+    # automatically set the figure size based on the aspect ratio of the domain being plotted
+    if extents is None:
+        extents = get_extents(lon, lat)
+    d_lon = extents[1] - extents[0]
+    d_lat = extents[3] - extents[2]
+    aspect_ratio = d_lon/d_lat
+    # set figsize according to the aspect ratio of the data
+    if aspect_ratio>1:
+        figsize = (6*aspect_ratio,6)
+    else:
+        figsize = (6,6/aspect_ratio)
+    #
+    if ax is None:
+        fig = plt.figure(figsize=figsize) 
+        ax = plt.axes(projection=ccrs.Mercator())
+        setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
+    
     # subset to the time-step
     ds_tstep = post.subset_tstep(ds,tstep)
     time_plot = ds_tstep.time.values
-    lon=ds_tstep.lon_bin.values
-    lat=ds_tstep.lat_bin.values
-    lon,lat=lonlat_2_corners(lon,lat)
     var_data = ds_tstep[var_str].values
     
     # set up the plot
@@ -346,15 +385,20 @@ def plot_gridded(fname,
                               norm=cmap_norm,
                               transform=ccrs.PlateCarree())
     
-    if lon_release is not None:
-        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
+    # dynamically get the release location from the particle locations at the first time-step
+    ds_part = xr.open_dataset(fname_particles)
+    ds_part = post.fill_deactivated(ds_part)
+    ds_part_start = ds_part.isel(time=0)
+    lon_release=np.nanmean(ds_part_start.lon.values)
+    lat_release=np.nanmean(ds_part_start.lat.values)
+    ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
     
     tx_time = get_time_txt(ax, time_plot, time_start)
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     
-    if plot_cbar:
-        add_cbar(var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
-    
+    if add_cbar:
+        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc,aspect_ratio=aspect_ratio)
+        
     # write a jpg if specified
     if write_jpg:
         if jpg_out is None:
@@ -389,21 +433,17 @@ def plot_gridded(fname,
     return ax
 
 def plot_gridded_stats(fname,
+        fname_particles='trajectories.nc', # used for extracting the release location of the particles
         ax=None, # allowing for adding to an existing axis
-        var_str='probability', # variable to plot
-        # options related to the figure layout
-        figsize=(6,6), # (hz,vt)        
-        extents = [], # [lon0,lon1,lat0,lat1]
+        var_str='probability', # variable to plot      
+        extents = None, # [lon0,lon1,lat0,lat1]
         lscale = 'auto', # resolution of land feature ('c', 'l', 'i', 'h', 'f', 'auto')
-        # options relating to the release location
-        lon_release=None, 
-        lat_release=None,
         size_release = 50,
         # options relating to the dispaly of data, colormap and colorbar
         ticks = np.linspace(0,1,num=11), # the ticks to plot relating to the colormap (can be irregularly spaced)
         cmap = 'Spectral_r', # colormap to use
-        plot_cbar = False,
-        cbar_loc = [0.9, 0.2, 0.02, 0.6], # where on the plot to put the colorbar
+        add_cbar = True,
+        cbar_loc = None, # where on the plot to put the colorbar
         cbar_label = 'probability of occurrence (-)',
         # options related to the plot output file
         jpg_out=None, # filename of the jpg file
@@ -416,16 +456,31 @@ def plot_gridded_stats(fname,
     
     # get the data
     ds = xr.open_dataset(fname)
+    lon=ds.lon_bin.values
+    lat=ds.lat_bin.values
+    lon,lat=lonlat_2_corners(lon,lat)
+    
+    # get the data
+    ds = xr.open_dataset(fname)
     
     # only plot where data shows up
     ds=ds.where(ds[var_str]>0.0)
     
-    # subset to the time-step
-    lon=ds.lon_bin.values
-    lat=ds.lat_bin.values
-    lon,lat=lonlat_2_corners(lon,lat)
+    # get the data to plot
     var_data = ds[var_str].values
     
+    # automatically set the figure size based on the aspect ratio of the domain being plotted
+    if extents is None:
+        extents = get_extents(lon, lat)
+    d_lon = extents[1] - extents[0]
+    d_lat = extents[3] - extents[2]
+    aspect_ratio = d_lon/d_lat
+    # set figsize according to the aspect ratio of the data
+    if aspect_ratio>1:
+        figsize = (6*aspect_ratio,6)
+    else:
+        figsize = (6,6/aspect_ratio)
+        
     # set up the plot
     if ax is None:
         fig = plt.figure(figsize=figsize) 
@@ -446,12 +501,17 @@ def plot_gridded_stats(fname,
                               norm=cmap_norm,
                               transform=ccrs.PlateCarree())
     
-    if lon_release is not None:
-        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
+    # dynamically get the release location from the particle locations at the first time-step
+    ds_part = xr.open_dataset(fname_particles)
+    ds_part = post.fill_deactivated(ds_part)
+    ds_part_start = ds_part.isel(time=0)
+    lon_release=np.nanmean(ds_part_start.lon.values)
+    lat_release=np.nanmean(ds_part_start.lat.values)
+    ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
+       
+    if add_cbar:
+        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc,aspect_ratio=aspect_ratio)
         
-    if plot_cbar:
-        add_cbar(var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
-    
     # write a jpg if specified
     if write_jpg:
         if jpg_out is None:

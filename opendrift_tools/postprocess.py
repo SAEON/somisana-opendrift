@@ -139,11 +139,12 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         h = h.transpose("time", "lat_bin", "lon_bin")
         # normalise so that the data represents the particle density
         # i.e. the sum over the heat map should add up to 1
-        h = h / len(lon)
+        # then we multiply by 100 to get percent
+        h = 100 * h / len(lon)
         
         # convert oil volume per grid cell into oil thickness in micron
         h=h.rename('particle_density')
-        h.attrs["units"] = '-'
+        h.attrs["units"] = '% particles'
         
         h_time_min = get_time_min(h)
         
@@ -151,7 +152,7 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         h_max=h.max(('time'))
         h_max=h_max.rename('maximum')
         h_max.attrs["standard_name"] = 'maximum_particle_density'
-        h_max.attrs["units"] = 'micron'
+        h_max.attrs["units"] = '% particles'
         
         if max_only:
             ds_out = xr.Dataset({'minimum_time': h_time_min, 'maximum': h_max})

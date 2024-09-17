@@ -31,6 +31,15 @@ on:
         description: 'name of boundary forcing e.g. MERCATOR' 
         required: true
         type: string
+      EXTENTS:
+        description: 'spatial extent of the gridded output and plot, in format lon0,lon1,lat0,lat1. If None, then this is dynamically determined from the geographic extent of the particles'
+        required: true
+        type: string
+      DX_M:
+        description: 'grid size (m) used to grid particle output. If None, If None, then a 50 x 50 regular grid is generated'
+        required: true
+        type: string
+
 
 env:
   # the directory to get mounted when running the docker image
@@ -41,28 +50,7 @@ env:
   RUN_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
 
 jobs:
-  setup-run-dir:
-  # this is partly a repeat of what was already done in run_model.yml, but it's here in case the user wants to update the configurable plot options without re-running the model each time   
-    runs-on: ${{ inputs.RUNNER_NAME }}
-    steps:
-      - name: Check out source code so have access to the files in the repo
-        uses: actions/checkout@main
-        with:
-          ref: ${{ inputs.BRANCH_REF }}
-
-      - name: replace the config file on the local server 
-        run: |
-          OGCM=${{ inputs.OGCM }}
-          WIND=${{ inputs.WIND }} 
-          sed -e 's/OGCM/'$OGCM'/g' -e 's/WIND/'$WIND'/g' < configs/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config.py
-
-      - name: add permissions to the config file
-        run: |
-          chmod -R 774 ${{ env.RUN_DIR }}
-        continue-on-error: true
-
   gridding:
-    needs: [setup-run-dir]
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: go from particle trajectories to a Eulerian grid of particle density
@@ -74,7 +62,9 @@ jobs:
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               grid_particles  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }}
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --extents ${{ inputs.EXTENTS }} \
+                --dx_m ${{ inputs.DX_M }}
 
   plotting:
     needs: [gridding]
@@ -89,8 +79,10 @@ jobs:
             --user root \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              plot_particles  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }}
+              animate  \
+                --type particles \
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --extents ${{ inputs.EXTENTS }}
           
           # animation of the gridded output
           docker run \
@@ -98,8 +90,10 @@ jobs:
             --user root \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              plot_gridded  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }}
+              animate  \
+                --type gridded  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --extents ${{ inputs.EXTENTS }}
 
   permissions:
     needs: [gridding,plotting]
