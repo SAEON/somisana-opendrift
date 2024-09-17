@@ -115,3 +115,23 @@ jobs:
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               -c "chown -R $(id -u):$(id -g) ${{ env.RUN_DIR_DOCKER }}"
+
+  # copy data over to where it will be archived
+  archive:
+    needs: [gridding,gridding,permissions,plotting]
+    runs-on: ${{ inputs.RUNNER_NAME }}
+    env:
+      ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}-${{ inputs.WIND }}
+    steps:
+      - name: copy files to the archive directory if needed
+        run: |
+          # only copy if we're on the main branch
+          # we need to use sudo since the archive directory is owned by root
+          if [ ${{ inputs.BRANCH_REF }} = "main" ]; then
+            if [ ! -d ${{ env.ARCHIVE_DIR }} ]; then
+              sudo mkdir -p ${{ env.ARCHIVE_DIR }}
+              sudo chmod -R 775 ${{ env.ARCHIVE_DIR }}
+            fi
+            # we have set up the somisana user to be able to do this without the need for a password
+            sudo cp ${{ env.RUN_DIR }}/* ${{ env.ARCHIVE_DIR }}
+          fi
