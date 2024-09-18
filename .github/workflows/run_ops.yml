@@ -100,8 +100,7 @@ jobs:
       OGCM: ${{ matrix.ogcm }}
   
   # do some postprocessing and plotting
-  # (could maybe separate the gridding, plotting and archiving into different jobs?)
-  post_plot:
+  postprocess:
     needs: [envs,run_model]
     if: ${{ always() && github.event.inputs.do_post == 'true' }}
     strategy:
@@ -109,7 +108,7 @@ jobs:
         # matrix strategy allows us to run different model forcings in parallel
         wind: ['GFS']
         ogcm: ['MERCATOR']
-    uses: ./.github/workflows/post_plot.yml  # Path to your reusable workflow
+    uses: ./.github/workflows/postprocess.yml  # Path to your reusable workflow
     with:
       MODEL_TYPE: ${{ github.event.inputs.model_type }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}

@@ -106,7 +106,7 @@ def main():
             help='compute the mass balance for an OpenOil simulation')
     parser_oil_massbal.add_argument('--config_dir', required=True, type=str, help='Directory where the OpenOil output is located')
     parser_oil_massbal.add_argument('--fname', required=False, type=str, default='trajectories.nc', help='the OpenOil output filename')
-    parser_oil_massbal.add_argument('--fname_out', required=False, type=str, default='gridded.nc', help='the mass balance filename')
+    parser_oil_massbal.add_argument('--fname_out', required=False, type=str, default='oil_mass_balance.nc', help='the mass balance filename')
     def oil_massbal_handler(args):
         fname = os.path.join(args.config_dir,args.fname)
         fname_out = os.path.join(args.config_dir,args.fname_out)
@@ -122,8 +122,14 @@ def main():
     parser_animate.add_argument('--config_dir', required=True, type=str, help='Directory where the output files are located')
     parser_animate.add_argument('--fname_gridded', required=False, type=str, default='gridded.nc', help='the gridded filename')
     parser_animate.add_argument('--fname_particles', required=False, type=str, default='trajectories.nc', help='the raw OpenDrift particle output filename')
+    parser_animate.add_argument('--var_str', required=False, default='particle_density', type=str, help='the variable name to plot')
     parser_animate.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the plot in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
     parser_animate.add_argument('--lscale', required=False, type=str, default='h', help='land resolution, with options c,l,i,h,f and auto')
+    parser_animate.add_argument('--ticks', required=False, type=parse_list,
+                         default=[0,1,2,3,5,10,15],
+                         help='contour ticks to use in plotting the variable')
+    parser_animate.add_argument('--cbar_label', required=False, default='particle density (%)', type=str, help='the label used for the colorbar')
+    parser_animate.add_argument('--cmap', required=False, default='Spectral_r', type=str, help='the colormap to use')
     parser_animate.add_argument('--write_gif', required=False, type=parse_bool, default=True, help='write a gif? (true or false)')
     parser_animate.add_argument('--gif_out', required=False, type=parse_str, default=None, help='the output gif filename')
     def animate_handler(args):
@@ -140,8 +146,12 @@ def main():
         if args.type == 'gridded':
             plot_gridded(fname_gridded,
                             fname_particles=fname_particles,
+                            var_str=args.var_str,
                             extents=args.extents,
                             lscale=args.lscale,
+                            ticks=args.ticks,
+                            cbar_label=args.cbar_label,
+                            cmap=args.cmap,
                             gif_out=gif_out,
                             write_gif=args.write_gif)
         elif args.type == 'particles':
