@@ -521,13 +521,48 @@ def plot_gridded_stats(fname,
     
     return ax
     
+def plot_budget(fname, fname_out,
+                figsize=(8,4),
+                xlims=None,
+                ylims=None,
+                legend_loc="upper right",
+                ):
+    # plot the oil mass balance for a single OpenOil simulation
+
+    # get the data 
+    ds = xr.open_dataset(fname)
+    ds_total = ds.subsurface+ds.surface+ds.stranded+ds.evaporated
+    
+    # plot the timeseries
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(ds.time, ds.subsurface, label='subsurface', color = 'blue')
+    ax.plot(ds.time, ds.surface, label='surface', color = 'green')
+    ax.plot(ds.time, ds.evaporated, label='evaporated', color = 'orange')
+    ax.plot(ds.time, ds.stranded, label='stranded', color = 'red')
+    ax.plot(ds.time, ds_total, label='total', color = 'purple')
+    # (total oil should have no variability)
+    
+    # format the axes
+    ax.set_xlabel('time',fontsize=12)
+    if xlims is not None:
+        ax.set_xlim(xlims[0], xlims[1])
+    ax.set_ylabel('mass of oil (kg)',fontsize=12)
+    if ylims is not None:
+        ax.set_ylim(ylims[0], ylims[1])
+    ax.grid(linestyle='-', linewidth=0.3)
+    ax.legend(loc=legend_loc, frameon=False)
+    
+    # save the figure
+    ds.close()
+    plt.savefig(fname_out,dpi=500,bbox_inches = 'tight')
+
 def plot_stochastic_budget(fname, fname_out,
                 figsize=(8,4),
                 xlims=[],
                 ylims=[],
                 legend_loc="upper right",
                 ):
-    
+    # plot the output from the stochasitic_massbal function - see opendrift_tools/stochastic.py
     ds = xr.open_dataset(fname)
     
     # ds_mean = ds.mean(dim='iteration')

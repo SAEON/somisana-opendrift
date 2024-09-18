@@ -14,7 +14,7 @@ from opendrift_tools.run import oil as run_oil
 from opendrift_tools.run import leeway as run_leeway
 from opendrift_tools.run import oceandrift as run_oceandrift
 from opendrift_tools.postprocess import grid_particles, oil_massbal
-from opendrift_tools.plotting import plot_particles, plot_gridded
+from opendrift_tools.plotting import plot_particles, plot_gridded, plot_budget
 from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats, stochasitic_massbal
 
 # functions to help parsing string input to object types needed by python functions
@@ -112,6 +112,20 @@ def main():
         fname_out = os.path.join(args.config_dir,args.fname_out)
         oil_massbal(fname, fname_out)
     parser_oil_massbal.set_defaults(func=oil_massbal_handler)
+    
+    # -------------------------------------------
+    # plot the oil mass balance of an OpenOil run
+    # -------------------------------------------
+    parser_plot_budget = subparsers.add_parser('plot_budget', 
+            help='plot the mass balance for an OpenOil simulation, as output from the oil_massbal function')
+    parser_plot_budget.add_argument('--config_dir', required=True, type=str, help='Directory where the OpenOil output is located')
+    parser_plot_budget.add_argument('--fname', required=False, type=str, default='oil_mass_balance.nc', help='the mass balance filename output from the oil_massbal function')
+    parser_plot_budget.add_argument('--fname_out', required=False, type=str, default='oil_mass_balance.jpg', help='the output plot filename')
+    def plot_budget_handler(args):
+        fname = os.path.join(args.config_dir,args.fname)
+        fname_out = os.path.join(args.config_dir,args.fname_out)
+        plot_budget(fname, fname_out)
+    parser_plot_budget.set_defaults(func=plot_budget_handler)
     
     # -----------------------------------------------
     # do an animation of the particle/gridded output

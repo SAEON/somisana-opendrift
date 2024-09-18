@@ -12,10 +12,10 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='Test_Run'
+config_name='Test_oil'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20240701_06'
+run_date='20240916_12'
 
 # -----------
 # spill info
@@ -42,7 +42,7 @@ radius=5
 oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
 #
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20240701_06'
+release_start_time='202400916_12'
 #
 # duration of the release of oil in hours
 release_dur=3
@@ -56,7 +56,7 @@ oil_volume=50
 oil_flow_rate=oil_volume/release_dur
 #
 # initial droplet sizes
-# this get's over-ridden by the wave entrainment DSD when pushed into the water column due to wave entrainment
+# this get's over-ridden by the wave entrainment DSD when oil is submerged into the water column due to wave entrainment
 # so this input is not important for a surface release
 dsd='uniform' # 'uniform' or 'lognormal'
 # if 'uniform' dsd_param1 is the min diamter (m)
