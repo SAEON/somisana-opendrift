@@ -102,7 +102,8 @@ jobs:
 
   # copy data over to where it will be archived
   archive:
-    needs: [plot_particles,grid_density,plot_grid_density,grid_oil,plot_grid_oil]
+    needs: [plot_particles,grid_density,plot_grid_density]
+    #,grid_oil,plot_grid_oil]
     runs-on: ${{ inputs.RUNNER_NAME }}
     env:
       ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}-${{ inputs.WIND }}
