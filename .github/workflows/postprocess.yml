@@ -265,4 +265,5 @@ jobs:
             sudo cp -f ${{ env.RUN_DIR }}/config.py ${{ env.ARCHIVE_DIR }}
             sudo cp -f ${{ env.RUN_DIR }}/*.nc ${{ env.ARCHIVE_DIR }}
             sudo cp -f ${{ env.RUN_DIR }}/*.gif ${{ env.ARCHIVE_DIR }}
+            sudo cp -f ${{ env.RUN_DIR }}/*.jpg ${{ env.ARCHIVE_DIR }}
           fi
