@@ -50,29 +50,11 @@ env:
   RUN_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
 
 jobs:
-  gridding:
-    runs-on: ${{ inputs.RUNNER_NAME }}
-    steps:
-      - name: go from particle trajectories to a Eulerian grid of particle density
-        run: |
-          # we're specifying --user root due to permission issues I wasn't clever enough to solve
-          docker run \
-            --rm \
-            --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              grid_particles  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
-                --extents ${{ inputs.EXTENTS }} \
-                --dx_m ${{ inputs.DX_M }}
-
   plot_particles:
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: make animation of the particles
         run: |
-          # we're specifying --user root due to permission issues I wasn't clever enough to solve
-          # animation of the particles
           docker run \
             --rm \
             --user root \
@@ -83,14 +65,29 @@ jobs:
                 --config_dir ${{ env.RUN_DIR_DOCKER }} \
                 --extents ${{ inputs.EXTENTS }} \
                 --gif_out trajectories.gif
-          
-  plot_gridded:
-    needs: [gridding]
+  grid_density:
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
-      - name: make animation of the gridded output
+      - name: go from particle trajectories to a Eulerian grid of particle density
         run: |
-          # animation of the gridded output
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              grid_particles  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --fname trajectories.nc \
+                --fname_gridded gridded_density.nc \
+                --extents ${{ inputs.EXTENTS }} \
+                --dx_m ${{ inputs.DX_M }}
+          
+  plot_grid_density:
+    needs: [grid_density]
+    runs-on: ${{ inputs.RUNNER_NAME }}
+    steps:
+      - name: make animation of the gridded density output
+        run: |
           docker run \
             --rm \
             --user root \
@@ -99,33 +96,21 @@ jobs:
               animate  \
                 --type gridded  \
                 --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --fname_gridded gridded_density.nc \
                 --extents ${{ inputs.EXTENTS }} \
                 --gif_out gridded.gif
 
-  permissions:
-    needs: [gridding,plot_gridded,plot_particles]
-    runs-on: ${{ inputs.RUNNER_NAME }}
-    steps:
-      - name: set permissions of output
-        run: |
-          # specifying --user root means the outputs have root permissions so hard to delete them, hence this hack 
-          docker run \
-            --rm \
-            --user root \
-            --entrypoint /bin/bash \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              -c "chown -R $(id -u):$(id -g) ${{ env.RUN_DIR_DOCKER }}"
-
   # copy data over to where it will be archived
   archive:
-    needs: [gridding,permissions,plot_gridded, plot_particles]
+    needs: [plot_particles,grid_density,plot_grid_density,grid_oil,plot_grid_oil]
     runs-on: ${{ inputs.RUNNER_NAME }}
     env:
       ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}-${{ inputs.WIND }}
     steps:
       - name: copy files to the archive directory if needed
         run: |
+          # change ownership of all files to the somisana user
+          sudo chown -R somisana:somisana ${{ env.RUN_DIR }}
           # only copy if we're on the main branch
           # we need to use sudo since the archive directory is owned by root
           # we have set up the somisana user to be able to do this without the need for a password
