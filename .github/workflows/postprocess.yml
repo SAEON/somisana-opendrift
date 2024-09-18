@@ -159,7 +159,7 @@ jobs:
                 --config_dir ${{ env.RUN_DIR_DOCKER }} \
                 --fname_gridded gridded_surface_oil.nc \
                 --extents ${{ inputs.EXTENTS }} \
-                --var_str surface_oil_thickness \
+                --var_str surface_thickness \
                 --ticks 0,0.01,0.1,1,10 \
                 --cbar_label 'surface oil thickness ($\mu$m)' \
                 --cmap Greys \
