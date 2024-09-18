@@ -96,6 +96,38 @@ jobs:
                 --fname_gridded gridded_particle_density.nc \
                 --extents ${{ inputs.EXTENTS }} \
                 --gif_out gridded_particle_density.gif
+      - name: plot maximum gridded particle density
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              animate  \
+                --type gridded_stats  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --fname_gridded gridded_particle_density.nc \
+                --var_str maximum \
+                --cbar_label 'max. particle density (%)' \
+                --extents ${{ inputs.EXTENTS }} \
+                --jpg_out gridded_particle_density_max.jpg
+      - name: plot minimum time to arrival
+        # this doesn't relate to particle density, but just sneaking it into this job
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              animate  \
+                --type gridded_stats  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --fname_gridded gridded_particle_density.nc \
+                --var_str minimum_time \
+                --ticks 0,0.5,1,1.5,2,3,5,7 \
+                --cbar_label 'minimum time (days)' \
+                --extents ${{ inputs.EXTENTS }} \
+                --jpg_out gridded_min_time.jpg
 
   surface_oil:
     runs-on: ${{ inputs.RUNNER_NAME }}
@@ -126,13 +158,66 @@ jobs:
                 --type gridded  \
                 --config_dir ${{ env.RUN_DIR_DOCKER }} \
                 --fname_gridded gridded_surface_oil.nc \
-                --var_str surface_oil_thickness \
                 --extents ${{ inputs.EXTENTS }} \
+                --var_str surface_oil_thickness \
                 --ticks 0,0.01,0.1,1,10 \
                 --cbar_label 'surface oil thickness ($\mu$m)' \
                 --cmap Greys \
                 --gif_out gridded_surface_oil.gif
+      - name: plot maximum surface oil thickness
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              animate  \
+                --type gridded_stats  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --fname_gridded gridded_surface_oil.nc \
+                --extents ${{ inputs.EXTENTS }} \
+                --var_str maximum \
+                --ticks 0,0.01,0.1,1,10 \
+                --cbar_label 'max. surface oil thickness ($\mu$m)' \
+                --cmap Greys \
+                --jpg_out gridded_surface_oil_max.jpg
 
+  stranded_oil:
+    runs-on: ${{ inputs.RUNNER_NAME }}
+    if: ${{ inputs.MODEL_TYPE == 'oil' }}
+    steps:
+      - name: stranded oil concentration from particles
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              grid_particles  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --fname trajectories.nc \
+                --fname_gridded gridded_stranded_oil.nc \
+                --grid_type stranded_oil \
+                --extents ${{ inputs.EXTENTS }} \
+                --dx_m ${{ inputs.DX_M }}
+      - name: plot maximum stranded oil concentration
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              animate  \
+                --type gridded_stats  \
+                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --fname_gridded gridded_stranded_oil.nc \
+                --extents ${{ inputs.EXTENTS }} \
+                --var_str maximum \
+                --ticks 0,10,20,50,100,200,500,1000 \
+                --cbar_label 'max. stranded oil (g m$^{-2}$)' \
+                --cmap plasma \
+                --jpg_out gridded_stranded_oil_max.jpg
+  
   oil_mass_balance:
     runs-on: ${{ inputs.RUNNER_NAME }}
     if: ${{ inputs.MODEL_TYPE == 'oil' }}
@@ -158,7 +243,7 @@ jobs:
           
   # copy data over to where it will be archived
   archive:
-    needs: [animate_particles,particle_density,surface_oil,oil_mass_balance]
+    needs: [animate_particles,particle_density,surface_oil,stranded_oil,oil_mass_balance]
     #plot_grid_oil_surface]
     if: ${{ always() && github.event.inputs.do_post == 'true' }}
     runs-on: ${{ inputs.RUNNER_NAME }}

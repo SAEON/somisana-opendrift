@@ -14,7 +14,7 @@ from opendrift_tools.run import oil as run_oil
 from opendrift_tools.run import leeway as run_leeway
 from opendrift_tools.run import oceandrift as run_oceandrift
 from opendrift_tools.postprocess import grid_particles, oil_massbal
-from opendrift_tools.plotting import plot_particles, plot_gridded, plot_budget
+from opendrift_tools.plotting import plot_particles, plot_gridded, plot_gridded_stats, plot_budget
 from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats, stochasitic_massbal
 
 # functions to help parsing string input to object types needed by python functions
@@ -127,12 +127,12 @@ def main():
         plot_budget(fname, fname_out)
     parser_plot_budget.set_defaults(func=plot_budget_handler)
     
-    # -----------------------------------------------
-    # do an animation of the particle/gridded output
-    # -----------------------------------------------
+    # ---------------------------------------------------
+    # do a plot/animation of the particle/gridded output
+    # ---------------------------------------------------
     parser_animate = subparsers.add_parser('animate', 
-            help='do an animation of the particle/gridded output')
-    parser_animate.add_argument('--type', required=True, type=str, help='either gridded or particles')
+            help='do a plot/animation of the particle/gridded output')
+    parser_animate.add_argument('--type', required=True, type=str, help='either particles, gridded or gridded_stats')
     parser_animate.add_argument('--config_dir', required=True, type=str, help='Directory where the output files are located')
     parser_animate.add_argument('--fname_gridded', required=False, type=str, default='gridded.nc', help='the gridded filename')
     parser_animate.add_argument('--fname_particles', required=False, type=str, default='trajectories.nc', help='the raw OpenDrift particle output filename')
@@ -144,8 +144,8 @@ def main():
                          help='contour ticks to use in plotting the variable')
     parser_animate.add_argument('--cbar_label', required=False, default='particle density (%)', type=str, help='the label used for the colorbar')
     parser_animate.add_argument('--cmap', required=False, default='Spectral_r', type=str, help='the colormap to use')
-    parser_animate.add_argument('--write_gif', required=False, type=parse_bool, default=True, help='write a gif? (true or false)')
     parser_animate.add_argument('--gif_out', required=False, type=parse_str, default=None, help='the output gif filename')
+    parser_animate.add_argument('--jpg_out', required=False, type=parse_str, default=None, help='the output jpg filename')
     def animate_handler(args):
         # the input options passed by the cli is not exhaustive to the plotting functions
         # this is just intended to provide a quick animation as part of the operational workflow
@@ -156,8 +156,20 @@ def main():
             gif_out = None
         else:
             gif_out = os.path.join(args.config_dir,args.gif_out)
+        if args.jpg_out is None: # we need this if/else to ensure the os.path.join() gets a string, not a None
+            jpg_out = None
+        else:
+            jpg_out = os.path.join(args.config_dir,args.jpg_out)
         
-        if args.type == 'gridded':
+        if args.type == 'particles':
+            # animate the particles
+            plot_particles(fname_particles,
+                            extents=args.extents,
+                            lscale=args.lscale,
+                            gif_out=gif_out,
+                            write_gif=True)
+        elif args.type == 'gridded':
+            # animate the gridded output
             plot_gridded(fname_gridded,
                             fname_particles=fname_particles,
                             var_str=args.var_str,
@@ -167,13 +179,19 @@ def main():
                             cbar_label=args.cbar_label,
                             cmap=args.cmap,
                             gif_out=gif_out,
-                            write_gif=args.write_gif)
-        elif args.type == 'particles':
-            plot_particles(fname_particles,
+                            write_gif=True)
+        elif args.type == 'gridded_stats':
+            # plot the static output (i.e. no time dimension) of the gridded output
+            plot_gridded_stats(fname_gridded,
+                            fname_particles=fname_particles,
+                            var_str=args.var_str,
                             extents=args.extents,
                             lscale=args.lscale,
-                            gif_out=gif_out,
-                            write_gif=args.write_gif)
+                            ticks=args.ticks,
+                            cbar_label=args.cbar_label,
+                            cmap=args.cmap,
+                            jpg_out=jpg_out,
+                            write_jpg=True)
         else:
             raise argparse.ArgumentTypeError(f"Invalid animation type: {args.type}")
     parser_animate.set_defaults(func=animate_handler)
