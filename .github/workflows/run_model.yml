@@ -27,8 +27,24 @@ on:
         description: 'name of wind forcing e.g. GFS' 
         required: true
         type: string
+      RUN_MODEL:
+        description: 'run the model?'
+        required: true
+        type: string
+      DO_POST:
+        description: 'do the postprocessing?'
+        required: true
+        type: string
       OGCM:
         description: 'name of boundary forcing e.g. MERCATOR' 
+        required: true
+        type: string
+      EXTENTS:
+        description: 'spatial extent of the gridded output and plot, in format lon0,lon1,lat0,lat1. If None, then this is dynamically determined from the geographic extent of the particles'
+        required: true
+        type: string
+      DX_M:
+        description: 'grid size (m) used to grid particle output. If None, If None, then a 50 x 50 regular grid is generated'
         required: true
         type: string
 
@@ -41,7 +57,8 @@ env:
   RUN_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
 
 jobs:
-  setup-run-dir:
+  run-model:
+    if: ${{ inputs.RUN_MODEL == 'true' }}
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: Check out source code so have access to the files in the repo
@@ -65,10 +82,6 @@ jobs:
           chmod -R 774 ${{ env.RUN_DIR }}
         continue-on-error: true
 
-  run-model:
-    needs: [setup-run-dir]
-    runs-on: ${{ inputs.RUNNER_NAME }}
-    steps:
       - name: run the model
         run: |
           # we're specifying --user root due to permission issues I wasn't clever enough to solve
@@ -82,3 +95,19 @@ jobs:
                 --config_dir ${{ env.RUN_DIR_DOCKER }}
           # change ownership to somisana user
           sudo chown -R somisana:somisana ${{ env.RUN_DIR }}
+  
+  # do some postprocessing and plotting
+  postprocess:
+    needs: [run-model]
+    if: ${{ always() && inputs.DO_POST == 'true' }}
+    uses: ./.github/workflows/postprocess.yml  # Path to your reusable workflow
+    with:
+      MODEL_TYPE: ${{ inputs.MODEL_TYPE }}
+      BRANCH_REF: ${{ inputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ inputs.CONFIG_NAME }}
+      RUN_DATE: ${{ inputs.RUN_DATE }}
+      RUNNER_NAME: ${{ inputs.RUNNER_NAME }}
+      WIND: ${{ inputs.WIND }}
+      OGCM: ${{ inputs.OGCM }}
+      EXTENTS: ${{ inputs.EXTENTS }}
+      DX_M: ${{ inputs.DX_M }}

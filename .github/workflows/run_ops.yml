@@ -50,6 +50,7 @@ jobs:
         id: BRANCH_REF
         run: |
           echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+  
   # set some environment variables
   envs:
     needs: [branch-ref]
@@ -80,15 +81,11 @@ jobs:
 
   build_image:
     uses: ./.github/workflows/build_image.yml  # Path to your reusable workflow
-  
-  run_model:
+ 
+  # I thought about using the matrix strategy to run models in parallel, but if one job fails, then they all get called off so it's better run them as separate jobs, which still get run in parallel
+
+  run_GFS_MERCATOR:
     needs: [envs,build_image]
-    if: ${{ github.event.inputs.run_model == 'true' }}
-    strategy:
-      matrix:
-        # matrix strategy allows us to run different model forcings in parallel
-        wind: ['GFS']
-        ogcm: ['MERCATOR']
     uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
     with:
       MODEL_TYPE: ${{ github.event.inputs.model_type }}
@@ -96,28 +93,27 @@ jobs:
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
-      WIND: ${{ matrix.wind }}
-      OGCM: ${{ matrix.ogcm }}
+      WIND: GFS
+      OGCM: MERCATOR
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
+      DO_POST: ${{ github.event.inputs.do_post }}
+      EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}
   
-  # do some postprocessing and plotting
-  postprocess:
-    needs: [envs,run_model]
-    if: ${{ always() && github.event.inputs.do_post == 'true' }}
-    strategy:
-      matrix:
-        # matrix strategy allows us to run different model forcings in parallel
-        wind: ['GFS']
-        ogcm: ['MERCATOR']
-    uses: ./.github/workflows/postprocess.yml  # Path to your reusable workflow
+  run_SAWS_MERCATOR:
+    needs: [envs,build_image]
+    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
     with:
       MODEL_TYPE: ${{ github.event.inputs.model_type }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
-      WIND: ${{ matrix.wind }}
-      OGCM: ${{ matrix.ogcm }}
+      WIND: SAWS
+      OGCM: MERCATOR
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
+      DO_POST: ${{ github.event.inputs.do_post }}
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
-
+  
   # get some combined output from runs with different forcings?
