@@ -44,8 +44,6 @@ def add_readers(o,config):
     o.add_reader(reader_landmask)
     
     # Now start adding the ocean and wind input. The order that you do this matters!
-    # Preference is given to data which is added first. We could include boolean checks on 
-    # whether certain forcings should be included e.g. SAWS winds, and different ocean forcings
     
     # -----------------------------
     # CROCO files covering the run
@@ -83,7 +81,8 @@ def add_readers(o,config):
     try:
         wind_files = config.wind_files
         for wind_file in wind_files:
-            # Assume we're using the netcdf file on the gfs native grid created during croco preprocessing 
+            # Assume we're using the netcdf file on the native grid created during croco preprocessing
+            # (but I'm pretty sure this would work on any other regular grid file with standard names)
             # I'm opening the file as an xarray dataset before passing to reader_netCDF_CF_generic
             # because it had trouble with the time conversion inside the reader
             # Doing it like this is a hack to get around this issue, as the time gets handled by xarray

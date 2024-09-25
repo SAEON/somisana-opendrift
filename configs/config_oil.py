@@ -71,7 +71,7 @@ dsd_param2=0.001
 # -------------
 #
 # you can just comment files which you don't want to include in the forcing
-# the operational workflow uses a sed replcements for OGCM and WIND below to change 
+# the operational workflow uses sed replcements for OGCM and WIND below to change 
 # them to the strings specified in the operational run e.g. MERCATOR and GFS
 # For a local run, you of course need to edit the strings to point to the files
 # you are forcing with

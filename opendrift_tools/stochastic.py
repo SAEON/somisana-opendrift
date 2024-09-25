@@ -7,6 +7,7 @@ import sys, os, shutil
 import numpy as np
 from datetime import datetime, timedelta
 import xarray as xr
+from matplotlib.path import Path
 from opendrift_tools.run import oil as run_oil
 from opendrift_tools.run import leeway as run_leeway
 from opendrift_tools.run import oceandrift as run_oceandrift
@@ -227,6 +228,88 @@ class gridded_stats(base_stochastic):
     def __to_netcdf__(self):
         fname_out = self.fname_gridded.split('.nc')[0]+'_threshold'+str(self.threshold)+'.nc'
         self.stats.to_netcdf(os.path.join(self.out_dir,fname_out))
+
+class gridded_stats_polygon(base_stochastic):
+    '''
+    class used to compute the probability of occurrence over a defined threshold and minimum time to arrival
+    within a particular polygon
+    (assuming that the trajectories files have already been gridded 
+     - only gridded data inside the polygon are considered)
+    '''
+    def __init__(self, run_dir, date_start, run_id, increment_days, run_id_end, 
+                 out_dir = '/summary_stats/', # this gets appended onto run_dir
+                 fname_gridded='gridded.nc', # the gridded filename common to all run directories
+                 threshold=0, # only data over this value are used in computing statistics
+                 polygon_file='polygon_file.txt', # with 2 columns - lon lat
+                 fname_out='polygon_stats.txt' # the output file
+                 ):
+        super().__init__(run_dir, date_start, run_id, increment_days, run_id_end) # this is where the base_stochastic class is inherited
+      
+        self.out_dir = os.path.join(run_dir,out_dir)
+        os.makedirs(self.out_dir, exist_ok=True)
+        self.threshold     = threshold # only grid cells which exceed this value are counted
+        self.fname_gridded = fname_gridded # the generic gridded file name
+        self.polygon_file  = polygon_file
+        self.fname_out     = fname_out
+        
+        # Create mask for points inside the polygon
+        with xr.open_dataset(self.iteration_dir+self.fname_gridded) as ds:
+            lon = ds.lon_bin.data
+            lat = ds.lat_bin.data
+            lon_grid, lat_grid = np.meshgrid(lon, lat)
+            lon = lon_grid.ravel()
+            lat = lat_grid.ravel()
+
+        polygon = np.loadtxt(polygon_file)
+        # Define polygon path for masking
+        polygon_path = Path(polygon)
+        points = np.vstack((lon, lat)).T
+        self.inside_polygon_mask = polygon_path.contains_points(points)
+        
+        # initialise variables used for counting exceedance of threshold
+        self.count_exceed=0
+        self.probability=0
+        self.maximum=0
+        self.minimum_time=10e6
+    
+    def update_stats(self):
+        '''
+        read the output from one of the deterministic runs and update the probability and minimum time variables
+        '''
+        # get the data for this iteration, inside the polygon
+        with xr.open_dataset(self.iteration_dir+self.fname_gridded) as ds:     
+            iteration_max = ds.maximum.data.ravel() # 'maximum' is the standard variable name accross all gridded files, representing the maximum over the deterministic simulation
+            iteration_mintime =ds.minimum_time.data.ravel()
+            # extract the max/min_time from points inside the polygon
+            iteration_max=np.nanmax(iteration_max[self.inside_polygon_mask])
+            iteration_mintime=np.nanmin(iteration_mintime[self.inside_polygon_mask])
+            
+        # update maximum if data from this iteration is greater
+        self.maximum=np.maximum(iteration_max,self.maximum)
+        # check if iteration max exceeds threshold and update the probability
+        if iteration_max>self.threshold:
+            self.count_exceed += 1
+            self.minimum_time=np.minimum(iteration_mintime,self.minimum_time)
+        # update probability of exceedance
+        prob=self.count_exceed/self.num_it
+        self.probability = prob
+    
+    def update_stats_all(self):
+        '''
+        Loop through the specified run_id's and compute the stats over all runs
+        '''
+        while self.run_id <= self.run_id_end:
+            self.update_stats()
+            self.run_id += 1
+            self.update_iteration_dir()
+            self.num_it += 1
+        
+        # write the stats to the output txt file
+        fname_out = os.path.join(self.out_dir,self.fname_out)
+        with open(fname_out, 'w') as f:
+            f.write(f"probability={self.probability}\n")
+            f.write(f"maximum={self.maximum}\n")
+            f.write(f"minimum_time={self.minimum_time}\n")    
     
 class stochasitic_massbal(base_stochastic):
     '''

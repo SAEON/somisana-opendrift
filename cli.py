@@ -15,7 +15,7 @@ from opendrift_tools.run import leeway as run_leeway
 from opendrift_tools.run import oceandrift as run_oceandrift
 from opendrift_tools.postprocess import grid_particles, oil_massbal
 from opendrift_tools.plotting import plot_particles, plot_gridded, plot_gridded_stats, plot_budget
-from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats, stochasitic_massbal
+from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats, gridded_stats_polygon, stochasitic_massbal
 
 # functions to help parsing string input to object types needed by python functions
 def parse_datetime(value):
@@ -258,6 +258,31 @@ def main():
                                 threshold=args.threshold)
         stoch.update_stats_all()
     parser_gridded_stats.set_defaults(func=gridded_stats_handler)
+    
+    # ----------------------
+    # gridded_stats_polygon
+    # ----------------------
+    parser_gridded_stats_polygon = subparsers.add_parser('gridded_stats_polygon', 
+            help='Compute summary statistics within a polygon from gridded output from stochastic OpenDrift simulations')
+    parser_gridded_stats_polygon.add_argument('--run_dir', required=True, type=str, help='based dir where stochastic iterations are initialised')
+    parser_gridded_stats_polygon.add_argument('--date_start', required=True, type=parse_datetime, help='start time of run001 (first stochastic simulation) in format "YYYYMMDD_HH"')
+    parser_gridded_stats_polygon.add_argument('--run_id', required=True, type=int, help='run id to start on (you don\'t have to start at run001)')
+    parser_gridded_stats_polygon.add_argument('--increment_days', required=True, type=float, help='number of days increment between stochastic runs')
+    parser_gridded_stats_polygon.add_argument('--run_id_end', required=True, type=int, help='run id to end on')
+    parser_gridded_stats_polygon.add_argument('--out_dir', required=False, type=str,default='summary_stats', help='output directory name (this gets appended onto run_dir)')
+    parser_gridded_stats_polygon.add_argument('--fname_gridded', required=True, type=str, help='the gridded filename common to all run directories')
+    parser_gridded_stats_polygon.add_argument('--threshold', required=True, type=float, help='only data over this value are used in computing statistics')
+    parser_gridded_stats_polygon.add_argument('--polygon_file', required=True, type=str, help='full path to the input polygon text file. First column is lon, second column is lat. Space delimited')
+    parser_gridded_stats_polygon.add_argument('--fname_out', required=True, type=str, help='the output filename (text file) to be written to out_dir')
+    def gridded_stats_polygon_handler(args):
+        stoch = gridded_stats_polygon(args.run_dir, args.date_start, args.run_id, args.increment_days, args.run_id_end, 
+                                out_dir = args.out_dir,
+                                fname_gridded=args.fname_gridded,
+                                threshold=args.threshold,
+                                polygon_file=args.polygon_file,
+                                fname_out=args.fname_out)
+        stoch.update_stats_all()
+    parser_gridded_stats_polygon.set_defaults(func=gridded_stats_polygon_handler)
     
     # -----------------------
     # stohastic mass balance
