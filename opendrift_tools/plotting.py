@@ -116,17 +116,16 @@ def plot_cbar(ax,var_plt,
              label='values',
              label_font=14,
              loc=None, # [left, bottom, width, height]
-             aspect_ratio=1,
              orientation='vertical'):
     
     '''
     Add a colorbar to a plot
     '''
     if loc is None:
-        # dynamically position to colorbar
-        colorbar_offset = 0.05  # Fixed offset from the right of the plot
-        x_position = 0.8 + colorbar_offset * (1 / aspect_ratio)
-        x_thickness = 0.02/aspect_ratio
+        # this can be hard coded because we took care to set up the figsize and
+        # axis location to accomodate the colorbar
+        x_position = 0.8
+        x_thickness = 0.015
         loc = [x_position, 0.2, x_thickness, 0.6]
     
     cbarax = plt.gcf().add_axes(loc) 
@@ -138,6 +137,39 @@ def plot_cbar(ax,var_plt,
     cbar_plt.ax.tick_params(labelsize=tick_font)
     
     return cbar_plt
+
+def get_fig_size(extents,add_cbar):
+    '''
+    Determine the figure size based on the aspect ratio of the extents being plotted
+    and whether or not we'll be adding a colorbar.
+    This helps with automated generation of plots, and particularly animations. 
+    Setting the correct figure size is important to ensure the colorbar isn't cut off the animation'
+    '''
+    
+    # Create a Mercator projection
+    proj = ccrs.Mercator()
+    # Convert the corner points of the extents to Mercator projected coordinates
+    # this is needed to compute the plot aspect ratio properly
+    x0, y0 = proj.transform_point(extents[0], extents[2], ccrs.PlateCarree())  # lon0, lat0
+    x1, y1 = proj.transform_point(extents[1], extents[3], ccrs.PlateCarree())  # lon1, lat1
+    # Calculate the width and height of the domain in projected coordinates
+    width = abs(x1 - x0)
+    height = abs(y1 - y0)
+    aspect_ratio = width/height
+    
+    # set figsize according to the plot aspect ratio
+    if aspect_ratio>1:
+        fig_width = 6*aspect_ratio
+        fig_height = 6
+    else:
+        fig_width = 6
+        fig_height = 6/aspect_ratio
+    # cbar_ax_width = 0.2 * fig_width if add_cbar else 0
+    buffer_left=0.1 * fig_width
+    buffer_right=0.2 * fig_width if add_cbar else 0.1 * fig_width
+    figsize = (buffer_left + fig_width + buffer_right, fig_height)
+    
+    return figsize
 
 def plot_particles(fname,
         ax=None, # allowing for adding to an existing axis
@@ -176,23 +208,18 @@ def plot_particles(fname,
     lat=ds.lat.values
     time_start = ds.time.data[0] # start of the release, not the time of the plot
     
-    # automatically set the figure size based on the aspect ratio of the domain being plotted
     if extents is None:
         extents = get_extents(lon, lat)
-    d_lon = extents[1] - extents[0]
-    d_lat = extents[3] - extents[2]
-    aspect_ratio = d_lon/d_lat
-    # set figsize according to the aspect ratio of the data
-    if aspect_ratio>1:
-        figsize = (6*aspect_ratio,6)
-    else:
-        figsize = (6,6/aspect_ratio)
-    #
+    
     if ax is None:
+        # automatically set the figure size based on the aspect ratio of the domain being plotted
+        figsize = get_fig_size(extents,add_cbar)
         fig = plt.figure(figsize=figsize) 
-        ax = plt.axes(projection=ccrs.Mercator())
+        # [left, bottom, width, height] in fractions of figure dimensions
+        width=0.7 if add_cbar else 0.8
+        ax = fig.add_axes([0.1, 0.1, width, 0.8], projection=ccrs.Mercator())
         setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
-        
+    
     # dynamically get the release location from the particle locations at the first time-step
     ds_start = ds.isel(time=0)
     lon_release=np.nanmean(ds_start.lon.values)
@@ -234,7 +261,7 @@ def plot_particles(fname,
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     
     if add_cbar:
-        plot_cbar(ax,scat,label=cbar_label,ticks=ticks,loc=cbar_loc,aspect_ratio=aspect_ratio)
+        plot_cbar(ax,scat,label=cbar_label,ticks=ticks,loc=cbar_loc)
         
     # write a jpg if specified
     if write_jpg:
@@ -343,32 +370,21 @@ def plot_gridded(fname,
     # only plot where data shows up
     ds=ds.where(ds[var_str]>0.0)
     
-    # automatically set the figure size based on the aspect ratio of the domain being plotted
-    if extents is None:
-        extents = get_extents(lon, lat)
-    d_lon = extents[1] - extents[0]
-    d_lat = extents[3] - extents[2]
-    aspect_ratio = d_lon/d_lat
-    # set figsize according to the aspect ratio of the data
-    if aspect_ratio>1:
-        figsize = (6*aspect_ratio,6)
-    else:
-        figsize = (6,6/aspect_ratio)
-    #
-    if ax is None:
-        fig = plt.figure(figsize=figsize) 
-        ax = plt.axes(projection=ccrs.Mercator())
-        setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
-    
     # subset to the time-step
     ds_tstep = post.subset_tstep(ds,tstep)
     time_plot = ds_tstep.time.values
     var_data = ds_tstep[var_str].values
     
-    # set up the plot
+    if extents is None:
+        extents = get_extents(lon, lat)
+    
     if ax is None:
+        # automatically set the figure size based on the aspect ratio of the domain being plotted
+        figsize = get_fig_size(extents,add_cbar)
         fig = plt.figure(figsize=figsize) 
-        ax = plt.axes(projection=ccrs.Mercator())
+        # [left, bottom, width, height] in fractions of figure dimensions
+        width=0.7 if add_cbar else 0.8
+        ax = fig.add_axes([0.1, 0.1, width, 0.8], projection=ccrs.Mercator())
         setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
     
     # set up the cmap to handle non-uniform input ticks
@@ -397,7 +413,7 @@ def plot_gridded(fname,
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     
     if add_cbar:
-        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc,aspect_ratio=aspect_ratio)
+        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
         
     # write a jpg if specified
     if write_jpg:
@@ -469,22 +485,16 @@ def plot_gridded_stats(fname,
     # get the data to plot
     var_data = ds[var_str].values
     
-    # automatically set the figure size based on the aspect ratio of the domain being plotted
     if extents is None:
         extents = get_extents(lon, lat)
-    d_lon = extents[1] - extents[0]
-    d_lat = extents[3] - extents[2]
-    aspect_ratio = d_lon/d_lat
-    # set figsize according to the aspect ratio of the data
-    if aspect_ratio>1:
-        figsize = (6*aspect_ratio,6)
-    else:
-        figsize = (6,6/aspect_ratio)
-        
-    # set up the plot
+    
     if ax is None:
+        # automatically set the figure size based on the aspect ratio of the domain being plotted
+        figsize = get_fig_size(extents,add_cbar)
         fig = plt.figure(figsize=figsize) 
-        ax = plt.axes(projection=ccrs.Mercator())
+        # [left, bottom, width, height] in fractions of figure dimensions
+        width=0.7 if add_cbar else 0.8
+        ax = fig.add_axes([0.1, 0.1, width, 0.8], projection=ccrs.Mercator())
         setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
     
     # set up the cmap to handle non-uniform input ticks
@@ -510,7 +520,7 @@ def plot_gridded_stats(fname,
     ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
        
     if add_cbar:
-        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc,aspect_ratio=aspect_ratio)
+        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
         
     # write a jpg if specified
     if write_jpg:
