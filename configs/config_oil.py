@@ -15,7 +15,7 @@
 config_name='Test_oil'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20240916_12'
+run_date='20240929_12'
 
 # -----------
 # spill info
@@ -42,7 +42,7 @@ radius=5
 oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
 #
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20240916_12'
+release_start_time='20240929_12'
 #
 # duration of the release of oil in hours
 release_dur=3
