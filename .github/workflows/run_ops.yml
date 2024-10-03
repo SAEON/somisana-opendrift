@@ -120,7 +120,7 @@ jobs:
   # maybe we need a check to see if more than 1 run was actually successful?
   combine_output:
     needs: [envs,run_SAWS_MERCATOR,run_GFS_MERCATOR]
-    if: ${{ always() && ${{ github.event.inputs.do_post }} == 'true' }}
+    if: ${{ always() && github.event.inputs.do_post == 'true' }}
     uses: ./.github/workflows/combine_output.yml  # Path to your reusable workflow
     with:
       MODEL_TYPE: ${{ github.event.inputs.model_type }}
