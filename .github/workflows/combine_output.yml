@@ -35,6 +35,19 @@ env:
   DIR_WITH_DIRS: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}
 
 jobs:
+  combine_trajectories:
+    runs-on: ${{ inputs.RUNNER_NAME }}
+    steps:
+      - name: combine trajectories files
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+              combine_trajectories  \
+                --dir_with_dirs /mnt/tmp
+
   combine_particle_density:
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
@@ -45,10 +58,10 @@ jobs:
             --user root \
             -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-                    combine_gridded  \
-                      --dir_with_dirs /mnt/tmp \
-                      --fname_gridded gridded_particle_density.nc \
-                      --var_name particle_density
+              combine_gridded  \
+                --dir_with_dirs /mnt/tmp \
+                --fname_gridded gridded_particle_density.nc \
+                --var_name particle_density
 
       - name: animate the combined gridded particle density
         run: |
