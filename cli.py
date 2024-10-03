@@ -13,7 +13,7 @@ from datetime import datetime
 from opendrift_tools.run import oil as run_oil
 from opendrift_tools.run import leeway as run_leeway
 from opendrift_tools.run import oceandrift as run_oceandrift
-from opendrift_tools.postprocess import grid_particles, oil_massbal
+from opendrift_tools.postprocess import grid_particles, oil_massbal, combine_gridded, combine_trajectories
 from opendrift_tools.plotting import plot_particles, plot_gridded, plot_gridded_stats, plot_budget
 from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats, gridded_stats_polygon, stochasitic_massbal
 
@@ -29,6 +29,12 @@ def parse_list(value):
         return None
     else:
         return [float(x.strip()) for x in value.split(',')]
+
+def parse_list_str(value):
+    if value is None or value == 'None':
+        return None
+    else:
+        return [x.strip() for x in value.split(',')]
 
 def parse_float(value):
     if value is None or value == 'None':
@@ -98,6 +104,36 @@ def main():
                        dx_m=args.dx_m,
                        max_only=args.max_only)
     parser_grid_particles.set_defaults(func=grid_particles_handler)
+    
+    # ----------------------------------------------------
+    # combine multiple gridded outputs into a single file
+    # ----------------------------------------------------
+    parser_combine_gridded = subparsers.add_parser('combine_gridded', 
+            help='combine gridded output from multiple simulations into a single file')
+    parser_combine_gridded.add_argument('--dir_with_dirs', required=True, type=str, help='path to a directory containing multiple directories, where each directory contains opendrift output')
+    parser_combine_gridded.add_argument('--dirs', required=False, type=parse_list_str, default=None, help='a comma separated list of dir names inside dir_with_dirs which contain opendrift ouput. If None, then dirs is found dynamically from all dirs inside dir_with_dirs (except for the dirname \'combined\')')
+    parser_combine_gridded.add_argument('--fname_gridded', required=False, type=str, default='gridded.nc', help='the gridded filename to be found in every dir in dirs')
+    parser_combine_gridded.add_argument('--var_name', required=False, type=parse_str, default=None, help='the time-dependent variable in fname_gridded. If None, then only the time-independent \'maximum\' and \'minimum_time\' variables are used')
+    def combine_gridded_handler(args):
+        combine_gridded(args.dir_with_dirs,
+                       dirs=args.dirs,
+                       fname_gridded=args.fname_gridded,
+                       var_name=args.var_name)
+    parser_combine_gridded.set_defaults(func=combine_gridded_handler)
+    
+    # ---------------------------------------------------------
+    # combine multiple trajectories outputs into a single file
+    # ---------------------------------------------------------
+    parser_combine_trajectories = subparsers.add_parser('combine_trajectories', 
+            help='combine raw opendrift output from multiple simulations into a single file')
+    parser_combine_trajectories.add_argument('--dir_with_dirs', required=True, type=str, help='path to a directory containing multiple directories, where each directory contains opendrift output')
+    parser_combine_trajectories.add_argument('--dirs', required=False, type=parse_list_str, default=None, help='a comma separated list of dir names inside dir_with_dirs which contain opendrift ouput. If None, then dirs is found dynamically from all dirs inside dir_with_dirs (except for the dirname \'combined\')')
+    parser_combine_trajectories.add_argument('--fname_traj', required=False, type=str, default='trajectories.nc', help='the output opendrift filename to be found in every dir in dirs')
+    def combine_trajectories_handler(args):
+        combine_trajectories(args.dir_with_dirs,
+                       dirs=args.dirs,
+                       fname_traj=args.fname_traj)
+    parser_combine_trajectories.set_defaults(func=combine_trajectories_handler)
     
     # -------------------------------------------
     # get the oil mass balance of an OpenOil run

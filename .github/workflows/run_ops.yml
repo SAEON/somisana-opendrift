@@ -116,4 +116,16 @@ jobs:
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
   
-  # get some combined output from runs with different forcings?
+  # get some combined output from runs with different forcings
+  # maybe we need a check to see if more than 1 run was actually successful?
+  combine_output:
+    needs: [envs,run_SAWS_MERCATOR,run_GFS_MERCATOR]
+    if: ${{ always() && ${{ github.event.inputs.do_post }} == 'true' }}
+    uses: ./.github/workflows/combine_output.yml  # Path to your reusable workflow
+    with:
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims1
+      EXTENTS: ${{ github.event.inputs.extents }}

@@ -1,5 +1,7 @@
-name: postprocess and plot
-
+name: combine output
+# combine output from all simulations (combinations of forcing) into single files 
+# so the combined footprint can be viewed
+ 
 on:
   workflow_call:
     inputs:
@@ -23,105 +25,72 @@ on:
         description: 'specify the runner name to determine what server we are running on'
         required: true
         type: string
-      WIND:
-        description: 'name of wind forcing e.g. GFS' 
-        required: true
-        type: string
-      OGCM:
-        description: 'name of boundary forcing e.g. MERCATOR' 
-        required: true
-        type: string
       EXTENTS:
         description: 'spatial extent of the gridded output and plot, in format lon0,lon1,lat0,lat1. If None, then this is dynamically determined from the geographic extent of the particles'
         required: true
         type: string
-      DX_M:
-        description: 'grid size (m) used to grid particle output. If None, If None, then a 50 x 50 regular grid is generated'
-        required: true
-        type: string
-
 
 env:
-  # the directory to get mounted when running the docker image
-  DATE_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}
-  # path to the run directory, as seen inside the running docker container
-  RUN_DIR_DOCKER: /mnt/tmp/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
-  # path to the run directory, as seen inside the local server 
-  RUN_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
+  # path to the directory containing multiple run directories, as seen inside the local server 
+  DIR_WITH_DIRS: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}
 
 jobs:
-  animate_particles:
+  combine_particle_density:
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
-      - name: make animation of the particles
+      - name: combine gridded particle density files
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              animate  \
-                --type particles \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
-                --extents ${{ inputs.EXTENTS }} \
-                --gif_out trajectories.gif
+                    combine_gridded  \
+                      --dir_with_dirs /mnt/tmp \
+                      --fname_gridded gridded_particle_density.nc \
+                      --var_name particle_density
 
-  particle_density:
-    runs-on: ${{ inputs.RUNNER_NAME }}
-    steps:
-      - name: gridded particle density from particles
+      - name: animate the combined gridded particle density
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              grid_particles  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
-                --fname trajectories.nc \
-                --fname_gridded gridded_particle_density.nc \
-                --grid_type density \
-                --extents ${{ inputs.EXTENTS }} \
-                --dx_m ${{ inputs.DX_M }}
-      - name: animate the gridded particle density
-        run: |
-          docker run \
-            --rm \
-            --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               animate  \
                 --type gridded  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --config_dir /mnt/tmp/combined \
                 --fname_gridded gridded_particle_density.nc \
                 --extents ${{ inputs.EXTENTS }} \
                 --gif_out gridded_particle_density.gif
-      - name: plot maximum gridded particle density
+
+      - name: plot maximum combined gridded particle density
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               animate  \
                 --type gridded_stats  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --config_dir /mnt/tmp/combined \
                 --fname_gridded gridded_particle_density.nc \
                 --var_str maximum \
                 --cbar_label 'max. particle density (%)' \
                 --extents ${{ inputs.EXTENTS }} \
                 --jpg_out gridded_particle_density_max.jpg
+      
       - name: plot minimum time to arrival
         # this doesn't relate to particle density, but just sneaking it into this job
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               animate  \
                 --type gridded_stats  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --config_dir /mnt/tmp/combined \
                 --fname_gridded gridded_particle_density.nc \
                 --var_str minimum_time \
                 --ticks 0,0.5,1,1.5,2,3,5,7 \
@@ -129,34 +98,32 @@ jobs:
                 --extents ${{ inputs.EXTENTS }} \
                 --jpg_out gridded_min_time.jpg
 
-  surface_oil:
+  combine_surface_oil:
     runs-on: ${{ inputs.RUNNER_NAME }}
     if: ${{ inputs.MODEL_TYPE == 'oil' }}
     steps:
-      - name: surface oil thickness from particles
+      - name: combined surface oil thickness from particles (average over all runs)
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              grid_particles  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
-                --fname trajectories.nc \
+              combine_gridded  \
+                --dir_with_dirs /mnt/tmp \
                 --fname_gridded gridded_surface_oil.nc \
-                --grid_type surface_oil \
-                --extents ${{ inputs.EXTENTS }} \
-                --dx_m ${{ inputs.DX_M }}
-      - name: animate the surface oil thickness
+                --var_name surface_thickness
+
+      - name: animate the combined surface oil thickness
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               animate  \
                 --type gridded  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --config_dir /mnt/tmp/combined \
                 --fname_gridded gridded_surface_oil.nc \
                 --extents ${{ inputs.EXTENTS }} \
                 --var_str surface_thickness \
@@ -164,16 +131,17 @@ jobs:
                 --cbar_label 'surface oil thickness ($\mu$m)' \
                 --cmap Greys \
                 --gif_out gridded_surface_oil.gif
+
       - name: plot maximum surface oil thickness
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               animate  \
                 --type gridded_stats  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --config_dir /mnt/tmp/combined \
                 --fname_gridded gridded_surface_oil.nc \
                 --extents ${{ inputs.EXTENTS }} \
                 --var_str maximum \
@@ -182,34 +150,32 @@ jobs:
                 --cmap Greys \
                 --jpg_out gridded_surface_oil_max.jpg
 
-  stranded_oil:
+  combine_stranded_oil:
     runs-on: ${{ inputs.RUNNER_NAME }}
     if: ${{ inputs.MODEL_TYPE == 'oil' }}
     steps:
-      - name: stranded oil concentration from particles
+      - name: combined gridded stranded oil concentration (average over all runs)
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              grid_particles  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
-                --fname trajectories.nc \
+              combine_gridded  \
+                --dir_with_dirs /mnt/tmp \
                 --fname_gridded gridded_stranded_oil.nc \
-                --grid_type stranded_oil \
-                --extents ${{ inputs.EXTENTS }} \
-                --dx_m ${{ inputs.DX_M }}
+                --var_name stranded_oil
+
       - name: plot maximum stranded oil concentration
         run: |
           docker run \
             --rm \
             --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               animate  \
                 --type gridded_stats  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
+                --config_dir /mnt/tmp/combined \
                 --fname_gridded gridded_stranded_oil.nc \
                 --extents ${{ inputs.EXTENTS }} \
                 --var_str maximum \
@@ -218,40 +184,17 @@ jobs:
                 --cmap plasma \
                 --jpg_out gridded_stranded_oil_max.jpg
   
-  oil_mass_balance:
-    runs-on: ${{ inputs.RUNNER_NAME }}
-    if: ${{ inputs.MODEL_TYPE == 'oil' }}
-    steps:
-      - name: compute the oil mass balance 
-        run: |
-          docker run \
-            --rm \
-            --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              oil_massbal  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
-      - name: plot the oil mass balance 
-        run: |
-          docker run \
-            --rm \
-            --user root \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              plot_budget  \
-                --config_dir ${{ env.RUN_DIR_DOCKER }} \
-          
   # copy data over to where it will be archived
   archive:
-    needs: [animate_particles,particle_density,surface_oil,stranded_oil,oil_mass_balance]
+    needs: [combine_particle_density,combine_surface_oil,combine_stranded_oil]
     runs-on: ${{ inputs.RUNNER_NAME }}
     env:
-      ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}-${{ inputs.WIND }}
+      ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/combined
     steps:
       - name: copy files to the archive directory if needed
         run: |
           # start by changing ownership of all files to the somisana user
-          sudo chown -R somisana:somisana ${{ env.RUN_DIR }}
+          sudo chown -R somisana:somisana ${{ env.DIR_WITH_DIRS }}/combined
           # only copy if we're on the main branch
           # we need to use sudo since the archive directory is owned by root
           # we have set up the somisana user to be able to do this without the need for a password
@@ -260,8 +203,7 @@ jobs:
               sudo mkdir -p ${{ env.ARCHIVE_DIR }}
               sudo chmod -R 775 ${{ env.ARCHIVE_DIR }}
             fi
-            sudo cp -f ${{ env.RUN_DIR }}/config.py ${{ env.ARCHIVE_DIR }}
-            sudo cp -f ${{ env.RUN_DIR }}/*.nc ${{ env.ARCHIVE_DIR }}
-            sudo cp -f ${{ env.RUN_DIR }}/*.gif ${{ env.ARCHIVE_DIR }}
-            sudo cp -f ${{ env.RUN_DIR }}/*.jpg ${{ env.ARCHIVE_DIR }}
+            sudo cp -f ${{ env.DIR_WITH_DIRS }}/combined/*.nc ${{ env.ARCHIVE_DIR }}
+            sudo cp -f ${{ env.DIR_WITH_DIRS }}/combined/*.gif ${{ env.ARCHIVE_DIR }}
+            sudo cp -f ${{ env.DIR_WITH_DIRS }}/combined/*.jpg ${{ env.ARCHIVE_DIR }}
           fi

@@ -9,6 +9,7 @@ import xarray as xr
 import opendrift
 import xarray as xr
 from xhistogram.xarray import histogram
+import glob
 
 def fill_deactivated(ds):
     '''
@@ -102,7 +103,7 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         for ii, days in enumerate(days_since_start):
             h_time.data[ii,:,:]=xr.where(h.data[ii,:,:]>0,days,10e6)
         
-        # compute the minimum surface oiling time
+        # compute the minimum time
         h_time_min=h_time.min(('time'))
         h_time_min = h_time_min.where(h_time_min != 10e6)
         h_time_min=h_time_min.rename('minimum_time')
@@ -256,6 +257,107 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
     else:
         print('grid_type input of '+grid_type+' is not supported')
         print('valid options are density, surface_oil and stranded_oil')
+
+
+def combine_gridded(dir_with_dirs,dirs=None,fname_gridded='gridded.nc',var_name=None):
+    '''
+    combine gridded output from multiple simulations into a single file
+    the average values are computed over a selection of input gridded files, apart from minimum_time, in which case the minimum value is computed
+
+    dir_with_dirs - path to a directory containing multiple directories, where each directory contains opendrift output
+    dirs - a list of dir names inside dir_with_dirs which contain opendrift ouput. If None, then dirs is found dynamically from all dirs inside dir_with_dirs (except for the dirname 'combined')
+    fname_gridded - the name of the gridded file which will be located inside each dir in dirs
+    var_name - the time-dependent variable in fname_gridded. If None, then only the time-independent 'maximum' and 'minimum_time' variables are used
+    '''
+
+    if dirs is None:
+        # find a list of all dirs inside dir_with_dirs, except for any dir called 'combined'
+        all_dirs = glob.glob(dir_with_dirs + "/*/")  # Get all directories
+        dirs = [d for d in all_dirs if not d.endswith("combined/")]  # Filter out 'combined' directories
+    
+    for i,dir_i in enumerate(dirs):
+        fname_i = os.path.join(dir_with_dirs,dir_i,fname_gridded)
+        ds = xr.open_dataset(fname_i)
+        # maximum and minimum_time variables have dimensions (lat_bin, lon_bin) i.e. time independent
+        maximum_i=ds.maximum
+        minimum_time_i=ds.minimum_time
+        if var_name is not None:
+            var_i=ds[var_name]
+        if i == 0:
+            # initialise the output dataarrays using the first file
+            maximum_out=maximum_i
+            minimum_time_out=minimum_time_i
+            if var_name is not None:
+                var_out=var_i
+        else:
+            minimum_time_out = np.fmin(minimum_time_out, minimum_time_i)
+            maximum_out = maximum_i + maximum_out
+            if var_name is not None:
+                # the var_name variable will have dimensions (time, lat_bin, lon_bin) i.e. time independent
+                # But the length of the time dimension may not be consistent between different files
+                # So we have to firstly align the two dataarrays along the time dimension
+                var_out, var_i = xr.align(var_out, var_i, join="outer")
+                
+                # Fill missing times with zeros
+                var_out = var_out.fillna(0)
+                var_i = var_i.fillna(0)
+                
+                # Add the two DataArrays
+                var_out = var_out + var_i
+
+    # compute the averages for the maximum and var_name variables
+    maximum_out=maximum_out/len(dirs)
+    if var_name is not None:
+        var_out=var_out/len(dirs)
+
+    # make the 'combined' output directory
+    combined_dir = os.path.join(dir_with_dirs,'combined')
+    if not os.path.exists(combined_dir):
+        os.makedirs(combined_dir)
+    
+    # write the output file
+    fname_out = os.path.join(combined_dir,fname_gridded)
+    if var_name is not None:
+        ds_out = xr.Dataset({var_name: var_out, 'minimum_time': minimum_time_out,'maximum': maximum_out})
+        ds_out.to_netcdf(fname_out)
+    else:
+        ds_out = xr.Dataset({'minimum_time': minimum_time_out,'maximum': maximum_out})
+        ds_out.to_netcdf(fname_out)
+
+def combine_trajectories(dir_with_dirs,dirs=None,fname_traj='trajectories.nc'):
+    '''
+    combine raw opendrift output from multiple simulations into a single file
+    by adding a new dimension called dir_name
+        
+    dir_with_dirs - path to a directory containing multiple directories, where each directory contains opendrift output
+    dirs - a list of dir names inside dir_with_dirs which contain opendrift ouput. If None, then dirs is found dynamically from all dirs inside dir_with_dirs (except for the dirname 'combined')
+    fname_traj - the name of the trajectories file (raw output) which will be located inside each dir in dirs
+    '''
+    
+    if dirs is None:
+        # find a list of all dirs inside dir_with_dirs, except for any dir called 'combined'
+        all_dirs = glob.glob(dir_with_dirs + "/*/")  # Get all directories
+        dirs = [d for d in all_dirs if not d.endswith("combined/")]  # Filter out 'combined' directories
+    
+    datasets = []
+    for i,dir_i in enumerate(dirs):
+        fname_i = os.path.join(dir_with_dirs,dir_i,fname_traj)
+        ds = xr.open_dataset(fname_i)
+        # Add a new dimension 'filename' to the dataset, using the file name as the label
+        ds = ds.expand_dims({'dir_name': [dir_i.split('/')[-2]]})
+        datasets.append(ds)
+    
+    # Concatenate datasets along the new 'filename' dimension
+    combined_ds = xr.concat(datasets, dim='dir_name')
+    
+    # make the 'combined' output directory (if not already there)
+    combined_dir = os.path.join(dir_with_dirs,'combined')
+    if not os.path.exists(combined_dir):
+        os.makedirs(combined_dir)
+    
+    # write the output file
+    fname_out = os.path.join(combined_dir,fname_traj)
+    combined_ds.to_netcdf(fname_out)
 
 def oil_massbal(fname,fname_out):
     
