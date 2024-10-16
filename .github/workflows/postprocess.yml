@@ -244,6 +244,7 @@ jobs:
   # copy data over to where it will be archived
   archive:
     needs: [animate_particles,particle_density,surface_oil,stranded_oil,oil_mass_balance]
+    if: always()  # Ensure this job runs, even if the oil jobs are skipped
     runs-on: ${{ inputs.RUNNER_NAME }}
     env:
       ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}-${{ inputs.WIND }}
