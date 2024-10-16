@@ -200,6 +200,7 @@ jobs:
   # copy data over to where it will be archived
   archive:
     needs: [combine_particle_density,combine_surface_oil,combine_stranded_oil]
+    if: always()  # Ensure this job runs, even if the oil jobs are skipped
     runs-on: ${{ inputs.RUNNER_NAME }}
     env:
       ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/combined
