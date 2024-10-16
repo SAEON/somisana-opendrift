@@ -12,10 +12,10 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='Test_oil'
+config_name='IJ_spill_HFO'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20240929_12'
+run_date='20241016_00'
 
 # -----------
 # spill info
@@ -39,10 +39,10 @@ radius=5
 # Can choose any oil name from https://adios.orr.noaa.gov/oils/
 # Or some Norgegain oils from https://opendrift.github.io/oil_types.html
 # Or a few other generic oil types added as part of opendrift, such as 'GENERIC INTERMEDIATE FUEL OIL 180'
-oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
+oil_type='HEAVY FUEL OIL'
 #
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20240929_12'
+release_start_time='20241013_12'
 #
 # duration of the release of oil in hours
 release_dur=3
