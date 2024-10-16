@@ -22,8 +22,8 @@ run_date='20241016_00'
 # -----------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=25.74
-lat_release=-33.855
+lon_release=19.6185
+lat_release=-35.39933333
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -33,7 +33,7 @@ z=-0.001
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
 # for a subsea blowout this could be hundereds of meters, but a surface spill it will be small, in the order of meters
-radius=5
+radius=100
 #
 # specify the oil type - important for weathering properties
 # Can choose any oil name from https://adios.orr.noaa.gov/oils/
@@ -45,7 +45,7 @@ oil_type='HEAVY FUEL OIL'
 release_start_time='20241013_12'
 #
 # duration of the release of oil in hours
-release_dur=3
+release_dur=1
 #
 # volume of oil spilled in m3
 # This is not used directly in the model - it's only used here to get the oil flow rate below
