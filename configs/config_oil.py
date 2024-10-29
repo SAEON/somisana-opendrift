@@ -44,8 +44,8 @@ oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
 # start time of spill, in format YYYYMMDD_HH, in UTC
 release_start_time='20241027_12'
 #
-# duration of the release of oil in hours
-release_dur=0
+# duration of the release of oil in hours (this can't be zero!)
+release_dur=1
 #
 # volume of oil spilled in m3
 # This is not used directly in the model - it's only used here to get the oil flow rate below
