@@ -12,18 +12,18 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='I&J_spill_01'
+config_name='test_spill_01'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20241016_00'
+run_date='20241027_00'
 
 # -------------
 # release info
 # -------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=19.6185
-lat_release=-35.39933333
+lon_release=18
+lat_release=-34
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -32,13 +32,13 @@ z=0
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
-radius=100
+radius=3000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20241013_12'
+release_start_time='20241027_12'
 #
 # duration of the release of particles in hours
-release_dur=1
+release_dur=0
 
 # -------------
 # forcing files
