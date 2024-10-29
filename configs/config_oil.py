@@ -12,45 +12,45 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='IJ_spill_HFO'
+config_name='test_spill_01'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20241016_00'
+run_date='20241027_00'
 
 # -----------
 # spill info
 # -----------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=19.6185
-lat_release=-35.39933333
+lon_release=18
+lat_release=-34
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
-z=-0.001
+z=0
 #
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
 # for a subsea blowout this could be hundereds of meters, but a surface spill it will be small, in the order of meters
-radius=100
+radius=3000
 #
 # specify the oil type - important for weathering properties
 # Can choose any oil name from https://adios.orr.noaa.gov/oils/
 # Or some Norgegain oils from https://opendrift.github.io/oil_types.html
 # Or a few other generic oil types added as part of opendrift, such as 'GENERIC INTERMEDIATE FUEL OIL 180'
-oil_type='HEAVY FUEL OIL'
+oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
 #
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20241013_12'
+release_start_time='20241027_12'
 #
 # duration of the release of oil in hours
-release_dur=1
+release_dur=0
 #
 # volume of oil spilled in m3
 # This is not used directly in the model - it's only used here to get the oil flow rate below
 # so you can also specify the 'oil_flow_rate' directly and comment 'oil_volume' if that is convenient 
-oil_volume=50
+oil_volume=500
 #
 # oil flow rate in m3/hr
 oil_flow_rate=oil_volume/release_dur
