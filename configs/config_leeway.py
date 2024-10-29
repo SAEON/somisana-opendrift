@@ -15,20 +15,20 @@
 config_name='Test_leeway'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20240929_12'
+run_date='20241027_00'
 
 # ------------
 # object info
 # ------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=25.74
-lat_release=-33.855
+lon_release=18
+lat_release=-34
 #
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles
-radius=5
+radius=3000
 #
 # specify the object type - important for drift properties
 # see references here - https://opendrift.github.io/autoapi/opendrift/models/leeway/index.html#module-opendrift.models.leeway
@@ -37,7 +37,7 @@ radius=5
 object_type=26
 
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20240929_12'
+release_start_time='20241027_12'
 
 # -------------
 # forcing files
@@ -75,7 +75,7 @@ wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999
 coastline_action='previous'
 #
 # constant horizontal diffusivity (m2/s)
-hz_diff = 1
+hz_diff = 0
 
 # ------------------
 # numerical settings
