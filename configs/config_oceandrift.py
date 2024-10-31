@@ -15,7 +15,7 @@
 config_name='test_oceandrift'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20241027_00'
+run_date='20241031_00'
 
 # -------------
 # release info
@@ -35,7 +35,7 @@ z=0
 radius=3000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20241027_12'
+release_start_time='20241031_12'
 #
 # duration of the release of particles in hours
 release_dur=0
