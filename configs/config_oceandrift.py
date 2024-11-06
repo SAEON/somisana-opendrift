@@ -15,7 +15,7 @@
 config_name='test_oceandrift'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20241031_00'
+run_date='20241106_12'
 
 # -------------
 # release info
@@ -35,7 +35,7 @@ z=0
 radius=3000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20241031_12'
+release_start_time='20241102_00'
 #
 # duration of the release of particles in hours
 release_dur=0
@@ -56,8 +56,8 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those inside the docker image used to run operationally 
-croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C03_I99_OGCM_WIND/output/croco_avg.nc',
-        '/mnt/tmp/sa_west_02/croco_v1.3.1/C03_I99_OGCM_WIND/output/croco_avg.nc'
+croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C04_I99_OGCM_WIND/output/croco_avg.nc',
+        '/mnt/tmp/sa_west_02/croco_v1.3.1/C04_I99_OGCM_WIND/output/croco_avg.nc'
         ]
 
 # ogcm file, as downloaded using the somisana pre-processing tools
