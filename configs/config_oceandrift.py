@@ -111,7 +111,7 @@ loglevel = 50
 # run duration in days
 # default is None, in which case it will be dynamically defined based on the input forcing
 # if explicitly defined, make sure the run duration doesn't exceed the temporal range of your inputs!
-run_dur = None 
+run_dur = 7 
 #
 # number of particles to release
 # generally the more the better, but there are computational limits
