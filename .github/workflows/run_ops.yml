@@ -161,3 +161,4 @@ jobs:
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
       EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}

@@ -29,6 +29,10 @@ on:
         description: 'spatial extent of the gridded output and plot, in format lon0,lon1,lat0,lat1. If None, then this is dynamically determined from the geographic extent of the particles'
         required: true
         type: string
+      DX_M:
+        description: 'grid size (m) used to grid particle output. If None, If None, then a 50 x 50 regular grid is generated'
+        required: true
+        type: string
 
 env:
   # path to the directory containing multiple run directories, as seen inside the local server 
@@ -52,17 +56,35 @@ jobs:
     needs: [combine_trajectories]
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
-      - name: combine gridded particle density files
+      # I'm specifically not using the combine_gridded function here, as this creates the average over all runs
+      # This is more relevant for say oil thickness, but for particle density I think it is better to create
+      # The particle density again directly from the combined trajectories file (you can't do this for oil
+      # as you'll end up with unrealistic oil thicknesses as you keep adding runs...)
+      #- name: combine gridded particle density files
+      #  run: |
+      #    docker run \
+      #      --rm \
+      #      --user root \
+      #      -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
+      #      ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+      #        combine_gridded  \
+      #          --dir_with_dirs /mnt/tmp \
+      #          --fname_gridded gridded_particle_density.nc \
+      #          --var_name particle_density
+      - name: combined gridded particle density from combined particles
         run: |
           docker run \
             --rm \
             --user root \
             -v ${{ env.DIR_WITH_DIRS }}:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-              combine_gridded  \
-                --dir_with_dirs /mnt/tmp \
+              grid_particles  \
+                --config_dir /mnt/tmp/combined \
+                --fname trajectories.nc \
                 --fname_gridded gridded_particle_density.nc \
-                --var_name particle_density
+                --grid_type density \
+                --extents ${{ inputs.EXTENTS }} \
+                --dx_m ${{ inputs.DX_M }}
 
       - name: animate the combined gridded particle density
         run: |
@@ -113,6 +135,7 @@ jobs:
                 --jpg_out gridded_min_time.jpg
 
   combine_surface_oil:
+    needs: [combine_trajectories]
     runs-on: ${{ inputs.RUNNER_NAME }}
     if: ${{ inputs.MODEL_TYPE == 'oil' }}
     steps:
@@ -165,6 +188,7 @@ jobs:
                 --jpg_out gridded_surface_oil_max.jpg
 
   combine_stranded_oil:
+    needs: [combine_trajectories]
     runs-on: ${{ inputs.RUNNER_NAME }}
     if: ${{ inputs.MODEL_TYPE == 'oil' }}
     steps:

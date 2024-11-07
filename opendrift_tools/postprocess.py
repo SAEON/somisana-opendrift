@@ -339,16 +339,28 @@ def combine_trajectories(dir_with_dirs,dirs=None,fname_traj='trajectories.nc'):
         all_dirs = glob.glob(dir_with_dirs + "/*/")  # Get all directories
         dirs = [d for d in all_dirs if not d.endswith("combined/")]  # Filter out 'combined' directories
     
+    # I'm commenting this for now since I think it makes more sense to append
+    # the data to the 'trajectory' dimension rather than create a new 'dir_name' dimension
+    # But I'm not sure if there was a good reason for doing it like this in the first place?
+    # datasets = []
+    # for i,dir_i in enumerate(dirs):
+    #     fname_i = os.path.join(dir_with_dirs,dir_i,fname_traj)
+    #     ds = xr.open_dataset(fname_i)
+    #     # Add a new dimension 'filename' to the dataset, using the file name as the label
+    #     ds = ds.expand_dims({'dir_name': [dir_i.split('/')[-2]]})
+    #     datasets.append(ds)
+    # Concatenate datasets along the new 'filename' dimension
+    # combined_ds = xr.concat(datasets, dim='dir_name')
+    
     datasets = []
-    for i,dir_i in enumerate(dirs):
-        fname_i = os.path.join(dir_with_dirs,dir_i,fname_traj)
+    for i, dir_i in enumerate(dirs):
+        fname_i = os.path.join(dir_with_dirs, dir_i, fname_traj)
         ds = xr.open_dataset(fname_i)
-        # Add a new dimension 'filename' to the dataset, using the file name as the label
-        ds = ds.expand_dims({'dir_name': [dir_i.split('/')[-2]]})
         datasets.append(ds)
     
-    # Concatenate datasets along the new 'filename' dimension
-    combined_ds = xr.concat(datasets, dim='dir_name')
+    # Concatenate datasets along the 'trajectory' dimension
+    # the join='outer' argument should handle variable size in the time dimension
+    combined_ds = xr.concat(datasets, dim='trajectory', join='outer')
     
     # make the 'combined' output directory (if not already there)
     combined_dir = os.path.join(dir_with_dirs,'combined')
