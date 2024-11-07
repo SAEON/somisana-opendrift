@@ -126,5 +126,5 @@ time_step=15
 vert_mix_tstep=60
 #
 # output timestep in minutes
-time_step_output=60
+time_step_output=360
 
