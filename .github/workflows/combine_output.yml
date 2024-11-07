@@ -49,6 +49,7 @@ jobs:
                 --dir_with_dirs /mnt/tmp
 
   combine_particle_density:
+    needs: [combine_trajectories]
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: combine gridded particle density files
