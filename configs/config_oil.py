@@ -22,8 +22,8 @@ run_date='20241106_12'
 # -----------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=18
-lat_release=-34
+lon_release=25.772602
+lat_release=-33.869797
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -33,7 +33,7 @@ z=0
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
 # for a subsea blowout this could be hundereds of meters, but a surface spill it will be small, in the order of meters
-radius=3000
+radius=100
 #
 # specify the oil type - important for weathering properties
 # Can choose any oil name from https://adios.orr.noaa.gov/oils/
@@ -45,12 +45,12 @@ oil_type='GENERIC INTERMEDIATE FUEL OIL 180'
 release_start_time='20241102_00'
 #
 # duration of the release of oil in hours (this can't be zero!)
-release_dur=1
+release_dur=3
 #
 # volume of oil spilled in m3
 # This is not used directly in the model - it's only used here to get the oil flow rate below
 # so you can also specify the 'oil_flow_rate' directly and comment 'oil_volume' if that is convenient 
-oil_volume=500
+oil_volume=50
 #
 # oil flow rate in m3/hr
 oil_flow_rate=oil_volume/release_dur
@@ -131,7 +131,7 @@ loglevel = 50
 # run duration in days
 # default is None, in which case it will be dynamically defined based on the input forcing
 # if explicitly defined, make sure the run duration doesn't exceed the temporal range of your inputs!
-run_dur = None 
+run_dur = 7 
 #
 # number of particles to release
 # generally the more the better, but there are computational limits
@@ -146,5 +146,5 @@ time_step=15
 vert_mix_tstep=60
 #
 # output timestep in minutes
-time_step_output=60
+time_step_output=360
 
