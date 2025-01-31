@@ -23,7 +23,7 @@ run_date='20250128_00'
 #
 # coordinates of the release (in geographical degrees)
 lon_release=18.1
-lat_release=-32.6
+lat_release=-32.7
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -126,5 +126,5 @@ time_step=15
 vert_mix_tstep=60
 #
 # output timestep in minutes
-time_step_output=360
+time_step_output=60
 
