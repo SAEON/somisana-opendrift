@@ -12,10 +12,10 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='st_helena_spill_03'
+config_name='st_helena_spill_05'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250128_17'
+run_date='20250128_00'
 
 # -------------
 # release info
@@ -35,7 +35,7 @@ z=0
 radius=2000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20250125_12'
+release_start_time='20250125_17'
 #
 # duration of the release of particles in hours
 release_dur=0
@@ -98,7 +98,7 @@ hz_diff = 1
 #
 # wind drift factor
 # fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.03
+wind_drift_factor=0.05
 
 # ------------------
 # numerical settings
