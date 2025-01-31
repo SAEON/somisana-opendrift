@@ -35,7 +35,7 @@ z=0
 radius=2000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20250125_17'
+release_start_time='20250125_12'
 #
 # duration of the release of particles in hours
 release_dur=0
