@@ -15,7 +15,7 @@
 config_name='st_helena_spill_05'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250128_00'
+run_date='20250128_17'
 
 # -------------
 # release info
