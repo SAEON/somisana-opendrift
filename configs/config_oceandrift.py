@@ -12,7 +12,7 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='st_helena_spill_01'
+config_name='st_helena_spill_05'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
 run_date='20250128_00'
@@ -22,8 +22,8 @@ run_date='20250128_00'
 # -------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=18.1
-lat_release=-32.7
+lon_release=18.09
+lat_release=-32.68
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -98,7 +98,7 @@ hz_diff = 1
 #
 # wind drift factor
 # fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.03
+wind_drift_factor=0.05
 
 # ------------------
 # numerical settings
