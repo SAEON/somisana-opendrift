@@ -83,6 +83,11 @@ jobs:
     uses: ./.github/workflows/build_image.yml  # Path to your reusable workflow
  
   # I thought about using the matrix strategy to run models in parallel, but if one job fails, then they all get called off so it's better run them as separate jobs, which still get run in parallel
+  #
+
+  # we should be more clever about which runs get initialised. Not all runs in the ensemble are always available
+  # so we need some sort of check where we automatically see if the forcing files exist and only run opendrift if they do
+  # for now, I'm just manually commenting out the jobs if the forcing doesn't exist for the run I'm looking for  
 
   run_GFS_MERCATOR:
     needs: [envs,build_image]
@@ -100,21 +105,21 @@ jobs:
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
   
-  run_SAWS_MERCATOR:
-    needs: [envs,build_image]
-    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
-    with:
-      MODEL_TYPE: ${{ github.event.inputs.model_type }}
-      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-      RUNNER_NAME: mims1
-      WIND: SAWS
-      OGCM: MERCATOR
-      RUN_MODEL: ${{ github.event.inputs.run_model }}
-      DO_POST: ${{ github.event.inputs.do_post }}
-      EXTENTS: ${{ github.event.inputs.extents }}
-      DX_M: ${{ github.event.inputs.dx_m }}
+#  run_SAWS_MERCATOR:
+#    needs: [envs,build_image]
+#    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+#    with:
+#      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+#      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+#      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+#      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+#      RUNNER_NAME: mims1
+#      WIND: SAWS
+#      OGCM: MERCATOR
+#      RUN_MODEL: ${{ github.event.inputs.run_model }}
+#      DO_POST: ${{ github.event.inputs.do_post }}
+#      EXTENTS: ${{ github.event.inputs.extents }}
+#      DX_M: ${{ github.event.inputs.dx_m }}
   
   run_GFS_HYCOM:
     needs: [envs,build_image]
@@ -132,26 +137,27 @@ jobs:
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
   
-  run_SAWS_HYCOM:
-    needs: [envs,build_image]
-    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
-    with:
-      MODEL_TYPE: ${{ github.event.inputs.model_type }}
-      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-      RUNNER_NAME: mims1
-      WIND: SAWS
-      OGCM: HYCOM
-      RUN_MODEL: ${{ github.event.inputs.run_model }}
-      DO_POST: ${{ github.event.inputs.do_post }}
-      EXTENTS: ${{ github.event.inputs.extents }}
-      DX_M: ${{ github.event.inputs.dx_m }}
+#  run_SAWS_HYCOM:
+#    needs: [envs,build_image]
+#    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+#    with:
+#      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+#      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+#      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+#      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+#      RUNNER_NAME: mims1
+#      WIND: SAWS
+#      OGCM: HYCOM
+#      RUN_MODEL: ${{ github.event.inputs.run_model }}
+#      DO_POST: ${{ github.event.inputs.do_post }}
+#      EXTENTS: ${{ github.event.inputs.extents }}
+#      DX_M: ${{ github.event.inputs.dx_m }}
   
   # get some combined output from runs with different forcings
   # maybe we need a check to see if more than 1 run was actually successful?
   combine_output:
-    needs: [envs,run_SAWS_MERCATOR,run_GFS_MERCATOR,run_SAWS_HYCOM,run_GFS_HYCOM]
+#    needs: [envs,run_SAWS_MERCATOR,run_GFS_MERCATOR,run_SAWS_HYCOM,run_GFS_HYCOM]
+    needs: [envs,run_GFS_MERCATOR,run_GFS_HYCOM]
     if: ${{ always() && github.event.inputs.do_post == 'true' }}
     uses: ./.github/workflows/combine_output.yml  # Path to your reusable workflow
     with:

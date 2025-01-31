@@ -12,18 +12,18 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='test_oceandrift'
+config_name='st_helena_spill_01'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20241106_12'
+run_date='20250128_00'
 
 # -------------
 # release info
 # -------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=18
-lat_release=-34
+lon_release=18.1
+lat_release=-32.6
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -32,10 +32,10 @@ z=0
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
-radius=3000
+radius=2000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20241102_00'
+release_start_time='20250125_17'
 #
 # duration of the release of particles in hours
 release_dur=0
@@ -56,8 +56,8 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those inside the docker image used to run operationally 
-croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C04_I99_OGCM_WIND/output/croco_avg.nc',
-        '/mnt/tmp/sa_west_02/croco_v1.3.1/C04_I99_OGCM_WIND/output/croco_avg.nc'
+croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
+        '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
         ]
 
 # ogcm file, as downloaded using the somisana pre-processing tools
