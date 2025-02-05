@@ -12,7 +12,7 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='st_helena_spill_03'
+config_name='st_helena_spill_05_backward'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
 run_date='20250128_00'
@@ -98,7 +98,7 @@ hz_diff = 1
 #
 # wind drift factor
 # fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.03
+wind_drift_factor=0.05
 
 # ------------------
 # numerical settings
@@ -120,7 +120,8 @@ run_dur = 7
 num_part=5000
 #
 # opendrift timestep for particle integration in minutes
-time_step=15
+# negative value should make the model run in reverse
+time_step=-15
 #
 # vertical mixing tstep in seconds
 vert_mix_tstep=60
