@@ -12,18 +12,18 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='st_helena_spill_05_backward'
+config_name='Agulhas_spill_Gas_Capricorn'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250128_00'
+run_date='20250129_00'
 
 # -------------
 # release info
 # -------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=18.09
-lat_release=-32.68
+lon_release=19.655837
+lat_release=-34.840137
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -32,13 +32,13 @@ z=0
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
-radius=2000
+radius=100
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20250125_17'
+release_start_time='20250327_15'
 #
 # duration of the release of particles in hours
-release_dur=0
+release_dur=1
 
 # -------------
 # forcing files
@@ -98,7 +98,7 @@ hz_diff = 1
 #
 # wind drift factor
 # fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.05
+wind_drift_factor=0.03
 
 # ------------------
 # numerical settings
@@ -121,7 +121,7 @@ num_part=5000
 #
 # opendrift timestep for particle integration in minutes
 # negative value should make the model run in reverse
-time_step=-15
+time_step=15
 #
 # vertical mixing tstep in seconds
 vert_mix_tstep=60
