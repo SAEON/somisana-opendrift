@@ -15,7 +15,7 @@
 config_name='Agulhas_spill_Gas_Capricorn'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250129_00'
+run_date='20250329_00'
 
 # -------------
 # release info
