@@ -32,7 +32,7 @@ z=0
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
-radius=10000
+radius=1000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
 release_start_time='20250327_15'
