@@ -12,18 +12,18 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='Agulhas_spill_Gas_Capricorn_2'
+config_name='Brussels_Express_oceandrift'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250329_00'
+run_date='20250422_00'
 
 # -------------
 # release info
 # -------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=19.655837
-lat_release=-34.840137
+lon_release=32.1
+lat_release=-30.783333
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -35,7 +35,7 @@ z=0
 radius=1000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20250327_15'
+release_start_time='20250419_09'
 #
 # duration of the release of particles in hours
 release_dur=1
