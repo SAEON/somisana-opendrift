@@ -121,37 +121,37 @@ jobs:
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
   
-#  run_GFS_HYCOM:
-#    needs: [envs,build_image]
-#    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
-#    with:
-#      MODEL_TYPE: ${{ github.event.inputs.model_type }}
-#      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-#      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-#      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-#      RUNNER_NAME: mims1
-#      WIND: GFS
-#      OGCM: HYCOM
-#      RUN_MODEL: ${{ github.event.inputs.run_model }}
-#      DO_POST: ${{ github.event.inputs.do_post }}
-#      EXTENTS: ${{ github.event.inputs.extents }}
-#      DX_M: ${{ github.event.inputs.dx_m }}
-#  
-#  run_SAWS_HYCOM:
-#    needs: [envs,build_image]
-#    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
-#    with:
-#      MODEL_TYPE: ${{ github.event.inputs.model_type }}
-#      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-#      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-#      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-#      RUNNER_NAME: mims1
-#      WIND: SAWS
-#      OGCM: HYCOM
-#      RUN_MODEL: ${{ github.event.inputs.run_model }}
-#      DO_POST: ${{ github.event.inputs.do_post }}
-#      EXTENTS: ${{ github.event.inputs.extents }}
-#      DX_M: ${{ github.event.inputs.dx_m }}
+  run_GFS_HYCOM:
+    needs: [envs,build_image]
+    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+    with:
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims1
+      WIND: GFS
+      OGCM: HYCOM
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
+      DO_POST: ${{ github.event.inputs.do_post }}
+      EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}
+  
+  run_SAWS_HYCOM:
+    needs: [envs,build_image]
+    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+    with:
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims1
+      WIND: SAWS
+      OGCM: HYCOM
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
+      DO_POST: ${{ github.event.inputs.do_post }}
+      EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}
   
   # get some combined output from runs with different forcings
   # maybe we need a check to see if more than 1 run was actually successful?
