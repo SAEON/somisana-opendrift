@@ -12,18 +12,19 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='Gansbaai_oceandrift'
+config_name='SAWS_test'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250726_00'
+run_date='20250804_00'
 
 # -------------
 # release info
 # -------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=19.535084
-lat_release=-34.687801
+lon_release=18
+
+lat_release=-33.8
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -32,10 +33,10 @@ z=0
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
-radius=10000
+radius=3000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20250726_00'
+release_start_time='20250803_12'
 #
 # duration of the release of particles in hours
 release_dur=0
@@ -72,7 +73,7 @@ wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999
 # -------------------
 #
 # coastline interaction - 'stranding' or 'previous'
-coastline_action='previous'
+coastline_action='stranding'
 #
 # seafloor_action - ‘previous’: particles are moved back to previous location - ‘deactivate’: particles are deactivated - ‘lift_to_seafloor’: particles are lifted vertically to seafloor level
 seafloor_action='lift_to_seafloor'
@@ -121,7 +122,7 @@ num_part=5000
 #
 # opendrift timestep for particle integration in minutes
 # negative value should make the model run in reverse
-time_step=-15
+time_step=15
 #
 # vertical mixing tstep in seconds
 vert_mix_tstep=60
