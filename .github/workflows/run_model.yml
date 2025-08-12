@@ -89,10 +89,17 @@ jobs:
     outputs:
       files_ok: ${{ steps.set-output.outputs.files_ok }}
     steps:
-      - name: Write Python check script
-  run: |
-    cat << 'EOF' > check_files.py
-import os, sys, pathlib
+      - name: check input file availability
+        id: check
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            --entrypoint python \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.RUN_DIR }}:/mnt/run_dir \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+            -c 'import os, sys, pathlib
 
 sys.path.append("/mnt/run_dir")
 import config
@@ -119,18 +126,7 @@ if missing:
         print("  ", f)
 else:
     print("All specified forcing files are present.")
-EOF
-      - name: check input file availability
-        id: check
-        run: |
-          docker run \
-            --rm \
-            --user root \
-            --entrypoint python \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            -v ${{ env.RUN_DIR }}:/mnt/run_dir \
-            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-            -c '/mnt/run_dir/check_files.py'
+'
 
       - name: Set job output from file
       id: set-output
