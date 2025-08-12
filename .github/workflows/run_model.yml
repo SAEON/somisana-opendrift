@@ -89,6 +89,37 @@ jobs:
     outputs:
       files_ok: ${{ steps.set-output.outputs.files_ok }}
     steps:
+      - name: Write Python check script
+  run: |
+    cat << 'EOF' > check_files.py
+import os, sys, pathlib
+
+sys.path.append("/mnt/run_dir")
+import config
+
+missing = []
+if config.use_croco:
+    for f in config.croco_files:
+        if not os.path.exists(f):
+            missing.append(f)
+if config.use_ogcm:
+    for f in config.ogcm_files:
+        if not os.path.exists(f):
+            missing.append(f)
+if config.use_wind:
+    for f in config.wind_files:
+        if not os.path.exists(f):
+            missing.append(f)
+
+pathlib.Path("/mnt/run_dir/files_ok").write_text("false" if missing else "true")
+
+if missing:
+    print("Run not executed due to missing file(s):")
+    for f in missing:
+        print("  ", f)
+else:
+    print("All specified forcing files are present.")
+EOF
       - name: check input file availability
         id: check
         run: |
@@ -99,38 +130,7 @@ jobs:
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             -v ${{ env.RUN_DIR }}:/mnt/run_dir \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-            -c '
-import os, sys, pathlib
-             
-sys.path.append("/mnt/run_dir")
-import config 
-
-missing = []
-if config.use_croco:
-    croco_files = config.croco_files
-    for croco_file in croco_files:
-        if not os.path.exists(croco_file):
-            missing.append(croco_file)
-if config.use_ogcm:
-    ogcm_files = config.ogcm_files
-    for ogcm_file in ogcm_files:
-        if not os.path.exists(ogcm_file):
-            missing.append(ogcm_file)
-if config.use_wind:
-    wind_files = config.wind_files
-    for wind_file in wind_files:
-        if not os.path.exists(wind_file):
-            missing.append(wind_file)
-
-pathlib.Path("/mnt/run_dir/files_ok").write_text("false" if missing else "true")
-
-if missing:
-    print("Run not executed due to missing file(s):")
-    for f in missing:
-        print("  ", f)
-else:
-    print("All specified forcing files are present.")
-'
+            -c '/mnt/run_dir/check_files.py'
 
       - name: Set job output from file
       id: set-output
