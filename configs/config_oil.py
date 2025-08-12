@@ -95,7 +95,7 @@ croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C04_I99_OGCM_WIND/output/c
 use_ogcm=True 
 
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
+ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
 
 # switch to turn on/off use of wind as input
 use_wind=True 

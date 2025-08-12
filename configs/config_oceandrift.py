@@ -12,10 +12,10 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='SAWS_test'
+config_name='test'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250804_00'
+run_date='20250812_00'
 
 # -------------
 # release info
@@ -36,7 +36,7 @@ z=0
 radius=3000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20250803_12'
+release_start_time='20250812_12'
 #
 # duration of the release of particles in hours
 release_dur=0
@@ -69,7 +69,7 @@ croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/o
 use_ogcm=True 
 
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
+ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
 
 # switch to turn on/off use of wind as input
 use_wind=True 

@@ -57,8 +57,7 @@ env:
   RUN_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
 
 jobs:
-  run-model:
-    if: ${{ inputs.RUN_MODEL == 'true' }}
+  setup_config:
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: Check out source code so have access to the files in the repo
@@ -82,6 +81,67 @@ jobs:
           chmod -R 774 ${{ env.RUN_DIR }}
         continue-on-error: true
 
+  check_input_files:
+    # this is a check to skip running the model if the inputs aren't available
+    # this ensures the operational workflow doesn't crash if some of the runs aren't available but others are (e.g. if HYCOM couldn't be downloaded)
+    needs: [setup_config]
+    runs-on: ${{ inputs.RUNNER_NAME }}
+    outputs:
+      files_ok: ${{ steps.set-output.outputs.files_ok }}
+    steps:
+      - name: check input file availability
+        id: check
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            --entrypoint python \
+            -v ${{ env.DATE_DIR }}:/mnt/tmp \
+            -v ${{ env.RUN_DIR }}:/mnt/run_dir \
+            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
+            -c "
+import os, sys, pathlib
+             
+sys.path.append('/mnt/run_dir')
+import config 
+
+missing = []
+if config.use_croco:
+    croco_files = config.croco_files
+    for croco_file in croco_files:
+        if not os.path.exists(croco_file):
+            missing.append(croco_file)
+if config.use_ogcm:
+    ogcm_files = config.ogcm_files
+    for ogcm_file in ogcm_files:
+        if not os.path.exists(ogcm_file):
+            missing.append(ogcm_file)
+if config.use_wind:
+    wind_files = config.wind_files
+    for wind_file in wind_files:
+        if not os.path.exists(wind_file):
+            missing.append(wind_file)
+
+pathlib.Path('/mnt/run_dir/files_ok').write_text('false' if missing else 'true')
+
+if missing:
+    print('Run not executed due to missing file(s):')
+    for f in missing:
+        print('  ', f)
+else:
+    print('All specified forcing files are present.')
+"
+
+      - name: Set job output from file
+      id: set-output
+      run: |
+        echo "files_ok=$(cat ${{ env.RUN_DIR }}/files_ok)" >> $GITHUB_OUTPUT
+
+  run_model:
+    needs: [setup_config,check_input_files]
+    if: ${{ inputs.RUN_MODEL == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
+    runs-on: ${{ inputs.RUNNER_NAME }}
+    steps:
       - name: run the model
         run: |
           # we're specifying --user root due to permission issues I wasn't clever enough to solve
@@ -98,9 +158,9 @@ jobs:
   
   # do some postprocessing and plotting
   postprocess:
-    needs: [run-model]
-    if: ${{ always() && inputs.DO_POST == 'true' }}
-    uses: ./.github/workflows/postprocess.yml  # Path to your reusable workflow
+    needs: [run_model]
+    if: ${{ always() && inputs.DO_POST == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
+    uses: ./.github/workflows/postprocess.yml
     with:
       MODEL_TYPE: ${{ inputs.MODEL_TYPE }}
       BRANCH_REF: ${{ inputs.BRANCH_REF }}
