@@ -71,7 +71,7 @@ def oceandrift(config_dir):
                     time=[time_start,time_end], 
                     number=config.num_part,
                     terminal_velocity = np.random.uniform(config.terminal_min, config.terminal_max, config.num_part),
-                    wind_drift_factor=config.wind_drift_factor)
+                    wind_drift_factor=np.random.uniform(config.wind_drift_factor_min, config.wind_drift_factor_max, config.num_part))
     
     # --------------
     # run the model
@@ -177,7 +177,7 @@ def oil(config_dir):
                     time=[time_start,time_end], 
                     number=config.num_part,
                     oil_type=config.oil_type,
-                    wind_drift_factor=config.wind_drift_factor)
+                    wind_drift_factor=np.random.uniform(config.wind_drift_factor_min, config.wind_drift_factor_max, config.num_part))
     
     # --------------
     # run the model
@@ -232,6 +232,10 @@ def leeway(config_dir):
     # land interaction
     lw.set_config('general:use_auto_landmask', True) 
     lw.set_config('general:coastline_action', config.coastline_action) 
+    #
+    # prefering to use the exact wind and current...for now anyway
+    o.set_config('drift:wind_uncertainty',0) 
+    o.set_config('drift:current_uncertainty',0) 
     #
     lw.set_config('drift:horizontal_diffusivity', config.hz_diff)
     

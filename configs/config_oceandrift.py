@@ -99,7 +99,9 @@ hz_diff = 1
 #
 # wind drift factor
 # fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.03
+# you can specify a uniform distribution between two values if you'd like to a range of drift factors
+wind_drift_factor_min=0.03
+wind_drift_factor_max=0.03
 
 # ------------------
 # numerical settings
