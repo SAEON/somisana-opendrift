@@ -55,12 +55,22 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those inside the docker image used to run operationally 
+
+# switch to turn on/off use of CROCO as input
+use_croco=True 
+
 croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C04_I99_OGCM_WIND/output/croco_avg.nc',
         '/mnt/tmp/sa_west_02/croco_v1.3.1/C04_I99_OGCM_WIND/output/croco_avg.nc'
         ]
 
+# switch to turn on/off use of OGCM as input
+use_ogcm=True 
+
 # ogcm file, as downloaded using the somisana pre-processing tools
 ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
+
+# switch to turn on/off use of wind as input
+use_wind=True 
 
 # atmospheric forcing file, as produced by the croco pre-processing tools
 wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',

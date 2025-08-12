@@ -57,12 +57,22 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those inside the docker image used to run operationally 
+
+# switch to turn on/off use of CROCO as input
+use_croco=True 
+
 croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
         '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
         ]
 
+# switch to turn on/off use of OGCM as input
+use_ogcm=True 
+
 # ogcm file, as downloaded using the somisana pre-processing tools
 ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
+
+# switch to turn on/off use of wind as input
+use_wind=True 
 
 wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
         '/mnt/tmp/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
@@ -99,7 +109,7 @@ hz_diff = 1
 #
 # wind drift factor
 # fraction of the 10 m wind speed used to advect surface particles
-# you can specify a uniform distribution between two values if you'd like to a range of drift factors
+# you can specify a uniform distribution between two values if you'd like to model a range of drift factors
 wind_drift_factor_min=0.03
 wind_drift_factor_max=0.03
 
