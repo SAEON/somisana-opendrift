@@ -99,10 +99,10 @@ jobs:
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
             -v ${{ env.RUN_DIR }}:/mnt/run_dir \
             ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-            -c "
+            -c '
 import os, sys, pathlib
              
-sys.path.append('/mnt/run_dir')
+sys.path.append("/mnt/run_dir")
 import config 
 
 missing = []
@@ -122,15 +122,15 @@ if config.use_wind:
         if not os.path.exists(wind_file):
             missing.append(wind_file)
 
-pathlib.Path('/mnt/run_dir/files_ok').write_text('false' if missing else 'true')
+pathlib.Path("/mnt/run_dir/files_ok").write_text("false" if missing else "true")
 
 if missing:
-    print('Run not executed due to missing file(s):')
+    print("Run not executed due to missing file(s):")
     for f in missing:
-        print('  ', f)
+        print("  ", f)
 else:
-    print('All specified forcing files are present.')
-"
+    print("All specified forcing files are present.")
+'
 
       - name: Set job output from file
       id: set-output
