@@ -87,52 +87,22 @@ jobs:
     needs: [setup_config]
     runs-on: ${{ inputs.RUNNER_NAME }}
     outputs:
-      files_ok: ${{ steps.set-output.outputs.files_ok }}
+      files_ok: ${{ steps.check.outputs.files_ok }}
     steps:
       - name: check input file availability
         id: check
         run: |
-          docker run \
-            --rm \
-            --user root \
-            --entrypoint python \
-            -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            -v ${{ env.RUN_DIR }}:/mnt/run_dir \
-            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
-            -c 'import os, sys, pathlib
-
-sys.path.append("/mnt/run_dir")
-import config
-
-missing = []
-if config.use_croco:
-    for f in config.croco_files:
-        if not os.path.exists(f):
-            missing.append(f)
-if config.use_ogcm:
-    for f in config.ogcm_files:
-        if not os.path.exists(f):
-            missing.append(f)
-if config.use_wind:
-    for f in config.wind_files:
-        if not os.path.exists(f):
-            missing.append(f)
-
-pathlib.Path("/mnt/run_dir/files_ok").write_text("false" if missing else "true")
-
-if missing:
-    print("Run not executed due to missing file(s):")
-    for f in missing:
-        print("  ", f)
-else:
-    print("All specified forcing files are present.")
-'
-
-      - name: Set job output from file
-      id: set-output
-      run: |
-        echo "files_ok=$(cat ${{ env.RUN_DIR }}/files_ok)" >> $GITHUB_OUTPUT
-
+          ogcm_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
+          wind_file_u=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/U-component_of_wind_Y9999M1.nc
+          wind_file_v=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/V-component_of_wind_Y9999M1.nc
+          if [ -f "$ogcm_file" ] && [ -f "$wind_file_u" ] && [ -f "$wind_file_v" ]; then
+            echo "All required files are present"
+            echo "files_ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Missing required input files - will be skipping this run"
+            echo "files_ok=false" >> "$GITHUB_OUTPUT"
+          fi
+  
   run_model:
     needs: [setup_config,check_input_files]
     if: ${{ inputs.RUN_MODEL == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
