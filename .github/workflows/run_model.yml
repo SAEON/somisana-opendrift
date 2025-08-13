@@ -92,6 +92,7 @@ jobs:
       - name: check input file availability
         id: check
         run: |
+          # At the very least we need to ensure that the ogcm and wind forcing are available before attempting to run
           ogcm_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
           wind_file_u=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/U-component_of_wind_Y9999M1.nc
           wind_file_v=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/V-component_of_wind_Y9999M1.nc
