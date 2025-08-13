@@ -15,7 +15,7 @@
 config_name='test_leeway'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20241106_12'
+run_date='20250813_00'
 
 # ------------
 # object info
@@ -37,7 +37,7 @@ radius=3000
 object_type=26
 
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20241102_00'
+release_start_time='20250813_12'
 
 # -------------
 # forcing files
