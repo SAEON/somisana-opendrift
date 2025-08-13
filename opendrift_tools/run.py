@@ -234,8 +234,8 @@ def leeway(config_dir):
     lw.set_config('general:coastline_action', config.coastline_action) 
     #
     # prefering to use the exact wind and current...for now anyway
-    o.set_config('drift:wind_uncertainty',0) 
-    o.set_config('drift:current_uncertainty',0) 
+    lw.set_config('drift:wind_uncertainty',0) 
+    lw.set_config('drift:current_uncertainty',0) 
     #
     lw.set_config('drift:horizontal_diffusivity', config.hz_diff)
     
