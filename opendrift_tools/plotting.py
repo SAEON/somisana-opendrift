@@ -344,6 +344,7 @@ def plot_gridded(fname,
         cmap = 'Spectral_r', # colormap to use
         add_cbar = True,
         cbar_loc = None, # where on the plot to put the colorbar
+        cbar_orientation = 'vertical',
         cbar_label = 'particle density (%)',
         # options related to the plot output file
         jpg_out=None, # filename of the jpg file
@@ -413,7 +414,7 @@ def plot_gridded(fname,
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     
     if add_cbar:
-        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
+        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc,orientation=cbar_orientation)
         
     # write a jpg if specified
     if write_jpg:
@@ -460,6 +461,7 @@ def plot_gridded_stats(fname,
         cmap = 'Spectral_r', # colormap to use
         add_cbar = True,
         cbar_loc = None, # where on the plot to put the colorbar
+        cbar_orientation = 'vertical',
         cbar_label = 'probability of occurrence (-)',
         # options related to the plot output file
         jpg_out=None, # filename of the jpg file
@@ -495,7 +497,7 @@ def plot_gridded_stats(fname,
         # [left, bottom, width, height] in fractions of figure dimensions
         width=0.7 if add_cbar else 0.8
         ax = fig.add_axes([0.1, 0.1, width, 0.8], projection=ccrs.Mercator())
-        setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
+    setup_plot(ax,lon,lat,extents=extents,lscale=lscale)
     
     # set up the cmap to handle non-uniform input ticks
     if len(ticks)==0:
@@ -520,7 +522,7 @@ def plot_gridded_stats(fname,
     ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
        
     if add_cbar:
-        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
+        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc,orientation=cbar_orientation)
         
     # write a jpg if specified
     if write_jpg:
@@ -531,7 +533,7 @@ def plot_gridded_stats(fname,
     
     return ax
     
-def plot_budget(fname, fname_out,
+def plot_budget(fname, fname_out = None,
                 figsize=(8,4),
                 xlims=None,
                 ylims=None,
@@ -564,9 +566,13 @@ def plot_budget(fname, fname_out,
     
     # save the figure
     ds.close()
-    plt.savefig(fname_out,dpi=500,bbox_inches = 'tight')
+    
+    if fname_out is not None:
+        plt.savefig(fname_out,dpi=500,bbox_inches = 'tight')
+        
+    return ax
 
-def plot_stochastic_budget(fname, fname_out,
+def plot_stochastic_budget(fname, fname_out=None,
                 figsize=(8,4),
                 xlims=[],
                 ylims=[],
@@ -627,7 +633,10 @@ def plot_stochastic_budget(fname, fname_out,
     
     ds.close()
     
-    plt.savefig(fname_out,dpi=500,bbox_inches = 'tight')
+    if fname_out is not None:
+        plt.savefig(fname_out,dpi=500,bbox_inches = 'tight')
+        
+    return ax
 
 # if __name__ == "__main__":
     
