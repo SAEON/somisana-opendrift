@@ -1,0 +1,10 @@
+name: Sandbox for testing individual calleable workflows
+# (not used in th operational workflow at all)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_image:
+    uses: ./.github/workflows/build_image.yml  # Path to your reusable workflow
+ 

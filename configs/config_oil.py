@@ -15,7 +15,7 @@
 config_name='test_oil_blowout'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20241106_12'
+run_date='20250813_00'
 
 # -----------
 # spill info
@@ -42,7 +42,7 @@ radius=1000
 oil_type='Norman Wells'
 #
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20241102_00'
+release_start_time='20250813_00'
 #
 # duration of the release of oil in hours (this can't be zero!)
 release_dur=48
@@ -83,12 +83,22 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those inside the docker image used to run operationally 
-croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C04_I99_OGCM_WIND/output/croco_avg.nc',
-        '/mnt/tmp/sa_west_02/croco_v1.3.1/C04_I99_OGCM_WIND/output/croco_avg.nc'
+
+# switch to turn on/off use of CROCO as input
+use_croco=True 
+
+croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
+        '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
         ]
 
+# switch to turn on/off use of OGCM as input
+use_ogcm=True 
+
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
+ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
+
+# switch to turn on/off use of wind as input
+use_wind=True 
 
 # atmospheric forcing file, as produced by the croco pre-processing tools
 wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
@@ -119,7 +129,9 @@ hz_diff = 1
 #
 # wind drift factor
 # fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.03
+# you can specify a uniform distribution between two values if you'd like to model a range of drift factors
+wind_drift_factor_min=0.03
+wind_drift_factor_max=0.03
 
 # ------------------
 # numerical settings

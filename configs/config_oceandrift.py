@@ -12,18 +12,19 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='st_helena_spill_05_backward'
+config_name='test'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250128_00'
+run_date='20250812_00'
 
 # -------------
 # release info
 # -------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=18.09
-lat_release=-32.68
+lon_release=18
+
+lat_release=-33.8
 #
 # depth of the release
 # for a subsurface release you can also specify a distance off the seabed like z='seafloor+100' for 100m off the bottom
@@ -32,10 +33,10 @@ z=0
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
 # this allows for some initial spreading at location of the initialised particles 
-radius=2000
+radius=3000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20250125_17'
+release_start_time='20250812_12'
 #
 # duration of the release of particles in hours
 release_dur=0
@@ -56,12 +57,22 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those inside the docker image used to run operationally 
+
+# switch to turn on/off use of CROCO as input
+use_croco=True 
+
 croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
         '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
         ]
 
+# switch to turn on/off use of OGCM as input
+use_ogcm=True 
+
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_file = '/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc'
+ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
+
+# switch to turn on/off use of wind as input
+use_wind=True 
 
 wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
         '/mnt/tmp/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
@@ -98,7 +109,9 @@ hz_diff = 1
 #
 # wind drift factor
 # fraction of the 10 m wind speed used to advect surface particles
-wind_drift_factor=0.05
+# you can specify a uniform distribution between two values if you'd like to model a range of drift factors
+wind_drift_factor_min=0.03
+wind_drift_factor_max=0.03
 
 # ------------------
 # numerical settings
@@ -111,7 +124,7 @@ loglevel = 50
 # run duration in days
 # default is None, in which case it will be dynamically defined based on the input forcing
 # if explicitly defined, make sure the run duration doesn't exceed the temporal range of your inputs!
-run_dur = 7 
+run_dur = None 
 #
 # number of particles to release
 # generally the more the better, but there are computational limits
@@ -121,7 +134,7 @@ num_part=5000
 #
 # opendrift timestep for particle integration in minutes
 # negative value should make the model run in reverse
-time_step=-15
+time_step=15
 #
 # vertical mixing tstep in seconds
 vert_mix_tstep=60

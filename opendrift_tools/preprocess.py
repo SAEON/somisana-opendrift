@@ -50,26 +50,27 @@ def add_readers(o,config):
     # -----------------------------
     #
     # use the reader_ROMS_native reader
-    try:
+    if config.use_croco:
         croco_files = config.croco_files
         for croco_file in croco_files:
             reader_croco = reader_ROMS_native.Reader(croco_file)
             croco_ref_time = datetime(config.croco_Yorig,1,1)
             reader_croco = set_croco_time(reader_croco,croco_ref_time)
             o.add_reader(reader_croco)
-    except:
-        print('CROCO currents not defined, running without them')
+    else:
+        print('CROCO file(s) not defined - running without CROCO input')
     
     # -------------------------------
     # currents from global OGCM model
     # -------------------------------
     #
-    try:
-        ogcm_file=config.ogcm_file
-        reader_ogcm = reader_netCDF_CF_generic.Reader(ogcm_file)
-        o.add_reader(reader_ogcm)
-    except:
-        print('ogcm currents not defined, using a fallback of ZERO')
+    if config.use_ogcm:
+        ogcm_files = config.ogcm_files
+        for ogcm_file in ogcm_files:
+            reader_ogcm = reader_netCDF_CF_generic.Reader(ogcm_file)
+            o.add_reader(reader_ogcm)
+    else:
+        print('OGCM file(s) not defined - running without OGCM input')
         # if you want to exclude for debugging:
         o.set_config('environment:fallback:x_sea_water_velocity', 0)
         o.set_config('environment:fallback:y_sea_water_velocity', 0)
@@ -78,7 +79,7 @@ def add_readers(o,config):
     # Wind forcing
     # -------------
     #
-    try:
+    if config.use_wind:
         wind_files = config.wind_files
         for wind_file in wind_files:
             # Assume we're using the netcdf file on the native grid created during croco preprocessing
@@ -90,8 +91,8 @@ def add_readers(o,config):
             Dataset = xr.open_mfdataset(wind_file, decode_times=True) # decode_times=True is the default 
             reader_wind = reader_netCDF_CF_generic.Reader(Dataset)    
             o.add_reader(reader_wind)
-    except:
-        print('no wind forcing defined, running without wind')
+    else:
+        print('Wind forcing not defined - running without wind input')
         # if you want to exclude wind for debugging:
         o.set_config('environment:fallback:x_wind', 0)
         o.set_config('environment:fallback:y_wind', 0)

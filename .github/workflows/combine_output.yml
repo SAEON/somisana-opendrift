@@ -228,7 +228,7 @@ jobs:
     if: always()  # Ensure this job runs, even if the oil jobs are skipped
     runs-on: ${{ inputs.RUNNER_NAME }}
     env:
-      ARCHIVE_DIR: /mnt/saeon-somisana/data/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/combined
+      ARCHIVE_DIR: /mnt/ocims-somisana/opendrift/${{ inputs.RUN_DATE }}/${{ inputs.CONFIG_NAME }}/combined
     steps:
       - name: copy files to the archive directory if needed
         run: |
