@@ -59,6 +59,13 @@ def oceandrift(config_dir):
     o.set_config('vertical_mixing:diffusivitymodel','environment') # read from forcing file if it's there
     o.set_config('environment:fallback:ocean_vertical_diffusivity', config.vert_mix_fallback) 
     
+    if config.set_valid_extents:
+        o.set_config('drift:deactivate_west_of', config.valid_west)
+        o.set_config('drift:deactivate_east_of', config.valid_east)
+        o.set_config('drift:deactivate_south_of', config.valid_south)
+        o.set_config('drift:deactivate_north_of', config.valid_north)
+
+
     # ------------------
     # seed the elements
     # ------------------

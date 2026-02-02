@@ -78,6 +78,15 @@ wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999
         '/mnt/tmp/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
         ]
 
+# Option to set the valid extents of the forcing files
+# particles will be deactivated when leaving these bounds
+# Default is False, so these values are not used
+set_valid_extents=False
+valid_west=12
+valid_east=36
+valid_south=-42
+valid_north=-23
+
 # -------------------
 # physical processes
 # -------------------
