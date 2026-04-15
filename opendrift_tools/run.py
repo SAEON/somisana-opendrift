@@ -268,4 +268,94 @@ def leeway(config_dir):
     del(lw)
     del(config)
     sys.path.remove(config_dir) # needed if we are running this in a loop
-    
+
+
+# -----------
+# HABDRIFT
+# -----------
+def HABDrift(config_dir):
+    #
+    # --------
+    # imports
+    # --------
+    #
+    from opendrift.models.oceandrift import OceanDrift
+    print('config_dir is '+config_dir)
+    sys.path.append(config_dir)
+    if 'config' in sys.modules: # this is needed in case we are running this in a loop
+        config = importlib.reload(sys.modules['config'])
+    else:
+        import config
+    #
+    # -------------------------------------
+    # initialise HABDrift and set up readers
+    # -------------------------------------
+    #
+    o = OceanDrift(loglevel=config.loglevel)
+    #
+    o = pre_od.add_readers(o,config)
+    #
+    # -------------------
+    # physical processes
+    # -------------------
+    # Advection Scheme
+    o.set_config('drift:advection_scheme', 'runge-kutta')
+    #
+    # land interaction
+    o.set_config('general:use_auto_landmask', True) 
+    o.set_config('general:coastline_action', config.coastline_action) 
+    o.set_config('general:seafloor_action', config.seafloor_action)
+    #
+    # prefering to use the exact wind and current...for now anyway
+    o.set_config('drift:wind_uncertainty',0) 
+    o.set_config('drift:current_uncertainty',0) 
+    # ...but add hz diffusivity
+    o.set_config('drift:horizontal_diffusivity', config.hz_diff)
+    # Disable vertical Advection
+    o.disable_vertical_motion()
+    #
+    # ------------------
+    # seed the elements
+    # ------------------
+    time_start = datetime.strptime(config.release_start_time, '%Y%m%d_%H')
+    lonp,latp=pre_od.get_seed_points(file_in=config.flag_file,
+                                     domain=config.domain)
+    #
+    o.seed_elements(lon=lonp[:], 
+                    lat=latp[:],
+                    time=time_start,
+                    wind_drift_factor=config.wind_drift_factor_max
+                    )
+    #
+    # --------------
+    # run the model
+    # --------------
+    #
+    if config.run_dur is None:
+        duration=config.run_dur
+    else:
+        duration=timedelta(days=config.run_dur)
+    #
+    fname = config_dir+'/trajectories.nc' # keeping the filename generic
+    #
+    o.run(duration=duration, 
+          time_step=timedelta(minutes=config.time_step), 
+          time_step_output=timedelta(minutes=config.time_step_output), 
+          outfile=fname
+          ) 
+    #
+    # --------
+    # cleanup
+    # --------
+    #
+    del(o)
+    del(config)
+    sys.path.remove(config_dir) # needed if we are running this in a loop
+
+if __name__ == "__main__":
+    import os
+    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20250522/MERCATOR'
+    # config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20250522/HYCOM'
+    if os.path.exists(config_dir+'/trajectories.nc'):
+        os.remove(config_dir+'/trajectories.nc')    
+    HABDrift(config_dir)

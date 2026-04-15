@@ -7,9 +7,10 @@ import os
 import numpy as np
 import xarray as xr
 import opendrift
-import xarray as xr
 from xhistogram.xarray import histogram
 import glob
+import opendrift_tools.preprocess as pre_od
+
 
 def fill_deactivated(ds):
     '''
@@ -81,15 +82,58 @@ def extents_from_lonlat(lon,lat,factor=0.01):
     
     return extents
 
-def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,max_only=False):
+def compute_grid_area(lon, lat, R=6371000):
+    """
+    Function to compute the area of a regular grid cells on a sphere given 
+    the longitudes and latitudes.
+    
+    The formula that we solve is: 
+        A = R^2 * Dlon * Dlat * cos(lat)
+        where:
+            A = area
+            R = radius of sphere 
+            Dlon = longitudinal spacing
+            Dlat = latitudinal spacing
+            cos(lat) = cosine of latitude for the scaling of latitude convergence
+    
+    Inputs:
+        lon, lat: 1D arrays of longitudes and latitudes in degrees.
+        R: radius of the sphere in meters.
+    
+    Returns: 
+        area: area of the sphere in m2. 
+    
+    """
+    # Convert to radians
+    lat_rad = np.deg2rad(lat)
+    lon_rad = np.deg2rad(lon)
+    
+    # Compute grid spacing
+    dlat = np.abs(np.gradient(lat_rad))
+    dlon = np.abs(np.gradient(lon_rad))
+    
+    # Make meshgrids of lon and lat
+    lat2d, lon2d = np.meshgrid(lat_rad, lon_rad, indexing='ij')
+    
+    # Make meshgrids of dlon and dlat
+    dlat2d, dlon2d = np.meshgrid(dlat, dlon, indexing='ij')
+    
+    # Calculate area (m2)
+    area = (R**2) * dlon2d * dlat2d * np.cos(lat2d)
+    
+    return area
+
+def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,max_only=False,lonbin=None,latbin=None,mass_per_particle=None):
     '''
     compute a eulerian particle density map from the output of an opendrift simulation
     fname = the file to do the gridding on
     fname_out = output netcdf filename
-    grid_type = what kind of gridding to do. Options are 'density', 'surface_oil', 'stranded_oil'
+    grid_type = what kind of gridding to do. Options are 'density', 'concentration','surface_oil', 'stranded_oil'
     extents = the spatial extent of the grid [lon0,lon1,lat0,lat1]. If None, then this is automatically determined from the geographic extent of the particles
     dx_m = grid size in meters, if None, then a 50 x 50 regular grid is generated
     max_only = option to only write the maximum over the entire file to save disk space (boolean)
+    lonbin,latbin=longitude and latitude bins used for binning the data. If None, it makes the bins using dx_m when it greates the grid.
+    mass_per_particle=output txt file saved when running OpenDrift for a Harful Algal Event. 
     '''
     
     def get_time_min(h):
@@ -118,10 +162,24 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
     lon = ds.lon.values
     lat = ds.lat.values
     
-    if extents is None:
+    if extents is None: 
         extents = extents_from_lonlat(lon,lat)
-    
-    if dx_m is None:
+        
+    if isinstance(lonbin, str) and isinstance(latbin, str) and \
+        os.path.isfile(lonbin) and lonbin.endswith('.txt') and \
+        os.path.isfile(latbin) and latbin.endswith('.txt'):
+        lonbin = pre_od.array_from_txt(lonbin)
+        latbin = pre_od.array_from_txt(latbin)
+    else:
+        pass
+        
+    if lonbin is not None and latbin is not None:
+        grid_cell_area = compute_grid_area(lonbin, latbin)
+        grid_cell_area = 0.25 * (grid_cell_area[:-1, :-1] 
+                                 + grid_cell_area[1:, :-1] 
+                                 + grid_cell_area[:-1, 1:] 
+                                 + grid_cell_area[1:, 1:])
+    elif dx_m is None:
         num_x = 50 # default number of grid points in each direction
         lonbin = np.linspace(extents[0], extents[1], num=num_x)
         latbin = np.linspace(extents[2], extents[3], num=num_x)
@@ -161,6 +219,51 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         else:
             ds_out = xr.Dataset({'particle_density': h, 'minimum_time': h_time_min, 'maximum': h_max})
             ds_out.to_netcdf(fname_out)
+
+    elif grid_type == 'concentration':
+        # compute the histogram of the particle locations
+        # this will add up all the particles in each bin
+        # lonbin = np.sort(np.unique(lonbin))
+        # latbin = np.sort(np.unique(latbin))
+        h = histogram(ds.lon,
+                      ds.lat,
+                      bins=[lonbin, latbin],
+                      dim=['trajectory'],
+                      density=False)
+        # transpose to standard time,lat,lon ordering
+        h = h.transpose("time", "lat_bin", "lon_bin")
+        
+        # load in the mass_per_particle value if a path to the txt file containing 
+        # the value of the particle was provided.
+        if isinstance(mass_per_particle, str) and \
+            os.path.isfile(mass_per_particle) and \
+            mass_per_particle.endswith('.txt'):
+            mass_per_particle = pre_od.array_from_txt(mass_per_particle)
+        else:
+            pass
+        
+        # compute the concentration of each grid cell (mg/m-3)
+        h = h * mass_per_particle / grid_cell_area
+        
+        # convert oil volume per grid cell into oil thickness in micron
+        h=h.rename('particle_concentration')
+        h.attrs["units"] = 'mg/m-3'
+        
+        h_time_min = get_time_min(h)
+        
+        # compute the maximum density over the run
+        h_max=h.max(('time'))
+        h_max=h_max.rename('maximum')
+        h_max.attrs["standard_name"] = 'maximum_particle_concentration'
+        h_max.attrs["units"] = 'mg/m-3'
+        
+        if max_only:
+            ds_out = xr.Dataset({'minimum_time': h_time_min, 'maximum': h_max})
+            ds_out.to_netcdf(fname_out)
+        else:
+            ds_out = xr.Dataset({'particle_density': h, 'minimum_time': h_time_min, 'maximum': h_max})
+            ds_out.to_netcdf(fname_out)
+
         
     elif grid_type == 'surface_oil':
     
@@ -411,7 +514,16 @@ def oil_massbal(fname,fname_out):
     budget.attrs["units"] = 'kg'
     
     budget.to_netcdf(fname_out)
-    
-# if __name__ == "__main__":
-    
-        
+
+if __name__ == "__main__": 
+    grid_particles(
+    '/home/g.rautenbach/Scripts/HAB/trajectories-concept-16042019.nc',
+    '/home/g.rautenbach/Scripts/HAB/trajectories-concept-gridded-16042019.nc',
+    grid_type='concentration',
+    # extents=None,
+    # dx_m=None,
+    # max_only=False,
+    lonbin='/home/g.rautenbach/Scripts/HAB/lons.txt',
+    latbin='/home/g.rautenbach/Scripts/HAB/lats.txt',
+    mass_per_particle='/home/g.rautenbach/Scripts/HAB/particle_mass.txt',
+    )

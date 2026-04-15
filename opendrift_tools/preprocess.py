@@ -6,15 +6,38 @@ These are common to all OpenDrift applications
 
 """
 
-import os
-from datetime import datetime, timedelta
-import calendar
+from datetime import datetime
 from netCDF4 import num2date
 import xarray as xr
 import numpy as np
 from opendrift.readers import reader_netCDF_CF_generic
 from opendrift.readers import reader_ROMS_native
 from opendrift.readers import reader_global_landmask
+
+def get_seed_points(file_in,domain=None):
+    #
+    # Function to get the longoitude and latitude positions at points that are flagged 
+    # as a red tide in the phytoplankton flag file. 
+    #
+    if domain is not None:
+        ds_flags = ds_flags = xr.open_dataset(file_in).sel(x=slice(domain[0],domain[1]),
+                                                           y=slice(domain[3],domain[2])
+                                                           )
+    else:
+        ds_flags = xr.open_dataset(file_in)
+            
+    phytoplankton_flags = ds_flags.phytoplankton.values.squeeze()
+    lons = ds_flags.x.values
+    lats = ds_flags.y.values
+    LONS,LATS = np.meshgrid(lons,lats)
+    ds_flags.close()
+    
+    idx = np.argwhere((phytoplankton_flags==6))
+    j,i = idx[:,0],idx[:,1]
+    
+    lonp,latp = LONS[j,i],LATS[j,i]
+    
+    return lonp,latp
 
 def set_croco_time(reader_filename,date_ref):
     # hacky solution to correct the time, as native croco files do not contain reference time
@@ -51,12 +74,14 @@ def add_readers(o,config):
     #
     # use the reader_ROMS_native reader
     if config.use_croco:
+        print('\nAdding CROCO\n')
         croco_files = config.croco_files
         for croco_file in croco_files:
             reader_croco = reader_ROMS_native.Reader(croco_file)
             croco_ref_time = datetime(config.croco_Yorig,1,1)
             reader_croco = set_croco_time(reader_croco,croco_ref_time)
             o.add_reader(reader_croco)
+            print('\n We added croco successfully. \n')
     else:
         print('CROCO file(s) not defined - running without CROCO input')
     
