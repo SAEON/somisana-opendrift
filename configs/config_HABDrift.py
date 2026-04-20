@@ -12,19 +12,25 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='test'
+config_name='habdrift'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20260406_00'
+run_date='20250522_00'
+#
+# --------------------------------
+# Model Domain
+# --------------------------------
+#
+domain=[14,20,-36,-29]
 #
 # -------------
 # release info
 # -------------
-# path to chlorophyll-a concentration file which is used to determine where to seed particles.
-chl_file='/home/g.rautenbach/Data/OLCHI/nc_files/phyto_south_africa_20260406.nc'
+# path to phytoplankton flags.
+flag_file='/home/g.rautenbach/Data/OLCHI/nc_files/phyto_south_africa_20250522.nc'
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20260406_00'
+release_start_time='20250522_00'
 #
 # -------------
 # forcing files
@@ -42,26 +48,34 @@ croco_Yorig=2000
 # this is an array of file names to allow for the inclusion of multiple croco runs
 # The order is important - preference will be given to those which appear first in the array
 # The default locations are those inside the docker image used to run operationally 
-
+#
 # switch to turn on/off use of CROCO as input
 use_croco=True 
-
-croco_files = ['/home/g.rautenbach/OpenDrift_Tutorial/forcing/croco_sa_west_20241014_00_6hrly.nc'
+#
+croco_files = ['/home/g.rautenbach/Scripts/HAB/run_od_20250522/forcing/HYCOM-SAWS/croco_avg_frcst.nc'
         ]
 
 # switch to turn on/off use of OGCM as input
 use_ogcm=False
-
+#
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_files = ['/home/g.rautenbach/OpenDrift_Tutorial/forcing/MERCATOR_20241014_00.nc']
+ogcm_files = [
+    '/home/g.rautenbach/OpenDrift_Tutorial/forcing/MERCATOR_20241014_00.nc'
+    ]
 
 # switch to turn on/off use of wind as input
 use_wind=False
-
-wind_files = ['/home/g.rautenbach/OpenDrift_Tutorial/forcing/GFS_u_20241014_00.nc',
-              '/home/g.rautenbach/OpenDrift_Tutorial/forcing/GFS_v_20241014_00.nc'
+#
+wind_files = ['/home/g.rautenbach/Data/ERA5/U10M_Y2019M2.nc',
+              '/home/g.rautenbach/Data/ERA5/V10M_Y2019M2.nc'
               ]
 
+use_waves=True
+#
+wave_files = [
+    '/home/g.rautenbach/Scripts/HAB/run_od_20250522/forcing/2025_05.nc'
+    ]
+#
 # -------------------
 # physical processes
 # -------------------
@@ -69,6 +83,22 @@ wind_files = ['/home/g.rautenbach/OpenDrift_Tutorial/forcing/GFS_u_20241014_00.n
 # coastline interaction - 'stranding' or 'previous'
 coastline_action='previous'
 #
+# seafloor_action - ‘previous’: particles are moved back to previous location 
+#                 - ‘deactivate’: particles are deactivated 
+#                 - ‘lift_to_seafloor’: particles are lifted vertically to seafloor level
+seafloor_action='previous'
+#
+# include vertical advection
+vert_adv=True
+#
+# include vertical mixing? (boolean)
+vert_mix=True
+#
+# what to use in case the forcing files don't have vertical diffusivity (m2/s)
+vert_mix_fallback=0.001
+#
+# constant horizontal diffusivity (m2/s)
+hz_diff = 1
 #
 # ------------------
 # numerical settings
@@ -82,10 +112,6 @@ loglevel = 0
 # default is None, in which case it will be dynamically defined based on the input forcing
 # if explicitly defined, make sure the run duration doesn't exceed the temporal range of your inputs!
 run_dur = None 
-#
-# number of particles to release
-# generally the more the better, but there are computational limits
-max_part=150
 #
 # opendrift timestep for particle integration in minutes
 # negative value should make the model run in reverse

@@ -66,14 +66,14 @@ def add_readers(o,config):
     reader_landmask = reader_global_landmask.Reader()
     o.add_reader(reader_landmask)
     
-    # Now start adding the ocean and wind input. The order that you do this matters!
+    # Now start adding the ocean, wind and/or waves input. The order that you do this matters!
     
     # -----------------------------
     # CROCO files covering the run
     # -----------------------------
     #
     # use the reader_ROMS_native reader
-    if config.use_croco:
+    if getattr(config, "use_croco", False):
         print('\nAdding CROCO\n')
         croco_files = config.croco_files
         for croco_file in croco_files:
@@ -81,7 +81,7 @@ def add_readers(o,config):
             croco_ref_time = datetime(config.croco_Yorig,1,1)
             reader_croco = set_croco_time(reader_croco,croco_ref_time)
             o.add_reader(reader_croco)
-            print('\n We added croco successfully. \n')
+            print('\n We added CROCO successfully. \n')
     else:
         print('CROCO file(s) not defined - running without CROCO input')
     
@@ -89,11 +89,13 @@ def add_readers(o,config):
     # currents from global OGCM model
     # -------------------------------
     #
-    if config.use_ogcm:
+    if getattr(config, "use_ogcm", False):
+        print('\nAdding OGCM\n')
         ogcm_files = config.ogcm_files
         for ogcm_file in ogcm_files:
             reader_ogcm = reader_netCDF_CF_generic.Reader(ogcm_file)
             o.add_reader(reader_ogcm)
+            print('\n We added OGCM successfully. \n')
     else:
         print('OGCM file(s) not defined - running without OGCM input')
         # if you want to exclude for debugging:
@@ -104,7 +106,8 @@ def add_readers(o,config):
     # Wind forcing
     # -------------
     #
-    if config.use_wind:
+    if getattr(config, "use_wind", False):
+        print('\nAdding winds\n')
         wind_files = config.wind_files
         for wind_file in wind_files:
             # Assume we're using the netcdf file on the native grid created during croco preprocessing
@@ -116,10 +119,25 @@ def add_readers(o,config):
             Dataset = xr.open_mfdataset(wind_file, decode_times=True) # decode_times=True is the default 
             reader_wind = reader_netCDF_CF_generic.Reader(Dataset)    
             o.add_reader(reader_wind)
+            print('\n We added winds successfully. \n')
     else:
         print('Wind forcing not defined - running without wind input')
         # if you want to exclude wind for debugging:
         o.set_config('environment:fallback:x_wind', 0)
         o.set_config('environment:fallback:y_wind', 0)
+
+    # -------------
+    # Wave forcing
+    # -------------
+    #    
+    if getattr(config, "use_waves", False):
+        print('\nAdding waves\n')
+        waves_files = config.wave_files
+        for wave_file in waves_files:
+            reader_waves = reader_netCDF_CF_generic.Reader(wave_file)
+            o.add_reader(reader_waves)
+            print('\n We added waves successfully. \n')
+    else:
+        print('Wave file(s) not defined - running without wave input')
 
     return o

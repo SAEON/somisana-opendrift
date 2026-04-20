@@ -280,7 +280,7 @@ def HABDrift(config_dir):
     # --------
     #
     from opendrift.models.oceandrift import OceanDrift
-    print('config_dir is '+config_dir)
+    print('config_dir is ' + config_dir)
     sys.path.append(config_dir)
     if 'config' in sys.modules: # this is needed in case we are running this in a loop
         config = importlib.reload(sys.modules['config'])
@@ -306,14 +306,23 @@ def HABDrift(config_dir):
     o.set_config('general:coastline_action', config.coastline_action) 
     o.set_config('general:seafloor_action', config.seafloor_action)
     #
+    # include waves
+    o.set_config('drift:stokes_drift', config.use_waves)
+    #
     # prefering to use the exact wind and current...for now anyway
     o.set_config('drift:wind_uncertainty',0) 
     o.set_config('drift:current_uncertainty',0) 
+    #
     # ...but add hz diffusivity
     o.set_config('drift:horizontal_diffusivity', config.hz_diff)
-    # Disable vertical Advection
-    o.disable_vertical_motion()
     #
+    # Disable vertical Advection, but we include vertical mixing
+    o.set_config('drift:vertical_advection', config.vert_adv)
+    o.set_config('drift:vertical_mixing', config.vert_mix)
+    o.set_config('vertical_mixing:diffusivitymodel','environment')
+    o.set_config('vertical_mixing:timestep', config.vert_mix_tstep)
+    o.set_config('environment:fallback:ocean_vertical_diffusivity', config.vert_mix_fallback) 
+
     # ------------------
     # seed the elements
     # ------------------
@@ -321,11 +330,10 @@ def HABDrift(config_dir):
     lonp,latp=pre_od.get_seed_points(file_in=config.flag_file,
                                      domain=config.domain)
     #
-    o.seed_elements(lon=lonp[:], 
-                    lat=latp[:],
+    o.seed_elements(lon=lonp[:1], 
+                    lat=latp[:1],
                     time=time_start,
-                    wind_drift_factor=config.wind_drift_factor_max
-                    )
+                    z=0)
     #
     # --------------
     # run the model
@@ -354,8 +362,7 @@ def HABDrift(config_dir):
 
 if __name__ == "__main__":
     import os
-    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20250522/MERCATOR'
-    # config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20250522/HYCOM'
+    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20250511'
     if os.path.exists(config_dir+'/trajectories.nc'):
         os.remove(config_dir+'/trajectories.nc')    
     HABDrift(config_dir)
