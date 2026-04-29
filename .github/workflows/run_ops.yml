@@ -4,167 +4,284 @@ on:
   workflow_dispatch:
     inputs:
       model_type:
-        description: 'The kind of model to run'
+        description: "The kind of model to run"
         required: true
-        default: 'oceandrift'
+        default: oceandrift
         type: choice
         options:
           - oceandrift
           - oil
           - leeway
+          - phytodrift
+
       run_model:
-        description: 'run the model?'
+        description: "run the model?"
         required: true
         type: boolean
         default: true
+
       do_post:
-        description: 'do the postprocessing?'
+        description: "do the postprocessing?"
         required: true
         type: boolean
         default: true
+
       extents:
-        description: 'spatial extent of the gridded output and plot, in format lon0,lon1,lat0,lat1. If None, then this is dynamically determined from the geographic extent of the particles'
-        required: true
-        default: None
-        type: string
-      dx_m:
-        description: 'grid size (m) used to grid particle output. If None, If None, then a 50 x 50 regular grid is generated'
+        description: "lon0,lon1,lat0,lat1 or None"
         required: true
         default: None
         type: string
 
-# Many of the env variables reference the current branch,
-# which is set dynamically in the branch-ref job below
-# So the env variables are mostly set in the envs job below the branch-ref job
+      dx_m:
+        description: "grid size (m) or None"
+        required: true
+        default: None
+        type: string
+
+          #  schedule:
+          #    - cron: "0 10 * * *"
+
 env:
   REGISTRY: ghcr.io
 
+  # Works for both manual + scheduled runs
+  MODEL_TYPE: ${{ github.event.inputs.model_type || 'phytodrift' }}
+  RUN_MODEL: ${{ github.event.inputs.run_model || 'true' }}
+  DO_POST: ${{ github.event.inputs.do_post || 'true' }}
+  EXTENTS: ${{ github.event.inputs.extents || 'None' }}
+  DX_M: ${{ github.event.inputs.dx_m || 'None' }}
+
 jobs:
-  # Dynamically set the branch ref to the currently executing branch
+
+  ##########################################################################
+  # Detect branch
+  ##########################################################################
+
   branch-ref:
     runs-on: ubuntu-latest
     outputs:
-      value: ${{ steps.BRANCH_REF.outputs.value }}
+      value: ${{ steps.branch.outputs.value }}
+
     steps:
-      - name: Set the BRANCH_REF
-        id: BRANCH_REF
-        run: |
-          echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
-  
-  # set some environment variables
+      - name: Set branch name
+        id: branch
+        run: echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+
+
+  ##########################################################################
+  # Load config variables
+  ##########################################################################
+
   envs:
-    needs: [branch-ref]
+    needs: branch-ref
     runs-on: ubuntu-latest
+
     outputs:
       BRANCH_REF: ${{ needs.branch-ref.outputs.value }}
-      RUN_DATE: ${{ steps.run_date.outputs.value }}
-      CONFIG_NAME: ${{ steps.config_name.outputs.value }}
+      CONFIG_NAME: ${{ steps.config.outputs.value }}
+      RUN_DATE: ${{ steps.rundate.outputs.value }}
+
     steps:
-      - name: Check out source code so have access to the files in the repo
-        uses: actions/checkout@main
+      - uses: actions/checkout@v4
         with:
           ref: ${{ needs.branch-ref.outputs.value }}
-      - name: configuration name
-        id: config_name
+
+      - name: Read config_name
+        id: config
         run: |
-          # Use grep to find the line where the variable is defined
-          line=$(grep -m 1 -w config_name configs/config_${{ github.event.inputs.model_type }}.py)
-          # Use awk to extract the value of the variable from the line (thanks chatgpt)
-          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
-      - name: run date 
-        id: run_date
+          line=$(grep -m 1 -w config_name configs/config_${{ env.MODEL_TYPE }}.py)
+          value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
+          echo "value=$value" >> $GITHUB_OUTPUT
+
+      - name: Read run_date
+        id: rundate
         run: |
-          # Use grep to find the line where the variable is defined
-          line=$(grep -m 1 -w run_date configs/config_${{ github.event.inputs.model_type }}.py)
-          # Use awk to extract the value of the variable from the line (thanks chatgpt)
-          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+          line=$(grep -m 1 -w run_date configs/config_${{ env.MODEL_TYPE }}.py)
+          value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
+          echo "value=$value" >> $GITHUB_OUTPUT
+
+
+  ##########################################################################
+  # Build image
+  ##########################################################################
 
   build_image:
-    uses: ./.github/workflows/build_image.yml  # Path to your reusable workflow
- 
-  # I thought about using the matrix strategy to run models in parallel, but if one job fails, then they all get called off so it's better run them as separate jobs, which still get run in parallel
-  #
+    uses: ./.github/workflows/build_image.yml
 
-  # we should be more clever about which runs get initialised. Not all runs in the ensemble are always available
-  # so we need some sort of check where we automatically see if the forcing files exist and only run opendrift if they do
-  # for now, I'm just manually commenting out the jobs if the forcing doesn't exist for the run I'm looking for  
+  ##########################################################################
+  # Download Phytoplankton Flags
+  ##########################################################################
+  
+  download_phytoplankton_flags:
+    if: ${{ env.MODEL_TYPE == 'phytodrift' }}
+    needs: [pull-latest-docker-images]
+    uses: ./.github/workflows/download_phytoplankton_flags.yml
+    with:
+      RUNNER_NAME: ${{ inputs.RUNNER_NAME }}
+      RUN_DATE: ${{ inputs.RUN_DATE }}
+      BRANCH_REF: ${{ inputs.BRANCH_REF }}
+    secrets: inherit
+
+  ##########################################################################
+  # Download CMEMS Waves
+  ##########################################################################
+  
+  download_cmems_waves:
+    if: ${{ env.MODEL_TYPE == 'phytodrift' }}
+    needs: [pull-latest-docker-images]
+    uses: ./.github/workflows/download_cmems_waves.yml
+    with:
+      RUNNER_NAME: ${{ inputs.RUNNER_NAME }}
+      RUN_DATE: ${{ inputs.RUN_DATE }}
+      BRANCH_REF: ${{ inputs.BRANCH_REF }}
+      HDAYS: 5
+      FDAYS: 5
+    secrets: inherit
+
+  ##########################################################################
+  # Detect available forecast folders
+  ##########################################################################
+
+  check_models:
+    runs-on: mims1
+
+    outputs:
+      RUN_GFS_MERCATOR: ${{ steps.check.outputs.RUN_GFS_MERCATOR }}
+      RUN_SAWS_MERCATOR: ${{ steps.check.outputs.RUN_SAWS_MERCATOR }}
+      RUN_GFS_HYCOM: ${{ steps.check.outputs.RUN_GFS_HYCOM }}
+      RUN_SAWS_HYCOM: ${{ steps.check.outputs.RUN_SAWS_HYCOM }}
+
+    steps:
+      - name: Check available directories
+        id: check
+        run: |
+          BASE=/mnt/ocims-somisana/public-facing/sa-west/v1.0/forecasts/latest
+
+          [ -d "$BASE/MERCATOR-GFS" ] \
+            && echo "RUN_GFS_MERCATOR=true" >> $GITHUB_OUTPUT \
+            || echo "RUN_GFS_MERCATOR=false" >> $GITHUB_OUTPUT
+
+          [ -d "$BASE/MERCATOR-SAWS" ] \
+            && echo "RUN_SAWS_MERCATOR=true" >> $GITHUB_OUTPUT \
+            || echo "RUN_SAWS_MERCATOR=false" >> $GITHUB_OUTPUT
+
+          [ -d "$BASE/HYCOM-GFS" ] \
+            && echo "RUN_GFS_HYCOM=true" >> $GITHUB_OUTPUT \
+            || echo "RUN_GFS_HYCOM=false" >> $GITHUB_OUTPUT
+
+          [ -d "$BASE/HYCOM-SAWS" ] \
+            && echo "RUN_SAWS_HYCOM=true" >> $GITHUB_OUTPUT \
+            || echo "RUN_SAWS_HYCOM=false" >> $GITHUB_OUTPUT
+
+
+  ##########################################################################
+  # Run MERCATOR + GFS
+  ##########################################################################
 
   run_GFS_MERCATOR:
-    needs: [envs,build_image]
-    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+    needs: [envs, build_image, check_models]
+    if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
+
+    uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
       WIND: GFS
       OGCM: MERCATOR
-      RUN_MODEL: ${{ github.event.inputs.run_model }}
-      DO_POST: ${{ github.event.inputs.do_post }}
-      EXTENTS: ${{ github.event.inputs.extents }}
-      DX_M: ${{ github.event.inputs.dx_m }}
-  
+      RUN_MODEL: ${{ env.RUN_MODEL }}
+      DO_POST: ${{ env.DO_POST }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
+
+  ##########################################################################
+  # Run MERCATOR + SAWS
+  ##########################################################################
+
   run_SAWS_MERCATOR:
-    needs: [envs,build_image]
-    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+    needs: [envs, build_image, check_models]
+    if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
+
+    uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
       WIND: SAWS
       OGCM: MERCATOR
-      RUN_MODEL: ${{ github.event.inputs.run_model }}
-      DO_POST: ${{ github.event.inputs.do_post }}
-      EXTENTS: ${{ github.event.inputs.extents }}
-      DX_M: ${{ github.event.inputs.dx_m }}
-  
+      RUN_MODEL: ${{ env.RUN_MODEL }}
+      DO_POST: ${{ env.DO_POST }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
+
+  ##########################################################################
+  # Run HYCOM + GFS
+  ##########################################################################
+
   run_GFS_HYCOM:
-    needs: [envs,build_image]
-    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+    needs: [envs, build_image, check_models]
+    if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
+
+    uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
       WIND: GFS
       OGCM: HYCOM
-      RUN_MODEL: ${{ github.event.inputs.run_model }}
-      DO_POST: ${{ github.event.inputs.do_post }}
-      EXTENTS: ${{ github.event.inputs.extents }}
-      DX_M: ${{ github.event.inputs.dx_m }}
-  
+      RUN_MODEL: ${{ env.RUN_MODEL }}
+      DO_POST: ${{ env.DO_POST }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
+
+  ##########################################################################
+  # Run HYCOM + SAWS
+  ##########################################################################
+
   run_SAWS_HYCOM:
-    needs: [envs,build_image]
-    uses: ./.github/workflows/run_model.yml  # Path to your reusable workflow
+    needs: [envs, build_image, check_models]
+    if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
+
+    uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
       WIND: SAWS
       OGCM: HYCOM
-      RUN_MODEL: ${{ github.event.inputs.run_model }}
-      DO_POST: ${{ github.event.inputs.do_post }}
-      EXTENTS: ${{ github.event.inputs.extents }}
-      DX_M: ${{ github.event.inputs.dx_m }}
-  
-  # get some combined output from runs with different forcings
-  # maybe we need a check to see if more than 1 run was actually successful?
+      RUN_MODEL: ${{ env.RUN_MODEL }}
+      DO_POST: ${{ env.DO_POST }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
+
+  ##########################################################################
+  # Combine output
+  ##########################################################################
+
   combine_output:
-#    needs: [envs,run_SAWS_MERCATOR,run_GFS_MERCATOR,run_SAWS_HYCOM,run_GFS_HYCOM]
-    needs: [envs,run_GFS_MERCATOR,run_SAWS_MERCATOR]
-    if: ${{ always() && github.event.inputs.do_post == 'true' }}
-    uses: ./.github/workflows/combine_output.yml  # Path to your reusable workflow
+    needs:
+      - envs
+      - run_GFS_MERCATOR
+      - run_SAWS_MERCATOR
+      - run_GFS_HYCOM
+      - run_SAWS_HYCOM
+
+    if: ${{ always() && env.DO_POST == 'true' }}
+
+    uses: ./.github/workflows/combine_output.yml
     with:
-      MODEL_TYPE: ${{ github.event.inputs.model_type }}
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims1
-      EXTENTS: ${{ github.event.inputs.extents }}
-      DX_M: ${{ github.event.inputs.dx_m }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
