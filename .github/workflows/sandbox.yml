@@ -6,9 +6,6 @@ on:
 jobs:
   build_cli:
     uses: ./.github/workflows/build_image.yml
-    with:
-      IMAGE_ID: cli
-
 
   # download phytoplankton flags
   download_phyto:
