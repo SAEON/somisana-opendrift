@@ -66,9 +66,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   
-  pull-image-mims1:
+  pull-image-mims3:
     needs: [envs,build-image]
-    runs-on: mims1
+    runs-on: mims3
     steps:
       - name: pull latest docker image to mims server
         run: |
