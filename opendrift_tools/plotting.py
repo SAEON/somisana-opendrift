@@ -353,6 +353,7 @@ def plot_gridded(fname,
         write_gif=False,
         skip_time = 1, # every nth time-step will be animated (if provided)
         tstep_end=None, # The last timestep to animate. Only used if write_gif = True.
+        source=True,
         ):
     '''
     this is a convenience function for doing a quick 2D plot of gridded output with minimal coding.
@@ -407,8 +408,8 @@ def plot_gridded(fname,
     ds_part_start = ds_part.isel(time=0)
     lon_release=np.nanmean(ds_part_start.lon.values)
     lat_release=np.nanmean(ds_part_start.lat.values)
-    ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
-    
+    if source:
+        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
     tx_time = get_time_txt(ax, time_plot, time_start)
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     

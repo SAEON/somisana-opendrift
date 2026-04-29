@@ -13,6 +13,7 @@ from datetime import datetime
 from opendrift_tools.run import oil as run_oil
 from opendrift_tools.run import leeway as run_leeway
 from opendrift_tools.run import oceandrift as run_oceandrift
+from opendrift_tools.run import phytodrift as run_phytodrift
 from opendrift_tools.postprocess import grid_particles, oil_massbal, combine_gridded, combine_trajectories
 from opendrift_tools.plotting import plot_particles, plot_gridded, plot_gridded_stats, plot_budget
 from opendrift_tools.stochastic import run_stochastic, grid_stochastic, gridded_stats, gridded_stats_polygon, stochasitic_massbal
@@ -69,7 +70,7 @@ def main():
     parser_run_model = subparsers.add_parser('run_model', 
             help='Run an OpenDrift simulation')
     parser_run_model.add_argument('--config_dir', required=True, type=str, help='Directory where the config.py file is located')
-    parser_run_model.add_argument('--model_type', required=True, type=str, default='oil', help='type of model to run- options are \'oceandrift\', \'oil\' or \'leeway\'')
+    parser_run_model.add_argument('--model_type', required=True, type=str, default='oil', help='type of model to run- options are \'oceandrift\', \'oil\', \'leeway\' or \'phytodrift\'')
     def run_model_handler(args):
         if args.model_type == 'oil':
             run_oil(args.config_dir)
@@ -77,6 +78,8 @@ def main():
             run_leeway(args.config_dir)
         elif args.model_type == 'oceandrift':
             run_oceandrift(args.config_dir)
+        elif args.model_type == 'phytodrift':
+            run_phytodrift(args.config_dir)
         else:
             raise argparse.ArgumentTypeError(f"Invalid model_type: {args.model_type}")
     parser_run_model.set_defaults(func=run_model_handler)

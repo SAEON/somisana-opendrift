@@ -271,9 +271,9 @@ def leeway(config_dir):
 
 
 # -----------
-# HABDRIFT
+# Phytoplankton Advection
 # -----------
-def HABDrift(config_dir):
+def phytodrift(config_dir):
     #
     # --------
     # imports
@@ -330,8 +330,8 @@ def HABDrift(config_dir):
     lonp,latp=pre_od.get_seed_points(file_in=config.flag_file,
                                      domain=config.domain)
     #
-    o.seed_elements(lon=lonp[:1], 
-                    lat=latp[:1],
+    o.seed_elements(lon=lonp[:], 
+                    lat=latp[:],
                     time=time_start,
                     z=0)
     #
@@ -350,7 +350,9 @@ def HABDrift(config_dir):
           time_step=timedelta(minutes=config.time_step), 
           time_step_output=timedelta(minutes=config.time_step_output), 
           outfile=fname
-          ) 
+          )
+    #
+    o.plot(fast=True,filename='/home/g.rautenbach/Scripts/HAB/run_od_20260414/plot.png')
     #
     # --------
     # cleanup
@@ -362,7 +364,7 @@ def HABDrift(config_dir):
 
 if __name__ == "__main__":
     import os
-    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20250511'
+    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20260414'
     if os.path.exists(config_dir+'/trajectories.nc'):
         os.remove(config_dir+'/trajectories.nc')    
-    HABDrift(config_dir)
+    phytodrift(config_dir)
