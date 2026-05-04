@@ -18,6 +18,7 @@ jobs:
           sudo mkdir -p /home/somisana/ops/hab-advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
           sudo chown -R $(id -u):$(id -g) /home/somisana/ops/hab-advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
           sudo chmod -R 775 /home/somisana/ops/hab-advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
+          docker system prune -a -f
 
       - name: Download PHYTO
         uses: nick-fields/retry@master
