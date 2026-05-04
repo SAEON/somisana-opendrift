@@ -14,10 +14,10 @@ jobs:
     steps:
       - name: Clean and create CSIR PHYTOPLANKTON FLAGS directory with correct permissions
         run: |
-          sudo rm -rf /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/PHYTOPLANKTON_FLAGS
-          sudo mkdir -p /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/PHYTOPLANKTON_FLAGS
-          sudo chown -R $(id -u):$(id -g) /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/PHYTOPLANKTON_FLAGS
-          sudo chmod -R 775 /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/PHYTOPLANKTON_FLAGS
+          sudo rm -rf /home/somisana/ops/HAB-Advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
+          sudo mkdir -p /home/somisana/ops/HAB-Advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
+          sudo chown -R $(id -u):$(id -g) /home/somisana/ops/HAB-Advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
+          sudo chmod -R 775 /home/somisana/ops/HAB-Advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
 
       - name: Download PHYTO
         uses: nick-fields/retry@master
@@ -37,7 +37,7 @@ jobs:
               -v /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/PHYTOPLANKTON_FLAGS:/tmp \
               ghcr.io/saeon/somisana-download_download-phyto-flags:latest \
               -c 'python cli.py download_phytoplankton_flags \
-                --date "2026-04-28 00:00:00" \
+                --date "2026-04-03 00:00:00" \
                 --dir_out "/tmp" && echo "Download completed" || echo "Download failed"'
                 
   # Download wavs
@@ -47,10 +47,10 @@ jobs:
     steps:
       - name: Clean and create CMEMS WAVES directory with correct permissions
         run: |
-          sudo rm -rf /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/CMEMS_WAVES
-          sudo mkdir -p /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/CMEMS_WAVES
-          sudo chown -R $(id -u):$(id -g) /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/CMEMS_WAVES
-          sudo chmod -R 775 /home/somisana/ops/HAB-Advection/20260429_00/downloaded_data/CMEMS_WAVES
+          sudo rm -rf /home/somisana/ops/HAB-Advection/20260503_00/downloaded_data/CMEMS_WAVES
+          sudo mkdir -p /home/somisana/ops/HAB-Advection/20260503_00/downloaded_data/CMEMS_WAVES
+          sudo chown -R $(id -u):$(id -g) /home/somisana/ops/HAB-Advection/20260503_00/downloaded_data/CMEMS_WAVES
+          sudo chmod -R 775 /home/somisana/ops/HAB-Advection/20260503_00/downloaded_data/CMEMS_WAVES
 
       - name: Download WAVES
         uses: nick-fields/retry@master
@@ -73,11 +73,11 @@ jobs:
                 --usrname grautenbach \
                 --passwd ZuluTheMoo2021! \
                 --dataset cmems_mod_glo_wav_anfc_0.083deg_PT3H-i \
-                --varList "VHM0,VHM0_SW1,VHM0_SW2,VHM0_WW,VMDR,VMDR_SW1,VMDR_SW2,VMDR_WW,VPED,VSDX,VSDY,VTM01_SW1,VTM01_SW2,VTM01_WW,VTM02,VTM10,VTPK"  \
+                --varList "VHM0,VMDR,VTPK"  \
                 --domain 11,36,-39,-25 \
                 --depths 0,0 \
-                --run_date "2026-04-29 00:00:00" \
+                --run_date "2026-05-03 00:00:00" \
                 --hdays 5 \
                 --fdays 5 \
                 --outputDir "/tmp" \ 
-                --outputFile "waves_20260429.nc" && echo "Download completed" || echo "Download failed"' 
+                --outputFile "waves_20260503.nc" && echo "Download completed" || echo "Download failed"'
