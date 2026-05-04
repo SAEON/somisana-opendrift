@@ -12,7 +12,7 @@
 # (these are not used in local runs)
 #
 # give a name for your configuration
-config_name='habdrift'
+config_name='phytodrift'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
 run_date='20250522_00'
