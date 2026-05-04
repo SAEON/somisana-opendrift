@@ -112,7 +112,7 @@ jobs:
   ##########################################################################
   
   download_phytoplankton_flags:
-    if: ${{ env.MODEL_TYPE == 'phytodrift' }}
+    if: ${{ github.event.inputs.model_type == 'phytodrift' }}
     needs: [pull-latest-docker-images]
     uses: ./.github/workflows/download_phytoplankton_flags.yml
     with:
@@ -126,7 +126,7 @@ jobs:
   ##########################################################################
   
   download_cmems_waves:
-    if: ${{ env.MODEL_TYPE == 'phytodrift' }}
+    if: ${{ github.event.inputs.model_type == 'phytodrift' }}
     needs: [pull-latest-docker-images]
     uses: ./.github/workflows/download_cmems_waves.yml
     with:
@@ -190,7 +190,7 @@ jobs:
       RUNNER_NAME: mims3
       WIND: GFS
       OGCM: MERCATOR
-      RUN_MODEL: ${{ env.RUN_MODEL }}
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
       DO_POST: ${{ env.DO_POST }}
       EXTENTS: ${{ env.EXTENTS }}
       DX_M: ${{ env.DX_M }}
@@ -212,7 +212,7 @@ jobs:
       RUNNER_NAME: mims3
       WIND: SAWS
       OGCM: MERCATOR
-      RUN_MODEL: ${{ env.RUN_MODEL }}
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
       DO_POST: ${{ env.DO_POST }}
       EXTENTS: ${{ env.EXTENTS }}
       DX_M: ${{ env.DX_M }}
@@ -234,7 +234,7 @@ jobs:
       RUNNER_NAME: mims3
       WIND: GFS
       OGCM: HYCOM
-      RUN_MODEL: ${{ env.RUN_MODEL }}
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
       DO_POST: ${{ env.DO_POST }}
       EXTENTS: ${{ env.EXTENTS }}
       DX_M: ${{ env.DX_M }}
@@ -256,7 +256,7 @@ jobs:
       RUNNER_NAME: mims3
       WIND: SAWS
       OGCM: HYCOM
-      RUN_MODEL: ${{ env.RUN_MODEL }}
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
       DO_POST: ${{ env.DO_POST }}
       EXTENTS: ${{ env.EXTENTS }}
       DX_M: ${{ env.DX_M }}
