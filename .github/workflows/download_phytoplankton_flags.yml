@@ -70,7 +70,7 @@ jobs:
               --user $(id -u):$(id -g) \
               --rm \
               -v ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS:/tmp \
-              ghcr.io/saeon/somisana-download_download-phyto-flags:latest \
+              ghcr.io/saeon/somisana-download_main:latest \
               -c 'python cli.py download_phytoplankton_flags \
                   --date ${{ steps.run_date_formatted.outputs.value }} \ 
                   --dir_out "/tmp" && echo "Download completed" || echo "Download failed"'
