@@ -88,14 +88,14 @@ jobs:
       - name: Read config_name
         id: config
         run: |
-          line=$(grep -m 1 -w config_name configs/config_${{ envs.MODEL_TYPE }}.py)
+          line=$(grep -m 1 -w config_name configs/config_${{ env.MODEL_TYPE }}.py)
           value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
           echo "value=$value" >> $GITHUB_OUTPUT
 
       - name: Read run_date
         id: rundate
         run: |
-          line=$(grep -m 1 -w run_date configs/config_${{ envs.MODEL_TYPE }}.py)
+          line=$(grep -m 1 -w run_date configs/config_${{ env.MODEL_TYPE }}.py)
           value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
           echo "value=$value" >> $GITHUB_OUTPUT
 
@@ -112,7 +112,7 @@ jobs:
   ##########################################################################
   
   download_phytoplankton_flags:
-    if: ${{ envs.MODEL_TYPE == 'phytodrift' }}
+    if: ${{ env.MODEL_TYPE == 'phytodrift' }}
     needs: [pull-latest-docker-images]
     uses: ./.github/workflows/download_phytoplankton_flags.yml
     with:
@@ -126,7 +126,7 @@ jobs:
   ##########################################################################
   
   download_cmems_waves:
-    if: ${{ envs.MODEL_TYPE == 'phytodrift' }}
+    if: ${{ env.MODEL_TYPE == 'phytodrift' }}
     needs: [pull-latest-docker-images]
     uses: ./.github/workflows/download_cmems_waves.yml
     with:
@@ -142,7 +142,7 @@ jobs:
   ##########################################################################
 
   check_models:
-    runs-on: mims1
+    runs-on: mims3
 
     outputs:
       RUN_GFS_MERCATOR: ${{ steps.check.outputs.RUN_GFS_MERCATOR }}
@@ -183,17 +183,17 @@ jobs:
 
     uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ envs.MODEL_TYPE }}
-      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-      RUNNER_NAME: mims1
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.env.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.env.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.env.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
       WIND: GFS
       OGCM: MERCATOR
-      RUN_MODEL: ${{ envs.RUN_MODEL }}
-      DO_POST: ${{ envs.DO_POST }}
-      EXTENTS: ${{ envs.EXTENTS }}
-      DX_M: ${{ envs.DX_M }}
+      RUN_MODEL: ${{ env.RUN_MODEL }}
+      DO_POST: ${{ env.DO_POST }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
 
   ##########################################################################
   # Run MERCATOR + SAWS
@@ -205,17 +205,17 @@ jobs:
 
     uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ envs.MODEL_TYPE }}
-      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-      RUNNER_NAME: mims1
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.env.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.env.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.env.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
       WIND: SAWS
       OGCM: MERCATOR
-      RUN_MODEL: ${{ envs.RUN_MODEL }}
-      DO_POST: ${{ envs.DO_POST }}
-      EXTENTS: ${{ envs.EXTENTS }}
-      DX_M: ${{ envs.DX_M }}
+      RUN_MODEL: ${{ env.RUN_MODEL }}
+      DO_POST: ${{ env.DO_POST }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
 
   ##########################################################################
   # Run HYCOM + GFS
@@ -227,17 +227,17 @@ jobs:
 
     uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ envs.MODEL_TYPE }}
-      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-      RUNNER_NAME: mims1
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.env.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.env.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.env.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
       WIND: GFS
       OGCM: HYCOM
-      RUN_MODEL: ${{ envs.RUN_MODEL }}
-      DO_POST: ${{ envs.DO_POST }}
-      EXTENTS: ${{ envs.EXTENTS }}
-      DX_M: ${{ envs.DX_M }}
+      RUN_MODEL: ${{ env.RUN_MODEL }}
+      DO_POST: ${{ env.DO_POST }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
 
   ##########################################################################
   # Run HYCOM + SAWS
@@ -249,17 +249,17 @@ jobs:
 
     uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ envs.MODEL_TYPE }}
-      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-      RUNNER_NAME: mims1
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.env.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.env.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.env.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
       WIND: SAWS
       OGCM: HYCOM
-      RUN_MODEL: ${{ envs.RUN_MODEL }}
-      DO_POST: ${{ envs.DO_POST }}
-      EXTENTS: ${{ envs.EXTENTS }}
-      DX_M: ${{ envs.DX_M }}
+      RUN_MODEL: ${{ env.RUN_MODEL }}
+      DO_POST: ${{ env.DO_POST }}
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
 
   ##########################################################################
   # Combine output
@@ -273,14 +273,14 @@ jobs:
       - run_GFS_HYCOM
       - run_SAWS_HYCOM
 
-    if: ${{ always() && envs.DO_POST == 'true' }}
+    if: ${{ always() && env.DO_POST == 'true' }}
 
     uses: ./.github/workflows/combine_output.yml
     with:
-      MODEL_TYPE: ${{ envs.MODEL_TYPE }}
-      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-      RUNNER_NAME: mims1
-      EXTENTS: ${{ envs.EXTENTS }}
-      DX_M: ${{ envs.DX_M }}
+      MODEL_TYPE: ${{ env.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.env.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.env.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.env.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
+      EXTENTS: ${{ env.EXTENTS }}
+      DX_M: ${{ env.DX_M }}
