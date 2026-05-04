@@ -70,7 +70,24 @@ jobs:
     needs: [envs,build-image]
     runs-on: mims3
     steps:
+      - name: Free disk space on mims3
+        run: |
+          docker system prune -a -f
+          docker builder prune -a -f || true
+
+      - name: Check disk space
+        run: df -h
+
       - name: pull latest docker image to mims server
         run: |
           docker pull ${{ needs.envs.outputs.IMAGE_NAME }}:latest
+
+
+            #  pull-image-mims3:
+            #    needs: [envs,build-image]
+            #    runs-on: mims3
+            #    steps:
+            #      - name: pull latest docker image to mims server
+            #        run: |
+            #          docker pull ${{ needs.envs.outputs.IMAGE_NAME }}:latest
 
