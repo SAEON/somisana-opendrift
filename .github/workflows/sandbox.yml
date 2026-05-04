@@ -99,10 +99,9 @@ jobs:
 ###############################################################################
 # Download phytoplankton flags
 ###############################################################################
-
-  download_phytoplankton_flags:
+  download_phytoplankton_flags: 
     if: ${{ github.event.inputs.model_type == 'phytodrift' }}
-    needs: build_image
+    needs: [build_image,envs]
     uses: ./.github/workflows/download_phytoplankton_flags.yml
     with:
       RUNNER_NAME: mims3

@@ -73,7 +73,7 @@ jobs:
               ghcr.io/saeon/somisana-download_main:latest \
               -c 'python cli.py download_phytoplankton_flags \
                   --date ${{ steps.run_date_formatted.outputs.value }} \ 
-                  --dir_out "/tmp" && echo "Download completed" || echo "Download failed"'
+                  --dir_out /tmp && echo "Download completed" || echo "Download failed"'
 
   archive_ocims:
     # copy the data to an archive directory on ocims infrastructure, mounted to the mims compute server
