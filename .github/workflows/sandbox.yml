@@ -87,5 +87,5 @@ jobs:
                 --run_date "2026-05-03 00:00:00" \
                 --hdays 5 \
                 --fdays 5 \
-                --outputDir "/tmp" \ 
-                --outputFile "waves_20260503.nc" && echo "Download completed" || echo "Download failed"'
+                --outputDir /tmp \
+                --outputFile waves_20260503.nc && echo "Download completed" || echo "Download failed"'
