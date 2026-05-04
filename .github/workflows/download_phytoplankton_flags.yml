@@ -70,10 +70,10 @@ jobs:
               --user $(id -u):$(id -g) \
               --rm \
               -v ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS:/tmp \
-              ghcr.io/saeon/somisana-download_main:latest \
-              download_phytoplankton_flags \
-                --file_in "https://www.ocims.gov.za/data/s3olci/s3-phytoplankton-south_africa/${{ steps.format_date.outputs.value }}.tif" \
-                --file_out "/tmp/phyto_${{ steps.format_date.outputs.value }}.nc"
+              ghcr.io/saeon/somisana-download_download-phyto-flags:latest \
+              -c 'python cli.py download_phytoplankton_flags \
+                  --date ${{ steps.run_date_formatted.outputs.value }} \ 
+                  --dir_out "/tmp" && echo "Download completed" || echo "Download failed"'
 
   archive_ocims:
     # copy the data to an archive directory on ocims infrastructure, mounted to the mims compute server
