@@ -55,6 +55,9 @@ jobs:
           sudo mkdir -p ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
           sudo chown -R :runners ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
           sudo chmod -R 774 ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
+      - name: Check directory permissions
+        run: |
+          ls -ld ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
       - name: Download PHYTO
         uses: nick-fields/retry@master
         with:
