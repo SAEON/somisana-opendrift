@@ -69,11 +69,11 @@ jobs:
             docker run \
               --user $(id -u):$(id -g) \
               --rm \
-              -v ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS:/tmp \
+              -v ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS:/output \
               ghcr.io/saeon/somisana-download_main:latest \
               download_phytoplankton_flags \
                 --date ${{ steps.format_date.outputs.value }} \
-                --dir_out "/tmp" \
+                --dir_out "/output" \
                 && echo "Download completed" \
                 || { echo "Download failed"; exit 1; }
   
