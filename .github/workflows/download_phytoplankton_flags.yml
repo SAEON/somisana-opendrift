@@ -52,7 +52,7 @@ jobs:
       - name: create the Phytoplankton flags directory
         run: |
           sudo rm -rf ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
-          mkdir -p ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
+          sudo mkdir -p ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
           chown -R :runners ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
           chmod -R 774 ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS
       - name: Download PHYTO
