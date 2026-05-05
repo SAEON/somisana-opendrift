@@ -72,10 +72,10 @@ jobs:
               -v ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS:/tmp \
               ghcr.io/saeon/somisana-download_main:latest \
               download_phytoplankton_flags \
-              --date ${{ steps.format_date.outputs.value }} \
-              --dir_out /tmp \
-              && echo "Download completed" \
-              || { echo "Download failed"; exit 1; }
+                --date ${{ steps.format_date.outputs.value }} \
+                --dir_out "/tmp" \
+                && echo "Download completed" \
+                || { echo "Download failed"; exit 1; }
   
   archive_ocims:
     # copy the data to an archive directory on ocims infrastructure, mounted to the mims compute server
