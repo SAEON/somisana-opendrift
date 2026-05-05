@@ -101,32 +101,3 @@ jobs:
             # Not an issue since we have ensured no password is needed for this command 
             sudo cp ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS/PHYTO_${{ inputs.RUN_DATE }}.nc ${archive_dir}/PHYTO/
           fi
-
-
-jobs:
-  download_phyto:
-    runs-on: ${{ inputs.RUNNER_NAME }}
-
-    env:
-      DATA_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}/downloaded_data
-
-    steps:
-      - name: Format RUN_DATE
-        id: format_date
-        run: |
-          run_date=${{ inputs.RUN_DATE }}
-          run_date_formatted="${run_date:0:4}-${run_date:4:2}-${run_date:6:2} ${run_date:9:2}:00:00"
-          echo "value=$run_date_formatted" >> $GITHUB_OUTPUT
-
-      - name: Download PHYTO
-        uses: nick-fields/retry@master
-        with:
-          command: |
-            docker run \
-              --user $(id -u):$(id -g) \
-              --rm \
-              -v $DATA_DIR/PHYTOPLANKTON_FLAGS:/tmp \
-              ghcr.io/saeon/somisana-download_main:latest \
-              -c 'python cli.py download_phytoplankton_flags \
-                  --date "${{ steps.format_date.outputs.value }}" \
-                  --dir_out /tmp'
