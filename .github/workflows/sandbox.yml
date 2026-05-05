@@ -84,7 +84,7 @@ jobs:
         id: rundate
         run: |
           line=$(grep -m 1 -w run_date configs/config_${{ github.event.inputs.model_type }}.py)
-          value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
+          value=$(echo "$line" | awk -F "=" '{print $2}' | sed "s/^[[:space:]]*//" | sed "s/^['\"]//;s/['\"]$//")
           echo "value=$value" >> $GITHUB_OUTPUT
 
 
