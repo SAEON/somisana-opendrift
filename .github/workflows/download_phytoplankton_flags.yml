@@ -71,7 +71,7 @@ jobs:
               --rm \
               -v ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS:/tmp \
               ghcr.io/saeon/somisana-download_main:latest \
-              python cli.py download_phytoplankton_flags \
+              download_phytoplankton_flags \
               --date ${{ steps.format_date.outputs.value }} \
               --dir_out /tmp \
               && echo "Download completed" \
