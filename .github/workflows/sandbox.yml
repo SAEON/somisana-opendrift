@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      BRANCH_REF: ${{ steps.branch.outputs.value }}
+      BRANCH_REF: ${{ needs.branch-ref.outputs.value }}
       CONFIG_NAME: ${{ steps.config.outputs.value }}
       RUN_DATE: ${{ steps.rundate.outputs.value }}
       MODEL_TYPE: ${{ github.event.inputs.model_type }}

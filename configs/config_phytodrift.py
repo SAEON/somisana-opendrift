@@ -15,7 +15,7 @@
 config_name='phytodrift'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250522_00'
+run_date=20260413_00
 #
 # --------------------------------
 # Model Domain
