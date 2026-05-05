@@ -72,7 +72,7 @@ jobs:
               -v ${{ env.DATA_DIR }}/PHYTOPLANKTON_FLAGS:/tmp \
               ghcr.io/saeon/somisana-download_main:latest \
               -c 'python cli.py download_phytoplankton_flags \
-                  --date ${{ steps.run_date_formatted.outputs.value }} \ 
+                  --date ${{ steps.format_date.outputs.value }} \
                   --dir_out /tmp && echo "Download completed" || echo "Download failed"'
 
   archive_ocims:
