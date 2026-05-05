@@ -110,22 +110,21 @@ jobs:
     secrets: inherit
 
 
-# ###############################################################################
-# # Download CMEMS waves
-# ###############################################################################
+###############################################################################
+# Download CMEMS waves
+###############################################################################
 
-#   download_cmems_waves:
-#     if: ${{ github.event.inputs.model_type == 'phytodrift' }}
-#     needs: build_image
-#     uses: ./.github/workflows/download_cmems_waves.yml
-#     with:
-#       RUNNER_NAME: mims3
-#       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-#       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-#       HDAYS: 5
-#       FDAYS: 5
-#     secrets: inherit
-
+  download_cmems_waves:
+    if: ${{ github.event.inputs.model_type == 'phytodrift' }}
+    needs: [build_image,envs]
+    uses: ./.github/workflows/download_cmems_waves.yml
+    with:
+      RUNNER_NAME: mims3
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      HDAYS: 5
+      FDAYS: 5
+    secrets: inherit
 
 # ###############################################################################
 # # Check available models
