@@ -79,10 +79,10 @@ jobs:
         run: |
           OGCM=${{ inputs.OGCM }}
           WIND=${{ inputs.WIND }}
+          WAVES=${{ inputs.WAVES }}
           MODEL_TYPE=${{ github.event.inputs.model_type }}
 
           if [ "$MODEL_TYPE" = "phytodrift" ]; then
-            WAVES="CMEMS"
             sed -e "s/OGCM/$OGCM/g" \
                 -e "s/WAVES/$WAVES/g" \
                 < configs/config_${MODEL_TYPE}.py > ${{ env.RUN_DIR }}/config.py
