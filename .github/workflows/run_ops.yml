@@ -73,12 +73,20 @@ jobs:
         with:
           ref: ${{ needs.branch-ref.outputs.value }}
 
-      - name: Read config_name
+#       - name: Read config_name
+#         id: config
+#         run: |
+#           line=$(grep -m 1 -w config_name configs/config_${{ github.event.inputs.model_type }}.py)
+#           value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
+#           echo "value=$value" >> $GITHUB_OUTPUT
+
+      - name: Read configuration name
         id: config
         run: |
+          # Use grep to find the line where the variable is defined
           line=$(grep -m 1 -w config_name configs/config_${{ github.event.inputs.model_type }}.py)
-          value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
-          echo "value=$value" >> $GITHUB_OUTPUT
+          # Use awk to extract the value of the variable from the line (thanks chatgpt)
+          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
 
       - name: Read run_date
         id: rundate
