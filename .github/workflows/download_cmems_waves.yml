@@ -88,8 +88,8 @@ jobs:
             -v ${download_dir}:/tmp/download \
             ghcr.io/saeon/somisana-download_main:latest \
             download_cmems_ops \
-              --usrname ${{ secrets.COPERNICUS_USERNAME }} \
-              --passwd ${{ secrets.COPERNICUS_PASSWORD }} \
+              --usrname grautenbach \
+              --passwd ZuluTheMoo2021! \
               --dataset cmems_mod_glo_wav_anfc_0.083deg_PT3H-i \
               --varList "VHM0,VTPK,VMDR" \
               --domain 11,36,-39,-25 \
