@@ -91,7 +91,7 @@ jobs:
               --usrname ${{ secrets.COPERNICUS_USERNAME }} \
               --passwd ${{ secrets.COPERNICUS_PASSWORD }} \
               --dataset cmems_mod_glo_wav_anfc_0.083deg_PT3H-i \
-              --varList "VHM0,VHM0_SW1,VHM0_SW2,VHM0_WW,VMDR,VMDR_SW1,VMDR_SW2,VMDR_WW,VPED,VSDX,VSDY,VTM01_SW1,VTM01_SW2,VTM01_WW,VTM02,VTM10,VTPK" \
+              --varList "VHM0,VTPK,VMDR" \
               --domain 11,36,-39,-25 \
               --depths 0,0 \
               --run_date ${{ steps.format_date.outputs.value }} \
