@@ -71,7 +71,7 @@ jobs:
 
       - name: create the directory
         run: |
-          rm -rf ${{ env.RUN_DIR }}  
+          sudo rm -rf ${{ env.RUN_DIR }}  
           sudo mkdir -p ${{ env.RUN_DIR }}
 
 
