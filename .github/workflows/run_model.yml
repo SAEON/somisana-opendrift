@@ -72,7 +72,7 @@ jobs:
       - name: create the directory
         run: |
           rm -rf ${{ env.RUN_DIR }}  
-          mkdir -p ${{ env.RUN_DIR }}
+          sudo mkdir -p ${{ env.RUN_DIR }}
 
 
       - name: Copy config file to the local server to run the model
