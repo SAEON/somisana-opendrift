@@ -73,7 +73,7 @@ wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999
 use_waves=True
 #
 wave_files = [
-    '/mnt/tmp/downloaded_data/WAVES/WAVES_'+run_date+'.nc'
+    '/mnt/tmp/downloaded_data/CMEMS/CMEMS_'+run_date+'.nc'
     ]
 #
 # -------------------
