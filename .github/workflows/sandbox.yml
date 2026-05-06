@@ -97,6 +97,7 @@ jobs:
 ###############################################################################
 # Download phytoplankton flags
 ###############################################################################
+  
   download_phytoplankton_flags: 
     if: ${{ github.event.inputs.model_type == 'phytodrift' }}
     needs: [build_image,envs]
@@ -122,7 +123,7 @@ jobs:
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       HDAYS: 5
       FDAYS: 5
-   secrets: inherit
+    secrets: inherit
 
 ###############################################################################
 # Check available models
@@ -171,7 +172,7 @@ jobs:
 
 
   run_SAWS_MERCATOR:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
     if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -190,7 +191,7 @@ jobs:
 
 
   run_GFS_HYCOM:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
     if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -209,7 +210,7 @@ jobs:
 
 
   run_SAWS_HYCOM:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
     if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -244,86 +245,3 @@ jobs:
   #     EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
   #     DX_M: ${{ needs.envs.outputs.DX_M }}
 
-
-
-# on:
-#   workflow_dispatch:
-
-# jobs:
-#   build_cli:
-#     uses: ./.github/workflows/build_image.yml
-
-#   # download phytoplankton flags
-#   download_phyto:
-#     runs-on: mims3
-#     needs: [build_cli]
-#     steps:
-#       - name: Clean and create CSIR PHYTOPLANKTON FLAGS directory with correct permissions
-#         run: |
-#           sudo rm -rf /home/somisana/ops/hab-advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
-#           sudo mkdir -p /home/somisana/ops/hab-advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
-#           sudo chown -R $(id -u):$(id -g) /home/somisana/ops/hab-advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
-#           sudo chmod -R 775 /home/somisana/ops/hab-advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS
-
-#       - name: Download PHYTO
-#         uses: nick-fields/retry@master
-#         with:
-#           timeout_minutes: 60
-#           retry_wait_seconds: 300
-#           max_attempts: 3
-#           retry_on: any
-#           warning_on_retry: true
-#           shell: bash
-#           continue_on_error: false
-#           command: |
-#             docker run \
-#               --user $(id -u):$(id -g) \
-#               --rm \
-#               --entrypoint bash \
-#               -v /home/somisana/ops/hab-advection/20260503_00/downloaded_data/PHYTOPLANKTON_FLAGS:/tmp \
-#               ghcr.io/saeon/somisana-download_download-phyto-flags:latest \
-#               -c 'python cli.py download_phytoplankton_flags \
-#                 --date "2026-05-03 00:00:00" \
-#                 --dir_out "/tmp" && echo "Download completed" || echo "Download failed"'
-                
-#   # Download wavs
-#   download_waves:
-#     runs-on: mims3
-#     needs: [build_cli]
-#     steps:
-#       - name: Clean and create CMEMS WAVES directory with correct permissions
-#         run: |
-#           sudo rm -rf /home/somisana/ops/hab-advection/20260503_00/downloaded_data/CMEMS_WAVES
-#           sudo mkdir -p /home/somisana/ops/hab-advection/20260503_00/downloaded_data/CMEMS_WAVES
-#           sudo chown -R $(id -u):$(id -g) /home/somisana/ops/hab-advection/20260503_00/downloaded_data/CMEMS_WAVES
-#           sudo chmod -R 775 /home/somisana/ops/hab-advection/20260503_00/downloaded_data/CMEMS_WAVES
-
-#       - name: Download WAVES
-#         uses: nick-fields/retry@master
-#         with:
-#           timeout_minutes: 60
-#           retry_wait_seconds: 300
-#           max_attempts: 3
-#           retry_on: any
-#           warning_on_retry: true
-#           shell: bash
-#           continue_on_error: false
-#           command: |
-#             docker run \
-#               --user $(id -u):$(id -g) \
-#               --rm \
-#               --entrypoint bash \
-#               -v /home/somisana/ops/hab-advection/20260503_00/downloaded_data/CMEMS_WAVES:/tmp \
-#               ghcr.io/saeon/somisana-download_download-phyto-flags:latest \
-#               -c 'python cli.py download_cmems_ops \
-#                 --usrname grautenbach \
-#                 --passwd ZuluTheMoo2021! \
-#                 --dataset cmems_mod_glo_wav_anfc_0.083deg_PT3H-i \
-#                 --varList "VHM0,VMDR,VTPK"  \
-#                 --domain 11,36,-39,-25 \
-#                 --depths 0,0 \
-#                 --run_date "2026-05-03 00:00:00" \
-#                 --hdays 5 \
-#                 --fdays 5 \
-#                 --outputDir /tmp \
-#                 --outputFile waves_20260503.nc && echo "Download completed" || echo "Download failed"'
