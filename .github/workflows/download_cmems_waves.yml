@@ -37,7 +37,7 @@ jobs:
       - name: Check if WAVES file is already downloaded
         id: check_waves
         run: |
-          FILE_PATH=${{ env.DATA_DIR }}/CMEMS_WAVES/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc
+          FILE_PATH=${{ env.DATA_DIR }}/CMEMS/CMEMS_${{ inputs.RUN_DATE }}.nc
           # could have an additional check on file size here?
           if [ -f "$FILE_PATH" ]; then
             echo "value=1" >> $GITHUB_OUTPUT
@@ -79,7 +79,7 @@ jobs:
             -v ${download_dir}:/mnt/tmp \
             ghcr.io/saeon/somisana-download_main:latest \
               -c "rm -f /mnt/tmp/*nc"
-      - name: download CMEMS_WAVES
+      - name: download CMEMS
         run: |
           download_dir=/home/giles/mercator_download
           mkdir -p ${download_dir}
@@ -98,30 +98,30 @@ jobs:
               --hdays ${{ inputs.HDAYS }} \
               --fdays ${{ inputs.FDAYS }} \
               --outputDir "/tmp/download" \
-              --outputFile "CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc"
+              --outputFile "CMEMS_${{ inputs.RUN_DATE }}.nc"
 
           # copy to a shared dir
-          sudo cp ${download_dir}/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc /mnt/somisana/data/shared/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc
+          sudo cp ${download_dir}/CMEMS_${{ inputs.RUN_DATE }}.nc /mnt/somisana/data/shared/CMEMS_${{ inputs.RUN_DATE }}.nc
 
   download_cmems_waves:
     runs-on: ${{ inputs.RUNNER_NAME }}
     needs: [check_files,download_cmems_waves_saeon]
     if: ${{ always() && needs.check_files.outputs.WAVES_OK == '0' }}
     steps:
-      - name: create the CMEMS_WAVES directory
+      - name: create the CMEMS directory
         run: |
-          if [ ! -d "${{ env.DATA_DIR }}/CMEMS_WAVES" ]; then
-            mkdir -p ${{ env.DATA_DIR }}/CMEMS_WAVES
-            chown -R :runners ${{ env.DATA_DIR }}/CMEMS_WAVES
-            chmod -R 774 ${{ env.DATA_DIR }}/CMEMS_WAVES
+          if [ ! -d "${{ env.DATA_DIR }}/CMEMS" ]; then
+            mkdir -p ${{ env.DATA_DIR }}/CMEMS
+            chown -R :runners ${{ env.DATA_DIR }}/CMEMS
+            chmod -R 774 ${{ env.DATA_DIR }}/CMEMS
           fi
       - name: move downloaded file from the shared mount
         # we only need this since we have the workaround of downloading on saeonapps
         # so this essentially replaces the commented download code below
         run: |
           set -e
-          file="/mnt/saeon-somisana/data/shared/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc"
-          dest="${{ env.DATA_DIR }}/CMEMS_WAVES/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc"
+          file="/mnt/saeon-somisana/data/shared/CMEMS_${{ inputs.RUN_DATE }}.nc"
+          dest="${{ env.DATA_DIR }}/CMEMS/CMEMS_${{ inputs.RUN_DATE }}.nc"
           sudo cp "$file" "$dest"
 
   archive_ocims:
@@ -143,13 +143,13 @@ jobs:
           # also copying it to the public facing directory, just in case we might need it
           archive_dir_public=/mnt/ocims-somisana/public-facing/sa-forcing/${run_date}
           # make the archive directory
-          sudo mkdir -p ${archive_dir}/CMEMS_WAVES
-          sudo mkdir -p ${archive_dir_public}/CMEMS_WAVES
+          sudo mkdir -p ${archive_dir}/CMEMS
+          sudo mkdir -p ${archive_dir_public}/CMEMS
           # only archive one run per day (initialised at 00)
           # the archiving is really for validation purposes, and I think one run per day is sufficient for this
           if [ "${run_date_hh}" == "00" ]; then 
             # We need to use sudo in the lines below because the target dir is owned by root
             # Not an issue since we have ensured no password is needed for this command 
-            sudo cp ${{ env.DATA_DIR }}/CMEMS_WAVES/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc ${archive_dir}/CMEMS_WAVES/
-            sudo cp ${{ env.DATA_DIR }}/CMEMS_WAVES/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc ${archive_dir_public}/CMEMS_WAVES/
+            sudo cp ${{ env.DATA_DIR }}/CMEMS/CMEMS_${{ inputs.RUN_DATE }}.nc ${archive_dir}/CMEMS/
+            sudo cp ${{ env.DATA_DIR }}/CMEMS/CMEMS_${{ inputs.RUN_DATE }}.nc ${archive_dir_public}/CMEMS/
           fi
