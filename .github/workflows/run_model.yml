@@ -39,6 +39,10 @@ on:
         description: 'name of boundary forcing e.g. MERCATOR' 
         required: true
         type: string
+      WAVES:
+        description: 'name of wave forcing e.g. CMEMS'
+        required: true
+        type: string
       EXTENTS:
         description: 'spatial extent of the gridded output and plot, in format lon0,lon1,lat0,lat1. If None, then this is dynamically determined from the geographic extent of the particles'
         required: true
@@ -70,11 +74,23 @@ jobs:
           rm -rf ${{ env.RUN_DIR }}  
           mkdir -p ${{ env.RUN_DIR }}
 
+
       - name: Copy config file to the local server to run the model
         run: |
           OGCM=${{ inputs.OGCM }}
-          WIND=${{ inputs.WIND }} 
-          sed -e 's/OGCM/'$OGCM'/g' -e 's/WIND/'$WIND'/g' < configs/config_${{ github.event.inputs.model_type }}.py > ${{ env.RUN_DIR }}/config.py
+          WIND=${{ inputs.WIND }}
+          MODEL_TYPE=${{ github.event.inputs.model_type }}
+
+          if [ "$MODEL_TYPE" = "phytodrift" ]; then
+            WAVES="CMEMS"
+            sed -e "s/OGCM/$OGCM/g" \
+                -e "s/WAVES/$WAVES/g" \
+                < configs/config_${MODEL_TYPE}.py > ${{ env.RUN_DIR }}/config.py
+          else
+            sed -e "s/OGCM/$OGCM/g" \
+                -e "s/WIND/$WIND/g" \
+                < configs/config_${MODEL_TYPE}.py > ${{ env.RUN_DIR }}/config.py
+          fi
 
       - name: add permissions to the config file
         run: |
@@ -96,14 +112,36 @@ jobs:
           ogcm_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
           wind_file_u=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/U-component_of_wind_Y9999M1.nc
           wind_file_v=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/V-component_of_wind_Y9999M1.nc
-          if [ -f "$ogcm_file" ] && [ -f "$wind_file_u" ] && [ -f "$wind_file_v" ]; then
-            echo "All required files are present"
-            echo "files_ok=true" >> "$GITHUB_OUTPUT"
+          waves_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WAVES }}/${{ inputs.WAVES }}_${{ inputs.RUN_DATE }}.nc
+
+      - name: check input file availability
+        id: check
+        run: |
+          MODEL_TYPE=${{ github.event.inputs.model_type }}
+
+          ogcm_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
+          wind_file_u=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/U-component_of_wind_Y9999M1.nc
+          wind_file_v=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/V-component_of_wind_Y9999M1.nc
+          waves_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WAVES }}/${{ inputs.WAVES }}_${{ inputs.RUN_DATE }}.nc
+
+          if [ "$MODEL_TYPE" = "phytodrift" ]; then
+            if [ -f "$ogcm_file" ] && [ -f "$waves_file" ]; then
+              echo "All required files (including waves) are present"
+              echo "files_ok=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "Missing required input files - will be skipping this run"
+              echo "files_ok=false" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "Missing required input files - will be skipping this run"
-            echo "files_ok=false" >> "$GITHUB_OUTPUT"
+            if [ -f "$ogcm_file" ] && [ -f "$wind_file_u" ] && [ -f "$wind_file_v" ]; then
+              echo "All required files are present"
+              echo "files_ok=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "Missing required input files - will be skipping this run"
+              echo "files_ok=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
-  
+     
   run_model:
     needs: [setup_config,check_input_files]
     if: ${{ inputs.RUN_MODEL == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
@@ -123,18 +161,18 @@ jobs:
           # change ownership to somisana user
           sudo chown -R somisana:somisana ${{ env.RUN_DIR }}
   
-  # do some postprocessing and plotting
-  postprocess:
-    needs: [run_model]
-    if: ${{ always() && inputs.DO_POST == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
-    uses: ./.github/workflows/postprocess.yml
-    with:
-      MODEL_TYPE: ${{ inputs.MODEL_TYPE }}
-      BRANCH_REF: ${{ inputs.BRANCH_REF }}
-      CONFIG_NAME: ${{ inputs.CONFIG_NAME }}
-      RUN_DATE: ${{ inputs.RUN_DATE }}
-      RUNNER_NAME: ${{ inputs.RUNNER_NAME }}
-      WIND: ${{ inputs.WIND }}
-      OGCM: ${{ inputs.OGCM }}
-      EXTENTS: ${{ inputs.EXTENTS }}
-      DX_M: ${{ inputs.DX_M }}
+#   # do some postprocessing and plotting
+#   postprocess:
+#     needs: [run_model]
+#     if: ${{ always() && inputs.DO_POST == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
+#     uses: ./.github/workflows/postprocess.yml
+#     with:
+#       MODEL_TYPE: ${{ inputs.MODEL_TYPE }}
+#       BRANCH_REF: ${{ inputs.BRANCH_REF }}
+#       CONFIG_NAME: ${{ inputs.CONFIG_NAME }}
+#       RUN_DATE: ${{ inputs.RUN_DATE }}
+#       RUNNER_NAME: ${{ inputs.RUNNER_NAME }}
+#       WIND: ${{ inputs.WIND }}
+#       OGCM: ${{ inputs.OGCM }}
+#       EXTENTS: ${{ inputs.EXTENTS }}
+#       DX_M: ${{ inputs.DX_M }}

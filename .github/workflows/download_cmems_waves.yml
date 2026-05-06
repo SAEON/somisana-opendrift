@@ -101,7 +101,7 @@ jobs:
               --outputFile "CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc"
 
           # copy to a shared dir
-          cp ${download_dir}/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc /mnt/somisana/data/shared/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc
+          sudo cp ${download_dir}/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc /mnt/somisana/data/shared/CMEMS_WAVES_${{ inputs.RUN_DATE }}.nc
 
   download_cmems_waves:
     runs-on: ${{ inputs.RUNNER_NAME }}

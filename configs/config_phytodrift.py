@@ -27,7 +27,8 @@ domain=[14,20,-36,-29]
 # release info
 # -------------
 # path to phytoplankton flags.
-flag_file='/home/g.rautenbach/Data/OLCHI/nc_files/phyto_south_africa_20250522.nc'
+flag_file=['/home/g.rautenbach/Data/OLCHI/nc_files/phyto_south_africa_20250522.nc'
+           ]
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
 release_start_time='20250522_00'
@@ -52,28 +53,27 @@ croco_Yorig=2000
 # switch to turn on/off use of CROCO as input
 use_croco=True 
 #
-croco_files = ['/home/g.rautenbach/Scripts/HAB/run_od_20250522/forcing/HYCOM-SAWS/croco_avg_frcst.nc'
-        ]
+croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
+               '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
+               ]
 
 # switch to turn on/off use of OGCM as input
-use_ogcm=False
+use_ogcm=True
 #
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_files = [
-    '/home/g.rautenbach/OpenDrift_Tutorial/forcing/MERCATOR_20241014_00.nc'
-    ]
+ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
 
 # switch to turn on/off use of wind as input
 use_wind=False
 #
-wind_files = ['/home/g.rautenbach/Data/ERA5/U10M_Y2019M2.nc',
-              '/home/g.rautenbach/Data/ERA5/V10M_Y2019M2.nc'
-              ]
+wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
+        '/mnt/tmp/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
+        ]
 
 use_waves=True
 #
 wave_files = [
-    '/home/g.rautenbach/Scripts/HAB/run_od_20250522/forcing/2025_05.nc'
+    '/mnt/tmp/downloaded_data/WAVES/WAVES_'+run_date+'.nc'
     ]
 #
 # -------------------

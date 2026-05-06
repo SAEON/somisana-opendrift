@@ -110,120 +110,123 @@ jobs:
     secrets: inherit
 
 
-###############################################################################
-# Download CMEMS waves
-###############################################################################
-
-  download_cmems_waves:
-    if: ${{ github.event.inputs.model_type == 'phytodrift' }}
-    needs: [build_image,envs]
-    uses: ./.github/workflows/download_cmems_waves.yml
-    with:
-      RUNNER_NAME: mims3
-      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-      HDAYS: 5
-      FDAYS: 5
-    secrets: inherit
-
 # ###############################################################################
-# # Check available models
+# # Download CMEMS waves
 # ###############################################################################
+# 
+#   download_cmems_waves:
+#     if: ${{ github.event.inputs.model_type == 'phytodrift' }}
+#     needs: [build_image,envs]
+#     uses: ./.github/workflows/download_cmems_waves.yml
+#     with:
+#       RUNNER_NAME: mims3
+#       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+#       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+#       HDAYS: 5
+#       FDAYS: 5
+#    secrets: inherit
 
-#   check_models:
-#     runs-on: mims3
-#     outputs:
-#       RUN_GFS_MERCATOR: ${{ steps.check.outputs.RUN_GFS_MERCATOR }}
-#       RUN_SAWS_MERCATOR: ${{ steps.check.outputs.RUN_SAWS_MERCATOR }}
-#       RUN_GFS_HYCOM: ${{ steps.check.outputs.RUN_GFS_HYCOM }}
-#       RUN_SAWS_HYCOM: ${{ steps.check.outputs.RUN_SAWS_HYCOM }}
+###############################################################################
+# Check available models
+###############################################################################
 
-#     steps:
-#       - id: check
-#         run: |
-#           BASE=/mnt/ocims-somisana/public-facing/sa-west/v1.0/forecasts/latest
+  check_models:
+    runs-on: mims3
+    outputs:
+      RUN_GFS_MERCATOR: ${{ steps.check.outputs.RUN_GFS_MERCATOR }}
+      RUN_SAWS_MERCATOR: ${{ steps.check.outputs.RUN_SAWS_MERCATOR }}
+      RUN_GFS_HYCOM: ${{ steps.check.outputs.RUN_GFS_HYCOM }}
+      RUN_SAWS_HYCOM: ${{ steps.check.outputs.RUN_SAWS_HYCOM }}
 
-#           [ -d "$BASE/MERCATOR-GFS" ] && echo "RUN_GFS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_MERCATOR=false" >> $GITHUB_OUTPUT
-#           [ -d "$BASE/MERCATOR-SAWS" ] && echo "RUN_SAWS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_MERCATOR=false" >> $GITHUB_OUTPUT
-#           [ -d "$BASE/HYCOM-GFS" ] && echo "RUN_GFS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_HYCOM=false" >> $GITHUB_OUTPUT
-#           [ -d "$BASE/HYCOM-SAWS" ] && echo "RUN_SAWS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_HYCOM=false" >> $GITHUB_OUTPUT
+    steps:
+      - id: check
+        run: |
+          BASE=/mnt/ocims-somisana/public-facing/sa-west/v1.0/forecasts/latest
+
+          [ -d "$BASE/MERCATOR-GFS" ] && echo "RUN_GFS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_MERCATOR=false" >> $GITHUB_OUTPUT
+          [ -d "$BASE/MERCATOR-SAWS" ] && echo "RUN_SAWS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_MERCATOR=false" >> $GITHUB_OUTPUT
+          [ -d "$BASE/HYCOM-GFS" ] && echo "RUN_GFS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_HYCOM=false" >> $GITHUB_OUTPUT
+          [ -d "$BASE/HYCOM-SAWS" ] && echo "RUN_SAWS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_HYCOM=false" >> $GITHUB_OUTPUT
 
 
 # ###############################################################################
 # # RUN MODELS
 # ###############################################################################
 
-#   run_GFS_MERCATOR:
-#     needs: [envs, check_models, build_image]
-#     if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
-#     uses: ./.github/workflows/run_model.yml
-#     with:
-#       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
-#       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-#       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-#       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-#       RUNNER_NAME: mims3
-#       WIND: GFS
-#       OGCM: MERCATOR
-#       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
-#       DO_POST: ${{ needs.envs.outputs.DO_POST }}
-#       EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-#       DX_M: ${{ needs.envs.outputs.DX_M }}
+  run_GFS_MERCATOR:
+    needs: [envs, check_models, build_image]
+    if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
+    uses: ./.github/workflows/run_model.yml
+    with:
+      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
+      WIND: GFS
+      OGCM: MERCATOR
+      WAVES: CMEMS
+      RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
+      DO_POST: ${{ needs.envs.outputs.DO_POST }}
+      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
+      DX_M: ${{ needs.envs.outputs.DX_M }}
 
 
-#   run_SAWS_MERCATOR:
-#     needs: [envs, check_models, build_image]
-#     if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
-#     uses: ./.github/workflows/run_model.yml
-#     with:
-#       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
-#       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-#       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-#       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-#       RUNNER_NAME: mims3
-#       WIND: SAWS
-#       OGCM: MERCATOR
-#       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
-#       DO_POST: ${{ needs.envs.outputs.DO_POST }}
-#       EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-#       DX_M: ${{ needs.envs.outputs.DX_M }}
+  run_SAWS_MERCATOR:
+    needs: [envs, check_models, build_image]
+    if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
+    uses: ./.github/workflows/run_model.yml
+    with:
+      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
+      WIND: SAWS
+      OGCM: MERCATOR
+      WAVES: CMEMS
+      RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
+      DO_POST: ${{ needs.envs.outputs.DO_POST }}
+      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
+      DX_M: ${{ needs.envs.outputs.DX_M }}
 
 
-#   run_GFS_HYCOM:
-#     needs: [envs, check_models, build_image]
-#     if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
-#     uses: ./.github/workflows/run_model.yml
-#     with:
-#       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
-#       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-#       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-#       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-#       RUNNER_NAME: mims3
-#       WIND: GFS
-#       OGCM: HYCOM
-#       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
-#       DO_POST: ${{ needs.envs.outputs.DO_POST }}
-#       EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-#       DX_M: ${{ needs.envs.outputs.DX_M }}
+  run_GFS_HYCOM:
+    needs: [envs, check_models, build_image]
+    if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
+    uses: ./.github/workflows/run_model.yml
+    with:
+      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
+      WIND: GFS
+      OGCM: HYCOM
+      WAVES: CMEMS
+      RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
+      DO_POST: ${{ needs.envs.outputs.DO_POST }}
+      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
+      DX_M: ${{ needs.envs.outputs.DX_M }}
 
 
-#   run_SAWS_HYCOM:
-#     needs: [envs, check_models, build_image]
-#     if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
-#     uses: ./.github/workflows/run_model.yml
-#     with:
-#       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
-#       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
-#       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
-#       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
-#       RUNNER_NAME: mims3
-#       WIND: SAWS
-#       OGCM: HYCOM
-#       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
-#       DO_POST: ${{ needs.envs.outputs.DO_POST }}
-#       EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-#       DX_M: ${{ needs.envs.outputs.DX_M }}
-
+  run_SAWS_HYCOM:
+    needs: [envs, check_models, build_image]
+    if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
+    uses: ./.github/workflows/run_model.yml
+    with:
+      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
+      RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
+      RUNNER_NAME: mims3
+      WIND: SAWS
+      OGCM: HYCOM
+      WAVES: CMEMS
+      RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
+      DO_POST: ${{ needs.envs.outputs.DO_POST }}
+      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
+      DX_M: ${{ needs.envs.outputs.DX_M }}
 
 ###############################################################################
 # Combine output
