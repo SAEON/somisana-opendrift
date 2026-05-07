@@ -73,8 +73,8 @@ jobs:
         run: |
           sudo rm -rf ${{ env.RUN_DIR }}  
           sudo mkdir -p ${{ env.RUN_DIR }}
-          sudo chown -R somisana:somisana ${{ env.RUN_DIR }}
-          sudo chmod -R u+rwX ${{ env.RUN_DIR }}
+          sudo chown -R :runners ${{ env.RUN_DIR }}
+          sudo chmod -R 774 ${{ env.RUN_DIR }}
 
       - name: Copy config file to the local server to run the model
         run: |
