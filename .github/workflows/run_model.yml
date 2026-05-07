@@ -163,18 +163,18 @@ jobs:
           # change ownership to somisana user
           sudo chown -R somisana:somisana ${{ env.RUN_DIR }}
   
-#   # do some postprocessing and plotting
-#   postprocess:
-#     needs: [run_model]
-#     if: ${{ always() && inputs.DO_POST == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
-#     uses: ./.github/workflows/postprocess.yml
-#     with:
-#       MODEL_TYPE: ${{ inputs.MODEL_TYPE }}
-#       BRANCH_REF: ${{ inputs.BRANCH_REF }}
-#       CONFIG_NAME: ${{ inputs.CONFIG_NAME }}
-#       RUN_DATE: ${{ inputs.RUN_DATE }}
-#       RUNNER_NAME: ${{ inputs.RUNNER_NAME }}
-#       WIND: ${{ inputs.WIND }}
-#       OGCM: ${{ inputs.OGCM }}
-#       EXTENTS: ${{ inputs.EXTENTS }}
-#       DX_M: ${{ inputs.DX_M }}
+   # do some postprocessing and plotting
+  postprocess:
+    needs: [run_model]
+    if: ${{ always() && inputs.DO_POST == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
+    uses: ./.github/workflows/postprocess.yml
+    with:
+      MODEL_TYPE: ${{ inputs.MODEL_TYPE }}
+      BRANCH_REF: ${{ inputs.BRANCH_REF }}
+      CONFIG_NAME: ${{ inputs.CONFIG_NAME }}
+      RUN_DATE: ${{ inputs.RUN_DATE }}
+      RUNNER_NAME: ${{ inputs.RUNNER_NAME }}
+      WIND: ${{ inputs.WIND }}
+      OGCM: ${{ inputs.OGCM }}
+      EXTENTS: ${{ inputs.EXTENTS }}
+      DX_M: ${{ inputs.DX_M }}
