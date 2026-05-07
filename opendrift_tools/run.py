@@ -352,8 +352,6 @@ def phytodrift(config_dir):
           outfile=fname
           )
     #
-    o.plot(fast=True,filename='/home/g.rautenbach/Scripts/HAB/run_od_20260414/plot.png')
-    #
     # --------
     # cleanup
     # --------

@@ -51,7 +51,7 @@ croco_Yorig=2000
 # The default locations are those inside the docker image used to run operationally 
 #
 # switch to turn on/off use of CROCO as input
-use_croco=True 
+use_croco=False 
 #
 croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
                '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
