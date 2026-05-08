@@ -195,7 +195,7 @@ def plot_particles(fname,
         write_gif=False,
         skip_time = 1, # every nth time-step will be animated (if provided)
         tstep_end=None, # The last timestep to animate. Only used if write_gif = True.
-        marker='X'
+        source=True
         ):
     '''
     this is a convenience function for doing a quick 2D plot of particles with minimal coding.
@@ -257,8 +257,8 @@ def plot_particles(fname,
     scat_strand = ax.scatter(lon_strand,lat_strand, s=size_scat, color='r', 
                       transform=ccrs.PlateCarree())
     
-    if marker is not None:
-        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker=marker,color='k')
+    if source:
+        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
     
     tx_time = get_time_txt(ax, time_plot, time_start)
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
@@ -356,7 +356,7 @@ def plot_gridded(fname,
         write_gif=False,
         skip_time = 1, # every nth time-step will be animated (if provided)
         tstep_end=None, # The last timestep to animate. Only used if write_gif = True.
-        marker='X'
+        source=True
         ):
     '''
     this is a convenience function for doing a quick 2D plot of gridded output with minimal coding.
@@ -411,8 +411,10 @@ def plot_gridded(fname,
     ds_part_start = ds_part.isel(time=0)
     lon_release=np.nanmean(ds_part_start.lon.values)
     lat_release=np.nanmean(ds_part_start.lat.values)
-    if marker is not None:
-        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker=marker,color='k')
+
+    if source:
+        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
+    
     tx_time = get_time_txt(ax, time_plot, time_start)
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     
@@ -468,7 +470,7 @@ def plot_gridded_stats(fname,
         # options related to the plot output file
         jpg_out=None, # filename of the jpg file
         write_jpg=False,
-        marker='X',
+        source=True,
         ):
     '''
     this is a convenience function for doing a quick 2D plot of summary stats gridded output with minimal coding.
@@ -522,8 +524,9 @@ def plot_gridded_stats(fname,
     ds_part_start = ds_part.isel(time=0)
     lon_release=np.nanmean(ds_part_start.lon.values)
     lat_release=np.nanmean(ds_part_start.lat.values)
-    if marker is not None:
-        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker=marker,color='k')
+    
+    if source:
+        ax.scatter(lon_release,lat_release, size_release, transform=ccrs.PlateCarree(),marker='X',color='k')
        
     if add_cbar:
         plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)

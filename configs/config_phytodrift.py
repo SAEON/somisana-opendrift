@@ -15,7 +15,7 @@
 config_name='phytodrift'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20260430_00'
+run_date='20260507_00'
 #
 # --------------------------------
 # Model Domain
@@ -30,7 +30,7 @@ domain=[14,20,-36,-29]
 flag_file='/mnt/tmp/downloaded_data/PHYTOPLANKTON_FLAGS/PHYTO_'+run_date+'.nc'           
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20260430_00'
+release_start_time='20260507_00'
 #
 # -------------
 # forcing files
