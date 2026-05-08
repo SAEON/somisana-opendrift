@@ -110,8 +110,8 @@ jobs:
         id: check
         run: |
           MODEL_TYPE=${{ github.event.inputs.model_type }}
-
-          ogcm_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
+          ogcm_file=/home/somisana/ops/main/${{ inputs.RUN_DATE }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
+          # ogcm_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
           wind_file_u=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/U-component_of_wind_Y9999M1.nc
           wind_file_v=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/V-component_of_wind_Y9999M1.nc
           waves_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WAVES }}/${{ inputs.WAVES }}_${{ inputs.RUN_DATE }}.nc
