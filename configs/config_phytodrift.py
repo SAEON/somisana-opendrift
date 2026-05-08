@@ -65,15 +65,14 @@ ogcm_files = ['/home/somisana/ops/main/'+run_date+'/downloaded_data/HYCOM/OGCM_'
 # switch to turn on/off use of wind as input
 use_wind=False
 #
-wind_files = ['/home/somisana/ops/main/+'run_date'+/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
-              '/home/somisana/ops/main/+'run_date'+/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
+wind_files = ['/home/somisana/ops/main/'+run_date+'/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
+              '/home/somisana/ops/main/'+run_date+'/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
               ]
 
 use_waves=True
 #
-wave_files = [
-    '/mnt/tmp/downloaded_data/CMEMS/CMEMS_'+run_date+'.nc'
-    ]
+wave_files = ['/mnt/tmp/downloaded_data/CMEMS/CMEMS_'+run_date+'.nc'
+              ]
 #
 # -------------------
 # physical processes
