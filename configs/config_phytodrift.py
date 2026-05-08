@@ -60,14 +60,14 @@ croco_files = ['/home/somisana/ops/main/'+run_date+'/sa_southeast_01/croco_v1.3.
 use_ogcm=True
 #
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
+ogcm_files = ['/home/somisana/ops/main/'+run_date+'/downloaded_data/HYCOM/OGCM_'+run_date+'.nc']
 
 # switch to turn on/off use of wind as input
 use_wind=False
 #
-wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
-        '/mnt/tmp/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
-        ]
+wind_files = ['/home/somisana/ops/main/+'run_date'+/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
+              '/home/somisana/ops/main/+'run_date'+/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
+              ]
 
 use_waves=True
 #
