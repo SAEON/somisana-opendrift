@@ -52,23 +52,22 @@ croco_Yorig=2000
 # switch to turn on/off use of CROCO as input
 use_croco=True 
 #
-croco_files = ['/home/somisana/ops/main/'+run_date+'/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
-               '/home/somisana/ops/main/'+run_date+'/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
+croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
+               '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
                ]
-
 # switch to turn on/off use of OGCM as input
 use_ogcm=True
 #
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_files = ['/home/somisana/ops/main/'+run_date+'/downloaded_data/HYCOM/OGCM_'+run_date+'.nc']
-
+ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
+#
 # switch to turn on/off use of wind as input
 use_wind=False
 #
-wind_files = ['/home/somisana/ops/main/'+run_date+'/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
-              '/home/somisana/ops/main/'+run_date+'/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
+wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999M1.nc',
+              '/mnt/tmp/downloaded_data/WIND/for_croco/V-component_of_wind_Y9999M1.nc'
               ]
-
+#
 use_waves=True
 #
 wave_files = ['/mnt/tmp/downloaded_data/CMEMS/CMEMS_'+run_date+'.nc'
