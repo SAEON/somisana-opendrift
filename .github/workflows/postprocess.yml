@@ -293,7 +293,7 @@ jobs:
                 --fname_gridded gridded_particle_density.nc \
                 --extents ${{ inputs.EXTENTS }} \
                 --gif_out gridded_particle_density.gif \
-                --marker None \
+                --source False \
                 --cmap cmo.algae \
                 --ticks 0,2,4,6,8,10
 
@@ -312,7 +312,7 @@ jobs:
                 --cbar_label 'max. particle density (%)' \
                 --extents ${{ inputs.EXTENTS }} \
                 --jpg_out gridded_particle_density_max.jpg \
-                --marker None \
+                --source False \
                 --cmap cmo.algae
 
       - name: plot minimum time to arrival
@@ -332,7 +332,7 @@ jobs:
                 --cbar_label 'minimum time (days)' \
                 --extents ${{ inputs.EXTENTS }} \
                 --jpg_out gridded_min_time.jpg \
-                --marker None \
+                --source False \
                 --cmap cmo.algae
 
   # copy data over to where it will be archived
