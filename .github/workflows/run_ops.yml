@@ -34,7 +34,6 @@ on:
         default: None
         type: string
 
-
 ###############################################################################
 # Detect branch
 ###############################################################################
@@ -49,7 +48,6 @@ jobs:
       - id: branch
         run: echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
 
-
 ###############################################################################
 # Load derived config (single source of truth)
 ###############################################################################
@@ -59,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      BRANCH_REF: ${{ steps.branch.outputs.value }}
+      BRANCH_REF: ${{ needs.branch-ref.outputs.value }}
       CONFIG_NAME: ${{ steps.config.outputs.value }}
       RUN_DATE: ${{ steps.rundate.outputs.value }}
       MODEL_TYPE: ${{ github.event.inputs.model_type }}
@@ -73,26 +71,18 @@ jobs:
         with:
           ref: ${{ needs.branch-ref.outputs.value }}
 
-#       - name: Read config_name
-#         id: config
-#         run: |
-#           line=$(grep -m 1 -w config_name configs/config_${{ github.event.inputs.model_type }}.py)
-#           value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
-#           echo "value=$value" >> $GITHUB_OUTPUT
-
-      - name: Read configuration name
+      - name: Read config_name
         id: config
         run: |
-          # Use grep to find the line where the variable is defined
           line=$(grep -m 1 -w config_name configs/config_${{ github.event.inputs.model_type }}.py)
-          # Use awk to extract the value of the variable from the line (thanks chatgpt)
-          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+          value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//' | sed "s/^['\"]//;s/['\"]$//")
+          echo "value=$value" >> $GITHUB_OUTPUT
 
       - name: Read run_date
         id: rundate
         run: |
           line=$(grep -m 1 -w run_date configs/config_${{ github.event.inputs.model_type }}.py)
-          value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//')
+          value=$(echo "$line" | awk -F "=" '{print $2}' | sed "s/^[[:space:]]*//" | sed "s/^['\"]//;s/['\"]$//")
           echo "value=$value" >> $GITHUB_OUTPUT
 
 
@@ -107,8 +97,8 @@ jobs:
 ###############################################################################
 # Download phytoplankton flags
 ###############################################################################
-
-  download_phytoplankton_flags:
+  
+  download_phytoplankton_flags: 
     if: ${{ github.event.inputs.model_type == 'phytodrift' }}
     needs: [build_image,envs]
     uses: ./.github/workflows/download_phytoplankton_flags.yml
@@ -135,7 +125,6 @@ jobs:
       FDAYS: 5
     secrets: inherit
 
-
 ###############################################################################
 # Check available models
 ###############################################################################
@@ -159,12 +148,12 @@ jobs:
           [ -d "$BASE/HYCOM-SAWS" ] && echo "RUN_SAWS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_HYCOM=false" >> $GITHUB_OUTPUT
 
 
-###############################################################################
-# RUN MODELS
-###############################################################################
+# ###############################################################################
+# # RUN MODELS
+# ###############################################################################
 
   run_GFS_MERCATOR:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
     if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -175,6 +164,7 @@ jobs:
       RUNNER_NAME: mims3
       WIND: GFS
       OGCM: MERCATOR
+      WAVES: CMEMS
       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
       DO_POST: ${{ needs.envs.outputs.DO_POST }}
       EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
@@ -182,7 +172,7 @@ jobs:
 
 
   run_SAWS_MERCATOR:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
     if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -193,6 +183,7 @@ jobs:
       RUNNER_NAME: mims3
       WIND: SAWS
       OGCM: MERCATOR
+      WAVES: CMEMS
       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
       DO_POST: ${{ needs.envs.outputs.DO_POST }}
       EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
@@ -200,7 +191,7 @@ jobs:
 
 
   run_GFS_HYCOM:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
     if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -211,6 +202,7 @@ jobs:
       RUNNER_NAME: mims3
       WIND: GFS
       OGCM: HYCOM
+      WAVES: CMEMS
       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
       DO_POST: ${{ needs.envs.outputs.DO_POST }}
       EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
@@ -218,7 +210,7 @@ jobs:
 
 
   run_SAWS_HYCOM:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
     if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -229,11 +221,11 @@ jobs:
       RUNNER_NAME: mims3
       WIND: SAWS
       OGCM: HYCOM
+      WAVES: CMEMS
       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
       DO_POST: ${{ needs.envs.outputs.DO_POST }}
       EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
       DX_M: ${{ needs.envs.outputs.DX_M }}
-
 
 ###############################################################################
 # Combine output

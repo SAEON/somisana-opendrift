@@ -13,7 +13,6 @@ import sys, importlib
 import numpy as np
 from datetime import datetime, timedelta
 import opendrift_tools.preprocess as pre_od
-
 # -----------
 # OCEANDRIFT
 # -----------
@@ -330,8 +329,12 @@ def phytodrift(config_dir):
     lonp,latp=pre_od.get_seed_points(file_in=config.flag_file,
                                      domain=config.domain)
     #
-    o.seed_elements(lon=lonp[:], 
-                    lat=latp[:],
+    if lonp is None and latp is None:
+        sys.exit()
+        
+    #
+    o.seed_elements(lon=lonp, 
+                    lat=latp,
                     time=time_start,
                     z=0)
     #
@@ -362,7 +365,7 @@ def phytodrift(config_dir):
 
 if __name__ == "__main__":
     import os
-    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20260414'
+    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20260504'
     if os.path.exists(config_dir+'/trajectories.nc'):
         os.remove(config_dir+'/trajectories.nc')    
     phytodrift(config_dir)

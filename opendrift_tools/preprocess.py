@@ -13,19 +13,24 @@ import numpy as np
 from opendrift.readers import reader_netCDF_CF_generic
 from opendrift.readers import reader_ROMS_native
 from opendrift.readers import reader_global_landmask
+import sys
 
 def get_seed_points(file_in,domain=None):
     #
     # Function to get the longoitude and latitude positions at points that are flagged 
     # as a red tide in the phytoplankton flag file. 
     #
-    if domain is not None:
-        ds_flags = ds_flags = xr.open_dataset(file_in).sel(x=slice(domain[0],domain[1]),
-                                                           y=slice(domain[3],domain[2])
-                                                           )
-    else:
-        ds_flags = xr.open_dataset(file_in)
-            
+    try:
+        if domain is not None:
+            ds_flags = ds_flags = xr.open_dataset(file_in).sel(x=slice(domain[0],domain[1]),
+                                                               y=slice(domain[3],domain[2])
+                                                               )
+        else:
+            ds_flags = xr.open_dataset(file_in)
+    except:
+        print('\nError extracting flagged points. No flag data.\n')
+        return None,None
+        
     phytoplankton_flags = ds_flags.phytoplankton.values.squeeze()
     lons = ds_flags.x.values
     lats = ds_flags.y.values
