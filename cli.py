@@ -185,6 +185,7 @@ def main():
     parser_animate.add_argument('--cmap', required=False, default='Spectral_r', type=str, help='the colormap to use')
     parser_animate.add_argument('--gif_out', required=False, type=parse_str, default=None, help='the output gif filename')
     parser_animate.add_argument('--jpg_out', required=False, type=parse_str, default=None, help='the output jpg filename')
+    parser_animate.add_argument('--marker', required=False, type=parse_str, default='X', help='Plot the source position of the particels')
     def animate_handler(args):
         # the input options passed by the cli is not exhaustive to the plotting functions
         # this is just intended to provide a quick animation as part of the operational workflow
@@ -206,7 +207,8 @@ def main():
                             extents=args.extents,
                             lscale=args.lscale,
                             gif_out=gif_out,
-                            write_gif=True)
+                            write_gif=True,
+                            marker=args.marker)
         elif args.type == 'gridded':
             # animate the gridded output
             plot_gridded(fname_gridded,
@@ -218,7 +220,8 @@ def main():
                             cbar_label=args.cbar_label,
                             cmap=args.cmap,
                             gif_out=gif_out,
-                            write_gif=True)
+                            write_gif=True,
+                            marker=args.marker)
         elif args.type == 'gridded_stats':
             # plot the static output (i.e. no time dimension) of the gridded output
             plot_gridded_stats(fname_gridded,
