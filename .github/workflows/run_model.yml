@@ -85,6 +85,7 @@ jobs:
 
           if [ "$MODEL_TYPE" = "phytodrift" ]; then
             sed -e "s/OGCM/$OGCM/g" \
+                -e "s/WIND/$WIND/g" \
                 -e "s/WAVES/$WAVES/g" \
                 < configs/config_${MODEL_TYPE}.py > ${{ env.RUN_DIR }}/config.py
           else
