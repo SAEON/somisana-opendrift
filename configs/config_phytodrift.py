@@ -52,14 +52,14 @@ croco_Yorig=2000
 # switch to turn on/off use of CROCO as input
 use_croco=True 
 #
-croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
-               '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
+croco_files = ['/mnt/tmp2/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
+               '/mnt/tmp2/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
                ]
 # switch to turn on/off use of OGCM as input
 use_ogcm=True
 #
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
+ogcm_files = ['/mnt/tmp2/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
 #
 # switch to turn on/off use of wind as input
 use_wind=False
