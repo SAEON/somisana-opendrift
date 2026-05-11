@@ -154,7 +154,7 @@ jobs:
 # ###############################################################################
 
   run_GFS_MERCATOR:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: |
         needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
         (
@@ -181,7 +181,7 @@ jobs:
 
 
   run_SAWS_MERCATOR:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: |
         needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
         (
@@ -208,7 +208,7 @@ jobs:
 
 
   run_GFS_HYCOM:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: |
         needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
         (
@@ -235,7 +235,7 @@ jobs:
 
 
   run_SAWS_HYCOM:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: |
         needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
         (
