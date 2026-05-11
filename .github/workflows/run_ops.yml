@@ -129,13 +129,24 @@ jobs:
 # Optional dependencies for phytodrift
 ###############################################################################
 
-  phytodrift_dependencies:
-    if: ${{ always() }}
-    needs: [download_phytoplankton_flags, download_cmems_waves]
-    runs-on: ubuntu-latest
+phytodrift_dependencies:
+  needs: [download_phytoplankton_flags, download_cmems_waves]
 
-    steps:
-      - run: echo "Phytodrift dependencies complete or skipped"
+  if: |
+    always() &&
+    (
+      needs.download_phytoplankton_flags.result == 'success' ||
+      needs.download_phytoplankton_flags.result == 'skipped'
+    ) &&
+    (
+      needs.download_cmems_waves.result == 'success' ||
+      needs.download_cmems_waves.result == 'skipped'
+    )
+
+  runs-on: ubuntu-latest
+
+  steps:
+    - run: echo "Phytodrift dependencies complete or skipped"
 
 ###############################################################################
 # Check available models
