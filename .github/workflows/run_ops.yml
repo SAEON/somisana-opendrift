@@ -93,6 +93,28 @@ jobs:
   build_image:
     uses: ./.github/workflows/build_image.yml
 
+###############################################################################
+# Check available models
+###############################################################################
+
+  check_models:
+    needs: envs
+    runs-on: mims3
+    outputs:
+      RUN_GFS_MERCATOR: ${{ steps.check.outputs.RUN_GFS_MERCATOR }}
+      RUN_SAWS_MERCATOR: ${{ steps.check.outputs.RUN_SAWS_MERCATOR }}
+      RUN_GFS_HYCOM: ${{ steps.check.outputs.RUN_GFS_HYCOM }}
+      RUN_SAWS_HYCOM: ${{ steps.check.outputs.RUN_SAWS_HYCOM }}
+
+    steps:
+      - id: check
+        run: |
+          BASE=/mnt/ocims-somisana/public-facing/sa-west/v1.0/forecasts/${{ needs.envs.outputs.RUN_DATE }}
+
+          [ -d "$BASE/MERCATOR-GFS" ] && echo "RUN_GFS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_MERCATOR=false" >> $GITHUB_OUTPUT
+          [ -d "$BASE/MERCATOR-SAWS" ] && echo "RUN_SAWS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_MERCATOR=false" >> $GITHUB_OUTPUT
+          [ -d "$BASE/HYCOM-GFS" ] && echo "RUN_GFS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_HYCOM=false" >> $GITHUB_OUTPUT
+          [ -d "$BASE/HYCOM-SAWS" ] && echo "RUN_SAWS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_HYCOM=false" >> $GITHUB_OUTPUT
 
 ###############################################################################
 # Download phytoplankton flags
@@ -126,27 +148,26 @@ jobs:
     secrets: inherit
 
 ###############################################################################
-# Check available models
+# Phytodrift sync point
 ###############################################################################
 
-  check_models:
-    needs: envs
-    runs-on: mims3
-    outputs:
-      RUN_GFS_MERCATOR: ${{ steps.check.outputs.RUN_GFS_MERCATOR }}
-      RUN_SAWS_MERCATOR: ${{ steps.check.outputs.RUN_SAWS_MERCATOR }}
-      RUN_GFS_HYCOM: ${{ steps.check.outputs.RUN_GFS_HYCOM }}
-      RUN_SAWS_HYCOM: ${{ steps.check.outputs.RUN_SAWS_HYCOM }}
+  phytodrift_ready:
+    runs-on: ubuntu-latest
+
+    needs: [build_image,envs,download_phytoplankton_flags,download_cmems_waves]
+
+    if: |
+      always() &&
+      (
+        github.event.inputs.model_type != 'phytodrift' ||
+        (
+          needs.download_phytoplankton_flags.result == 'success' &&
+          needs.download_cmems_waves.result == 'success'
+        )
+      )
 
     steps:
-      - id: check
-        run: |
-          BASE=/mnt/ocims-somisana/public-facing/sa-west/v1.0/forecasts/${{ needs.envs.outputs.RUN_DATE }}
-
-          [ -d "$BASE/MERCATOR-GFS" ] && echo "RUN_GFS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_MERCATOR=false" >> $GITHUB_OUTPUT
-          [ -d "$BASE/MERCATOR-SAWS" ] && echo "RUN_SAWS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_MERCATOR=false" >> $GITHUB_OUTPUT
-          [ -d "$BASE/HYCOM-GFS" ] && echo "RUN_GFS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_HYCOM=false" >> $GITHUB_OUTPUT
-          [ -d "$BASE/HYCOM-SAWS" ] && echo "RUN_SAWS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_HYCOM=false" >> $GITHUB_OUTPUT
+      - run: echo "Ready"
 
 
 # ###############################################################################
@@ -154,16 +175,8 @@ jobs:
 # ###############################################################################
 
   run_GFS_MERCATOR:
-    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
-    if: |
-        needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
-        (
-          github.event.inputs.model_type != 'phytodrift' ||
-          (
-            needs.download_phytoplankton_flags.result == 'success' &&
-            needs.download_cmems_waves.result == 'success'
-          )
-        )
+    needs: [envs, check_models, build_image, phytodrift_ready]
+    if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
@@ -181,16 +194,8 @@ jobs:
 
 
   run_SAWS_MERCATOR:
-    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
-    if: |
-        needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
-        (
-          github.event.inputs.model_type != 'phytodrift' ||
-          (
-            needs.download_phytoplankton_flags.result == 'success' &&
-            needs.download_cmems_waves.result == 'success'
-          )
-        )
+    needs: [envs, check_models, build_image, phytodrift_ready]
+    if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
@@ -208,16 +213,8 @@ jobs:
 
 
   run_GFS_HYCOM:
-    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
-    if: |
-        needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
-        (
-          github.event.inputs.model_type != 'phytodrift' ||
-          (
-            needs.download_phytoplankton_flags.result == 'success' &&
-            needs.download_cmems_waves.result == 'success'
-          )
-        )
+    needs: [envs, check_models, build_image, phytodrift_ready]
+    if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
@@ -235,16 +232,8 @@ jobs:
 
 
   run_SAWS_HYCOM:
-    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
-    if: |
-        needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
-        (
-          github.event.inputs.model_type != 'phytodrift' ||
-          (
-            needs.download_phytoplankton_flags.result == 'success' &&
-            needs.download_cmems_waves.result == 'success'
-          )
-        )
+    needs: [envs, check_models, build_image, phytodrift_ready]
+    if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
