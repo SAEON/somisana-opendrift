@@ -126,10 +126,23 @@ jobs:
     secrets: inherit
 
 ###############################################################################
+# Optional dependencies for phytodrift
+###############################################################################
+
+  phytodrift_dependencies:
+    if: ${{ always() }}
+    needs: [download_phytoplankton_flags, download_cmems_waves]
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo "Phytodrift dependencies complete or skipped"
+
+###############################################################################
 # Check available models
 ###############################################################################
 
   check_models:
+    needs: envs
     runs-on: mims3
     outputs:
       RUN_GFS_MERCATOR: ${{ steps.check.outputs.RUN_GFS_MERCATOR }}
@@ -153,7 +166,7 @@ jobs:
 # ###############################################################################
 
   run_GFS_MERCATOR:
-    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
+    needs: [envs, check_models, build_image, phytodrift_dependencies]
     if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -172,7 +185,7 @@ jobs:
 
 
   run_SAWS_MERCATOR:
-    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
+    needs: [envs, check_models, build_image, phytodrift_dependencies]
     if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -191,7 +204,7 @@ jobs:
 
 
   run_GFS_HYCOM:
-    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
+    needs: [envs, check_models, build_image, phytodrift_dependencies]
     if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -210,7 +223,7 @@ jobs:
 
 
   run_SAWS_HYCOM:
-    needs: [envs, check_models, build_image,download_phytoplankton_flags,download_cmems_waves]
+    needs: [envs, check_models, build_image, phytodrift_dependencies]
     if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
