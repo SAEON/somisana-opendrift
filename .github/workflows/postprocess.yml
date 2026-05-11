@@ -259,7 +259,7 @@ jobs:
                 --config_dir ${{ env.RUN_DIR_DOCKER }} \
                 --extents ${{ inputs.EXTENTS }} \
                 --gif_out trajectories.gif \
-                --marker None
+                --source False
 
   particle_density_phyto:
     if: ${{ inputs.MODEL_TYPE == 'phytodrift' }}
