@@ -126,29 +126,6 @@ jobs:
     secrets: inherit
 
 ###############################################################################
-# Optional dependencies for phytodrift
-###############################################################################
-
-  phytodrift_dependencies:
-    needs: [download_phytoplankton_flags, download_cmems_waves]
-
-    if: |
-      always() &&
-      (
-        needs.download_phytoplankton_flags.result == 'success' ||
-        needs.download_phytoplankton_flags.result == 'skipped'
-      ) &&
-      (
-        needs.download_cmems_waves.result == 'success' ||
-        needs.download_cmems_waves.result == 'skipped'
-      )
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - run: echo "Phytodrift dependencies complete or skipped"
-
-###############################################################################
 # Check available models
 ###############################################################################
 
@@ -177,8 +154,16 @@ jobs:
 # ###############################################################################
 
   run_GFS_MERCATOR:
-    needs: [envs, check_models, build_image, phytodrift_dependencies]
-    if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
+    needs: [envs, check_models, build_image]
+    if: |
+        needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
+        (
+          github.event.inputs.model_type != 'phytodrift' ||
+          (
+            needs.download_phytoplankton_flags.result == 'success' &&
+            needs.download_cmems_waves.result == 'success'
+          )
+        )
     uses: ./.github/workflows/run_model.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
@@ -196,8 +181,16 @@ jobs:
 
 
   run_SAWS_MERCATOR:
-    needs: [envs, check_models, build_image, phytodrift_dependencies]
-    if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
+    needs: [envs, check_models, build_image]
+    if: |
+        needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
+        (
+          github.event.inputs.model_type != 'phytodrift' ||
+          (
+            needs.download_phytoplankton_flags.result == 'success' &&
+            needs.download_cmems_waves.result == 'success'
+          )
+        )
     uses: ./.github/workflows/run_model.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
@@ -215,8 +208,16 @@ jobs:
 
 
   run_GFS_HYCOM:
-    needs: [envs, check_models, build_image, phytodrift_dependencies]
-    if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
+    needs: [envs, check_models, build_image]
+    if: |
+        needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
+        (
+          github.event.inputs.model_type != 'phytodrift' ||
+          (
+            needs.download_phytoplankton_flags.result == 'success' &&
+            needs.download_cmems_waves.result == 'success'
+          )
+        )
     uses: ./.github/workflows/run_model.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
@@ -234,8 +235,16 @@ jobs:
 
 
   run_SAWS_HYCOM:
-    needs: [envs, check_models, build_image, phytodrift_dependencies]
-    if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
+    needs: [envs, check_models, build_image]
+    if: |
+        needs.check_models.outputs.RUN_GFS_MERCATOR == 'true' &&
+        (
+          github.event.inputs.model_type != 'phytodrift' ||
+          (
+            needs.download_phytoplankton_flags.result == 'success' &&
+            needs.download_cmems_waves.result == 'success'
+          )
+        )
     uses: ./.github/workflows/run_model.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
