@@ -75,8 +75,8 @@ jobs:
           docker system prune -a -f
           docker builder prune -a -f || true
 
-      - name: Check disk space
-        run: df -h
+          #- name: Check disk space
+          #run: df -h
 
       - name: pull latest docker image to mims server
         run: |
