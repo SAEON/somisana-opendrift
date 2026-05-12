@@ -61,7 +61,6 @@ jobs:
     needs: [check_files]
     if: ${{ needs.check_files.outputs.WAVES_OK == '0' }}
     steps:
-      steps:
       - name: Skip unless phytodrift
         if: ${{ inputs.MODEL_TYPE != 'phytodrift' }}
         run: |
