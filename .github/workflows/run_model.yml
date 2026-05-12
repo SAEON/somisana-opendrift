@@ -119,7 +119,7 @@ jobs:
           flag_file=${{ env.DATE_DIR }}/downloaded_data/PHYTOPLANKTON_FLAGS/PHYTO_${{ inputs.RUN_DATE }}.nc
 
 
-          for f in "$ogcm_file" "$waves_file" "$flag_file"; do
+          for f in "$ogcm_file" "$wind_file_u" "$wind_file_v" "$waves_file" "$flag_file"; do
             if [ ! -f "$f" ]; then
               echo "Missing file: $f"
             else
