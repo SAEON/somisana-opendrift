@@ -117,7 +117,7 @@ jobs:
 ###############################################################################
   
   download_phytoplankton_flags: 
-    needs: [build_image,envs]
+    needs: [build_image, envs]
     uses: ./.github/workflows/download_phytoplankton_flags.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
@@ -131,7 +131,7 @@ jobs:
 ###############################################################################
 
   download_cmems_waves:
-    needs: [build_image,envs]
+    needs: [build_image, envs]
     uses: ./.github/workflows/download_cmems_waves.yml
     with:
       MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
@@ -147,7 +147,7 @@ jobs:
 # ###############################################################################
 
   run_GFS_MERCATOR:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -166,7 +166,7 @@ jobs:
 
 
   run_SAWS_MERCATOR:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -185,7 +185,7 @@ jobs:
 
 
   run_GFS_HYCOM:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -204,7 +204,7 @@ jobs:
 
 
   run_SAWS_HYCOM:
-    needs: [envs, check_models, build_image]
+    needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
