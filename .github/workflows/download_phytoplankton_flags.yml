@@ -3,6 +3,10 @@ name: download phytoplankton flags
 on:
   workflow_call:
     inputs:
+      MODEL_TYPE:
+        description: 'type of model being run'
+        required: true
+        type: string
       RUNNER_NAME:
         description: 'specify the runner name to determine what server we are running on'
         required: true
@@ -26,7 +30,6 @@ jobs:
     outputs:
       PHYTO_OK: ${{ steps.check_phyto.outputs.value }}
     steps:
-      steps:
       - name: Check if Phytoplankton flags file is already downloaded
         id: check_phyto
         run: |

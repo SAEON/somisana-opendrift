@@ -9,25 +9,21 @@ on:
         default: oceandrift
         type: choice
         options: [oceandrift, oil, leeway, phytodrift]
-
       run_model:
         description: "run the model?"
         required: true
         type: boolean
         default: true
-
       do_post:
         description: "do the postprocessing?"
         required: true
         type: boolean
         default: true
-
       extents:
         description: "lon0,lon1,lat0,lat1 or None"
         required: true
         default: None
         type: string
-
       dx_m:
         description: "grid size (m) or None"
         required: true
@@ -124,11 +120,11 @@ jobs:
     needs: [build_image,envs]
     uses: ./.github/workflows/download_phytoplankton_flags.yml
     with:
+      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
       RUNNER_NAME: mims3
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
     secrets: inherit
-
 
 ###############################################################################
 # Download CMEMS waves
@@ -138,6 +134,7 @@ jobs:
     needs: [build_image,envs]
     uses: ./.github/workflows/download_cmems_waves.yml
     with:
+      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
       RUNNER_NAME: mims3
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}

@@ -3,6 +3,10 @@ name: download regional CMEMS waves data
 on:
   workflow_call:
     inputs:
+      MODEL_TYPE:
+        description: 'type of model being run'
+        required: true
+        type: string
       RUNNER_NAME:
         description: 'specify the runner name to determine what server we are running on'
         required: true
