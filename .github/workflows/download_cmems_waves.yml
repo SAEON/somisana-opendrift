@@ -57,6 +57,12 @@ jobs:
     needs: [check_files]
     if: ${{ needs.check_files.outputs.WAVES_OK == '0' }}
     steps:
+      steps:
+      - name: Skip unless phytodrift
+        if: ${{ inputs.MODEL_TYPE != 'phytodrift' }}
+        run: |
+          echo "Not phytodrift. Nothing to do."
+          exit 0
       - name: pull latest download docker image to the saeon-apps server
         run: |
           docker pull ghcr.io/saeon/somisana-download_main:latest
@@ -106,7 +112,7 @@ jobs:
   download_cmems_waves:
     runs-on: ${{ inputs.RUNNER_NAME }}
     needs: [check_files,download_cmems_waves_saeon]
-    if: ${{ always() && needs.check_files.outputs.WAVES_OK == '0' }}
+    if: ${{ inputs.MODEL_TYPE == 'phytodrift' && needs.check_files.outputs.WAVES_OK == '0' }}
     steps:
       - name: create the CMEMS directory
         run: |

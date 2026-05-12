@@ -121,7 +121,6 @@ jobs:
 ###############################################################################
   
   download_phytoplankton_flags: 
-    if: ${{ github.event.inputs.model_type == 'phytodrift' }}
     needs: [build_image,envs]
     uses: ./.github/workflows/download_phytoplankton_flags.yml
     with:
@@ -136,7 +135,6 @@ jobs:
 ###############################################################################
 
   download_cmems_waves:
-    if: ${{ github.event.inputs.model_type == 'phytodrift' }}
     needs: [build_image,envs]
     uses: ./.github/workflows/download_cmems_waves.yml
     with:
@@ -147,35 +145,12 @@ jobs:
       FDAYS: 5
     secrets: inherit
 
-###############################################################################
-# Phytodrift sync point
-###############################################################################
-
-  phytodrift_ready:
-    runs-on: ubuntu-latest
-
-    needs: [build_image,envs,download_phytoplankton_flags,download_cmems_waves]
-
-    if: |
-      always() &&
-      (
-        github.event.inputs.model_type != 'phytodrift' ||
-        (
-          needs.download_phytoplankton_flags.result == 'success' &&
-          needs.download_cmems_waves.result == 'success'
-        )
-      )
-
-    steps:
-      - run: echo "Ready"
-
-
 # ###############################################################################
 # # RUN MODELS
 # ###############################################################################
 
   run_GFS_MERCATOR:
-    needs: [envs, check_models, build_image, phytodrift_ready]
+    needs: [envs, check_models, build_image]
     if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -194,7 +169,7 @@ jobs:
 
 
   run_SAWS_MERCATOR:
-    needs: [envs, check_models, build_image, phytodrift_ready]
+    needs: [envs, check_models, build_image]
     if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -213,7 +188,7 @@ jobs:
 
 
   run_GFS_HYCOM:
-    needs: [envs, check_models, build_image, phytodrift_ready]
+    needs: [envs, check_models, build_image]
     if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
@@ -232,7 +207,7 @@ jobs:
 
 
   run_SAWS_HYCOM:
-    needs: [envs, check_models, build_image, phytodrift_ready]
+    needs: [envs, check_models, build_image]
     if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
