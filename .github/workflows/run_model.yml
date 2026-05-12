@@ -158,7 +158,7 @@ jobs:
             --rm \
             --user root \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            -v ${{ env.DATE_DIR0 }}:/mnt/tmp0 \ 
+            -v ${{ env.DATE_DIR0 }}:/mnt/tmp0 \
            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               run_model \
                 --model_type ${{ inputs.MODEL_TYPE }} \
