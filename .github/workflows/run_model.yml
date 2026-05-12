@@ -54,8 +54,7 @@ on:
 
 env:
   # the directory to get mounted when running the docker image
-  DATE_DIR: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}
-  DATE_DIR2: /home/somisana/ops/main/${{ inputs.RUN_DATE }}
+  DATE_DIR: /home/somisana/ops/main/${{ inputs.RUN_DATE }} 
   # path to the run directory, as seen inside the running docker container
   RUN_DIR_DOCKER: /mnt/tmp/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
   # path to the run directory, as seen inside the local server 
@@ -112,7 +111,7 @@ jobs:
         id: check
         run: |
           MODEL_TYPE=${{ inputs.MODEL_TYPE }}
-          ogcm_file=${{ env.DATE_DIR2 }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
+          ogcm_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
           wind_file_u=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/U-component_of_wind_Y9999M1.nc
           wind_file_v=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/V-component_of_wind_Y9999M1.nc
           waves_file=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WAVES }}/${{ inputs.WAVES }}_${{ inputs.RUN_DATE }}.nc
@@ -157,7 +156,6 @@ jobs:
             --rm \
             --user root \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            -v ${{ env.DATE_DIR2 }}:/mnt/tmp2 \
            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               run_model \
                 --model_type ${{ inputs.MODEL_TYPE }} \
