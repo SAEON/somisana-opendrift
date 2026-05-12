@@ -82,7 +82,7 @@ jobs:
           OGCM=${{ inputs.OGCM }}
           WIND=${{ inputs.WIND }}
           WAVES=${{ inputs.WAVES }}
-          MODEL_TYPE=${{ github.event.inputs.model_type }}
+          MODEL_TYPE=${{ inputs.MODEL_TYPE }}
 
           if [ "$MODEL_TYPE" = "phytodrift" ]; then
             sed -e "s/OGCM/$OGCM/g" \
@@ -111,7 +111,7 @@ jobs:
       - name: check input file availability
         id: check
         run: |
-          MODEL_TYPE=${{ github.event.inputs.model_type }}
+          MODEL_TYPE=${{ inputs.MODEL_TYPE }}
           ogcm_file=${{ env.DATE_DIR2 }}/downloaded_data/${{ inputs.OGCM }}/${{ inputs.OGCM }}_${{ inputs.RUN_DATE }}.nc
           wind_file_u=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/U-component_of_wind_Y9999M1.nc
           wind_file_v=${{ env.DATE_DIR }}/downloaded_data/${{ inputs.WIND }}/for_croco/V-component_of_wind_Y9999M1.nc
