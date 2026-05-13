@@ -123,7 +123,7 @@ def compute_grid_area(lon, lat, R=6371000):
     
     return area
 
-def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,max_only=False,lonbin=None,latbin=None,mass_per_particle=None):
+def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,max_only=False,lonbin=None,latbin=None,mass_per_particle=None,max_depth=None):
     '''
     compute a eulerian particle density map from the output of an opendrift simulation
     fname = the file to do the gridding on
@@ -157,7 +157,12 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         return h_time_min
     
     # get the data
-    ds = xr.open_dataset(fname)
+    if max_depth is None:
+        ds = xr.open_dataset(fname)
+    else:
+        ds = xr.open_dataset(fname)
+        ds = ds.where(ds.z >= max_depth)
+        
     ds = fill_deactivated(ds)
     lon = ds.lon.values
     lat = ds.lat.values
@@ -179,10 +184,13 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
                                  + grid_cell_area[1:, :-1] 
                                  + grid_cell_area[:-1, 1:] 
                                  + grid_cell_area[1:, 1:])
+        # Calculate dx_m from the provided bins
+        dx_m = 111000 * np.abs(np.mean(np.diff(latbin)))
     elif dx_m is None:
         num_x = 50 # default number of grid points in each direction
         lonbin = np.linspace(extents[0], extents[1], num=num_x)
         latbin = np.linspace(extents[2], extents[3], num=num_x)
+        dx_m = (extents[1] - extents[0]) * np.cos(np.radians((extents[2] + extents[3]) / 2)) * 111000 / num_x
     else:
         lonbin, latbin = get_lonlat_bins(extents,dx_m)
     
