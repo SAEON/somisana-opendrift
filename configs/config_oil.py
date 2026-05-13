@@ -15,7 +15,7 @@
 config_name='test_oil_blowout'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20250813_00'
+run_date='20260511_00'
 
 # -----------
 # spill info
@@ -42,7 +42,7 @@ radius=1000
 oil_type='Norman Wells'
 #
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20250813_00'
+release_start_time='20260511_00'
 #
 # duration of the release of oil in hours (this can't be zero!)
 release_dur=48
