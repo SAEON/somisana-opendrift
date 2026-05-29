@@ -13,6 +13,7 @@ import sys, importlib
 import numpy as np
 from datetime import datetime, timedelta
 import opendrift_tools.preprocess as pre_od
+import xarray as xr
 # -----------
 # OCEANDRIFT
 # -----------
@@ -330,9 +331,8 @@ def phytodrift(config_dir):
     j,i = pre_od.get_flag_indexes(file_in=config.flag_file,
                                   domain=config.domain)
     
-    
-    ds = xr.open_dataset(chl_fname).sel(x=slice(domain[0],domain[1]),
-                                        y=slice(domain[3],domain[2])
+    ds = xr.open_dataset(config.chl_file).sel(x=slice(config.domain[0],config.domain[1]),
+                                              y=slice(config.domain[3],config.domain[2])
                                         )
     chl_conc = ds.chl.values.squeeze()
     x,y = ds.x.values,ds.y.values
@@ -341,7 +341,7 @@ def phytodrift(config_dir):
     dz = 5
     ds.close()
 
-    Np = compute_particle_number(chl_conc[j,i])
+    Np = pre_od.compute_particle_number(chl_conc[j,i],nmax=1)
 
     # Extract seeded values
     C_seed  = chl_conc[j, i]
@@ -356,15 +356,16 @@ def phytodrift(config_dir):
         np.isfinite(Np) &
         (Np > 0)
     )
+    
+    if valid is not None:
+        # Keep only valid cells
+        j = j[valid]
+        i = i[valid]
 
-    # Keep only valid cells
-    j = j[valid]
-    i = i[valid]
-
-    C_seed  = C_seed[valid]
-    dx_seed = dx_seed[valid]
-    dy_seed = dy_seed[valid]
-    Np      = Np[valid]
+        C_seed  = C_seed[valid]
+        dx_seed = dx_seed[valid]
+        dy_seed = dy_seed[valid]
+        Np      = Np[valid]
 
     weights = pre_od.compute_particle_weight(chl_conc[j, i],dx[j, i],dy[j, i],dz,Np)
 
@@ -375,7 +376,7 @@ def phytodrift(config_dir):
     for n in range(Np.size):
 
         # Generate random particle locations within each cell
-        lon_rand, lat_rand = random_points_in_cell(X, Y,i[n], j[n],Np[n])
+        lon_rand, lat_rand = pre_od.random_points_in_cell(X, Y,i[n], j[n],Np[n])
 
         # Store positions
         lonp.extend(float(x) for x in lon_rand)
@@ -422,7 +423,7 @@ def phytodrift(config_dir):
 
 if __name__ == "__main__":
     import os
-    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20260504'
+    config_dir='/home/gustav/Scripts/HAB-Advection/run_od_20260414'
     if os.path.exists(config_dir+'/trajectories.nc'):
         os.remove(config_dir+'/trajectories.nc')    
     phytodrift(config_dir)
