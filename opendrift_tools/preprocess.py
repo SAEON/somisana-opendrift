@@ -15,6 +15,223 @@ from opendrift.readers import reader_ROMS_native
 from opendrift.readers import reader_global_landmask
 import sys
 
+def get_flag_indexes(file_in,domain=None):
+    #
+    # Function to get the indexes at points that are flagged 
+    # as a red tide in the phytoplankton flag file. 
+    #
+    try:
+        if domain is not None:
+            ds_flags = ds_flags = xr.open_dataset(file_in).sel(x=slice(domain[0],domain[1]),
+                                                               y=slice(domain[3],domain[2])
+                                                               )
+        else:
+            ds_flags = xr.open_dataset(file_in)
+    except:
+        print('\nError extracting flagged points. No flag data.\n')
+        return None,None
+        
+    phytoplankton_flags = ds_flags.phytoplankton.values.squeeze()
+    ds_flags.close()
+    
+    idx = np.argwhere((phytoplankton_flags==6))
+    j,i = idx[:,0],idx[:,1]
+    
+    return j,i
+
+def compute_particle_number(C,cmin=0.1,cmax=300.0,nmin=1,nmax=100):
+    """
+    Compute number of particles per grid cell to seed based on chlorophyll concentration. 
+    A greater number of particles are assigned to a grid cell with a high 
+    clorophyll concentration and fewer particles are assigned to a grid cell 
+    with a lower clorophyll concentration.
+    
+    We use the following log function : 
+        Np = nmin + (nmax - nmin) x (log(C / cmin) / log(cmax / cmin))
+        
+    Parameters
+    ----------
+    C : float or ndarray
+        Chlorophyll concentration (mg m^-3)
+    cmin : float 
+        Minimum Chlorophyll concentration (mg m^-3)
+    cmax : float 
+        Maximum Chlorophyll concentration (mg m^-3)
+    nmin : float 
+        Minimum number of particles    
+    nmax : float 
+        Maximum number of particles    
+        
+    Returns
+    -------
+    Np : int or ndarray
+        Number of particles to seed
+    """
+    
+    # Small value to avoid log(0)
+    eps=1e-12
+    
+    # Convert to array
+    C = np.asarray(C, dtype=float)
+
+    # Replace invalid values
+    C = np.where(np.isfinite(C), C, eps)
+
+    # Prevent zero or negative values
+    C = np.maximum(C, eps)
+
+    # Logarithmic scaling
+    Np = (
+        nmin
+        + (nmax - nmin)
+        * np.log(C / cmin)
+        / np.log(cmax / cmin)
+    )
+
+    # Clip range
+    Np = np.clip(Np, nmin, nmax)
+    
+    # round to nearest integer
+    Np = np.rint(Np).astype(int)
+
+    return Np
+
+def random_points_in_cell(lon, lat, i, j, n_points):
+    """
+    Generate random (lon, lat) points uniformly inside a grid cell for
+    cell-centered 2D grids (e.g. ROMS/CROCO lon_rho, lat_rho).
+
+    Parameters
+    ----------
+    lon, lat : 2D arrays
+        Longitude and latitude arrays at cell centers (same shape).
+    i, j : int
+        Indices of the target grid cell center.
+        Must not be on the boundary (i > 0, j > 0, i < lon.shape[0]-1, j < lon.shape[1]-1)
+    n_points : int
+        Number of random points to generate inside the cell.
+
+    Returns
+    -------
+    lon_rand, lat_rand : 1D arrays
+        Random longitude and latitude values inside the cell.
+    """
+
+    # --- Compute approximate cell corners by averaging neighboring centers ---
+    lon_nw = 0.25 * (lon[j, i] + lon[j-1, i] + lon[j, i-1] + lon[j-1, i-1])
+    lon_ne = 0.25 * (lon[j, i] + lon[j-1, i] + lon[j, i+1] + lon[j-1, i+1])
+    lon_se = 0.25 * (lon[j, i] + lon[j+1, i] + lon[j, i+1] + lon[j+1, i+1])
+    lon_sw = 0.25 * (lon[j, i] + lon[j+1, i] + lon[j, i-1] + lon[j+1, i-1])
+
+    lat_nw = 0.25 * (lat[j, i] + lat[j-1, i] + lat[j, i-1] + lat[j-1, i-1])
+    lat_ne = 0.25 * (lat[j, i] + lat[j-1, i] + lat[j, i+1] + lat[j-1, i+1])
+    lat_se = 0.25 * (lat[j, i] + lat[j+1, i] + lat[j, i+1] + lat[j+1, i+1])
+    lat_sw = 0.25 * (lat[j, i] + lat[j+1, i] + lat[j, i-1] + lat[j+1, i-1])
+
+    # --- Define corners of the grid cells ---
+    lon_corners = [lon_nw, lon_ne, lon_se, lon_sw]
+    lat_corners = [lat_nw, lat_ne, lat_se, lat_sw]
+    
+    # --- Helper: random points inside one triangle using barycentric coordinates ---
+    def rand_in_triangle(p1, p2, p3, n):
+        # P = ( 1 − r1 <200b>) * p1 <200b>+ r1 * <200b>( 1 − r2 <200b>) * p2 <200b>+ r1<200b> * r2 * <200b>p3<200b>
+        # Take note that we square a random point (in this case r1) to ensure that we get 
+        # a random uniform distribution throughout our triangle. 
+        r1 = np.sqrt(np.random.rand(n))
+        r2 = np.random.rand(n)
+        lon_r = (1 - r1) * p1[0] + r1 * (1 - r2) * p2[0] + r1 * r2 * p3[0]
+        lat_r = (1 - r1) * p1[1] + r1 * (1 - r2) * p2[1] + r1 * r2 * p3[1]
+        return lon_r, lat_r
+
+    # Split total points between the two triangles
+    n1 = n_points // 2
+    n2 = n_points - n1
+
+    p0 = (lon_corners[0], lat_corners[0])  # NW
+    p1 = (lon_corners[1], lat_corners[1])  # NE
+    p2 = (lon_corners[2], lat_corners[2])  # SE
+    p3 = (lon_corners[3], lat_corners[3])  # SW
+
+    # Triangle 1: p0, p1, p2
+    lon1, lat1 = rand_in_triangle(p0, p1, p2, n1)
+    # Triangle 2: p0, p2, p3
+    lon2, lat2 = rand_in_triangle(p0, p2, p3, n2)
+
+    # Combine both sets of points
+    lon_rand = np.concatenate([lon1, lon2])
+    lat_rand = np.concatenate([lat1, lat2])
+
+    return lon_rand, lat_rand
+
+def compute_particle_weight(C,dx,dy,dz,Np):
+    """
+    Compute weight carried by each particle.
+
+    Parameters
+    ----------
+    C : float or ndarray
+        Chlorophyll concentration (mg m^-3)
+
+    dx, dy, dz : float or ndarray
+        Grid-cell dimensions (m)
+
+    Np : int or ndarray
+        Number of particles in cell
+
+    Returns
+    -------
+    w : float or ndarray
+        Weight per particle (mg)
+    """
+
+    # Cell volume
+    V = dx * dy * dz
+
+    # Total chlorophyll mass in cell
+    M = C * V
+
+    # Weight per particle
+    w = M / Np
+
+    return w
+
+def compute_grid_spacing(lon, lat, R=6371000.0):
+    """
+    Compute dx and dy grid spacing from lon/lat cell centers.
+
+    Parameters
+    ----------
+    lon : 2D ndarray
+        Longitudes in degrees
+
+    lat : 2D ndarray
+        Latitudes in degrees
+
+    Returns
+    -------
+    dx : 2D ndarray
+        Zonal grid spacing (m)
+
+    dy : 2D ndarray
+        Meridional grid spacing (m)
+    """
+    
+    # Convert to radians
+    lon_rad = np.radians(lon)
+    lat_rad = np.radians(lat)
+    
+    dlon = np.gradient(lon_rad, axis=1)
+    dlat = np.gradient(lat_rad, axis=0)
+
+    # dx depends on latitude
+    dx = R * np.cos(lat_rad) * dlon
+
+    # dy
+    dy = R * dlat
+
+    return np.abs(dx), np.abs(dy)
+
+
 def get_seed_points(file_in,domain=None):
     #
     # Function to get the longoitude and latitude positions at points that are flagged 
