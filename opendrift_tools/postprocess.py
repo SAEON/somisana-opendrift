@@ -262,9 +262,6 @@ def grid_particles(fname,fname_out,
         # compute the concentration of each grid cell (mg/m-3)
         grid_cell_volume = grid_cell_area * abs(max_depth)
         
-        print(f'\grid_cell_area: {np.shape(grid_cell_area)}\n')
-        print(f'\ngrid_cell_volume: {np.shape(grid_cell_volume)}\n')
-        print(f'\nh: {np.shape(h)}\n')
         h = h / grid_cell_volume
         
         # convert oil volume per grid cell into oil thickness in micron

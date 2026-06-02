@@ -25,3 +25,46 @@ jobs:
           # change ownership to somisana user
           sudo chown -R somisana:somisana /home/somisana/ops/hab-advection/20260414_00
 
+  grid_model:
+    needs: [build_cli,run_model]
+    runs-on: mims3
+    steps:
+      - name: grid the model
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            -v /home/somisana/ops/hab-advection/20260414_00:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_hab-advection:latest \
+              grid_particles \
+                --config_dir /mnt/tmp \
+                --fname trajectories.nc \
+                --fname_gridded gridded_trajectories.nc \
+                --grid_type concentration \
+                --max_depth -5 \
+                --fname_weights /mnt/tmp/particles.nc
+          # change ownership to somisana user
+          sudo chown -R somisana:somisana /home/somisana/ops/hab-advection/20260414_00
+
+  plot_model:
+    needs: [build_cli,run_model,grid_model]
+    runs-on: mims3
+    steps:
+      - name: plot the model
+        run: |
+          docker run \
+            --rm \
+            --user root \
+            -v /home/somisana/ops/hab-advection/20260414_00:/mnt/tmp \
+            ghcr.io/saeon/somisana-opendrift_hab-advection:latest \
+              animate \
+                --type gridded \
+                --config_dir /mnt/tmp \
+                --fname_gridded gridded_trajectories.nc \
+                --fname_particles trajectories.nc \
+                --ticks 0,2,4,6,8,10,15 \
+                --cbar_label 'chl concentration [mg.m-3]'\
+                --cmap cm.algae \
+                --skip_time 6 \
+                --gif_out /mnt/tmp/particles.gif\
+                --source False

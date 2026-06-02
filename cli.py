@@ -92,11 +92,19 @@ def main():
     parser_grid_particles.add_argument('--config_dir', required=True, type=str, help='Directory where the OpenDrift output is located')
     parser_grid_particles.add_argument('--fname', required=False, type=str, default='trajectories.nc', help='the OpenDrift output filename')
     parser_grid_particles.add_argument('--fname_gridded', required=False, type=str, default='gridded.nc', help='the gridded filename')
-    parser_grid_particles.add_argument('--grid_type', required=False, type=str, default='density', help='what kind of gridding to do. Options are \'density\', \'surface_oil\', \'stranded_oil\'')
+    parser_grid_particles.add_argument('--grid_type', required=False, type=str, default='density', help='what kind of gridding to do. Options are \'density\', \'surface_oil\', \'stranded_oil\', \'concentration\'')
     parser_grid_particles.add_argument('--extents', required=False,type=parse_list, default=None, help='the spatial extent of the grid in format lon0,lon1,lat0,lat1. If None, then this is automatically determined from the geographic extent of the particles')
     parser_grid_particles.add_argument('--dx_m', required=False, type=parse_float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
     parser_grid_particles.add_argument('--max_only', required=False, type=parse_bool, default=False,
             help='option to only write the maximum over the entire file to save disk space (set to true or false)')
+    parser_grid_particles.add_argument('--lonbin', required=False, default=None,
+            help='the lonbins')
+    parser_grid_particles.add_argument('--latbin', required=False, default=None,
+            help='the latbins')
+    parser_grid_particles.add_argument('--max_depth', required=False, default=None,type=float,
+            help='max depth to grid the particles.')
+    parser_grid_particles.add_argument('--fname_weights', required=False, default=None,
+            help='particle file that is saved when running the hab-advection config.')
     def grid_particles_handler(args):
         fname = os.path.join(args.config_dir,args.fname)
         fname_gridded = os.path.join(args.config_dir,args.fname_gridded)
@@ -105,7 +113,11 @@ def main():
                        grid_type=args.grid_type,
                        extents=args.extents,
                        dx_m=args.dx_m,
-                       max_only=args.max_only)
+                       max_only=args.max_only,
+                       lonbin=args.lonbin,
+                       latbin=args.latbin,
+                       max_depth=args.max_depth,
+                       fname_weights=args.fname_weights)
     parser_grid_particles.set_defaults(func=grid_particles_handler)
     
     # ----------------------------------------------------
