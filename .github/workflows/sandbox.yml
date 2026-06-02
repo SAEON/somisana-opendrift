@@ -63,8 +63,7 @@ jobs:
                 --fname_gridded gridded_trajectories.nc \
                 --fname_particles trajectories.nc \
                 --ticks 0,2,4,6,8,10,15 \
-                --cbar_label 'chl concentration [mg.m-3]'\
+                --cbar_label 'chl concentration [mg.m-3]' \
                 --cmap cm.algae \
-                --skip_time 6 \
-                --gif_out /mnt/tmp/particles.gif\
+                --gif_out /mnt/tmp/particles.gif \
                 --source False
