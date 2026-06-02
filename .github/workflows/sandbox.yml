@@ -7,8 +7,6 @@ on:
 jobs:
   build_cli:
     uses: ./.github/workflows/build_image.yml
-    with:
-      IMAGE_ID: cli
 
   run_model:
     needs: [build_cli]
