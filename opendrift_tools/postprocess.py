@@ -123,7 +123,16 @@ def compute_grid_area(lon, lat, R=6371000):
     
     return area
 
-def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,max_only=False,lonbin=None,latbin=None,mass_per_particle=None,max_depth=None):
+def grid_particles(fname,fname_out,
+                   grid_type='density',
+                   extents=None,
+                   dx_m=None,
+                   max_only=False,
+                   lonbin=None,
+                   latbin=None,
+                   max_depth=None,
+                   fname_weights=None
+                   ):
     '''
     compute a eulerian particle density map from the output of an opendrift simulation
     fname = the file to do the gridding on
@@ -133,7 +142,8 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
     dx_m = grid size in meters, if None, then a 50 x 50 regular grid is generated
     max_only = option to only write the maximum over the entire file to save disk space (boolean)
     lonbin,latbin=longitude and latitude bins used for binning the data. If None, it makes the bins using dx_m when it greates the grid.
-    mass_per_particle=output txt file saved when running OpenDrift for a Harful Algal Event. 
+    fname_weights=netCDF file containing the weights of each particle seeded duriung HAB advection.
+    fname_grid=file containing x and y longitudes and latitudes.
     '''
     
     def get_time_min(h):
@@ -169,15 +179,17 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
     
     if extents is None: 
         extents = extents_from_lonlat(lon,lat)
-        
-    if isinstance(lonbin, str) and isinstance(latbin, str) and \
-        os.path.isfile(lonbin) and lonbin.endswith('.txt') and \
-        os.path.isfile(latbin) and latbin.endswith('.txt'):
-        lonbin = pre_od.array_from_txt(lonbin)
-        latbin = pre_od.array_from_txt(latbin)
+    
+    if fname_weights is not None:
+        ds_weights = xr.open_dataset(fname_weights)
+        x,y = ds_weights.x.values, ds_weights.y.values
+        lonbin = 0.5 * (x[:-1] + x[1:])
+        latbin = 0.5 * (y[:-1] + y[1:])
+        weights = ds_weights.weight.values
+        ds_weights.close()
     else:
         pass
-        
+    
     if lonbin is not None and latbin is not None:
         grid_cell_area = compute_grid_area(lonbin, latbin)
         grid_cell_area = 0.25 * (grid_cell_area[:-1, :-1] 
@@ -185,7 +197,7 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
                                  + grid_cell_area[:-1, 1:] 
                                  + grid_cell_area[1:, 1:])
         # Calculate dx_m from the provided bins
-        dx_m = 111000 * np.abs(np.mean(np.diff(latbin)))
+        # dx_m = 111000 * np.abs(np.mean(np.diff(latbin)))
     elif dx_m is None:
         num_x = 50 # default number of grid points in each direction
         lonbin = np.linspace(extents[0], extents[1], num=num_x)
@@ -229,6 +241,10 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
             ds_out.to_netcdf(fname_out)
 
     elif grid_type == 'concentration':
+        particle_weight = xr.DataArray(
+            weights,
+            dims=["trajectory"]
+            )
         # compute the histogram of the particle locations
         # this will add up all the particles in each bin
         # lonbin = np.sort(np.unique(lonbin))
@@ -236,22 +252,20 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         h = histogram(ds.lon,
                       ds.lat,
                       bins=[lonbin, latbin],
+                      weights=particle_weight,
                       dim=['trajectory'],
                       density=False)
+        
         # transpose to standard time,lat,lon ordering
         h = h.transpose("time", "lat_bin", "lon_bin")
-        
-        # load in the mass_per_particle value if a path to the txt file containing 
-        # the value of the particle was provided.
-        if isinstance(mass_per_particle, str) and \
-            os.path.isfile(mass_per_particle) and \
-            mass_per_particle.endswith('.txt'):
-            mass_per_particle = pre_od.array_from_txt(mass_per_particle)
-        else:
-            pass
-        
+
         # compute the concentration of each grid cell (mg/m-3)
-        h = h * mass_per_particle / grid_cell_area
+        grid_cell_volume = grid_cell_area * abs(max_depth)
+        
+        print(f'\grid_cell_area: {np.shape(grid_cell_area)}\n')
+        print(f'\ngrid_cell_volume: {np.shape(grid_cell_volume)}\n')
+        print(f'\nh: {np.shape(h)}\n')
+        h = h / grid_cell_volume
         
         # convert oil volume per grid cell into oil thickness in micron
         h=h.rename('particle_concentration')
@@ -333,7 +347,7 @@ def grid_particles(fname,fname_out,grid_type='density',extents=None,dx_m=None,ma
         strand_mass=(ds_strand.mass_oil / (1 - ds_strand.water_fraction)) 
         
         # compute the histogram of stranded oil
-        # histogram omputes the number of particles per grid cell
+        # histogram computes the number of particles per grid cell
         # setting 'weights=strand_mass' converts this to the mass of stranded oil per grid cell
         h_strand = histogram(ds_strand.lon,
                       ds_strand.lat,
@@ -524,14 +538,12 @@ def oil_massbal(fname,fname_out):
     budget.to_netcdf(fname_out)
 
 if __name__ == "__main__": 
-    grid_particles(
-    '/home/g.rautenbach/Scripts/HAB/trajectories-concept-16042019.nc',
-    '/home/g.rautenbach/Scripts/HAB/trajectories-concept-gridded-16042019.nc',
-    grid_type='concentration',
-    # extents=None,
-    # dx_m=None,
-    # max_only=False,
-    lonbin='/home/g.rautenbach/Scripts/HAB/lons.txt',
-    latbin='/home/g.rautenbach/Scripts/HAB/lats.txt',
-    mass_per_particle='/home/g.rautenbach/Scripts/HAB/particle_mass.txt',
-    )
+    fname='/home/g.rautenbach/Scripts/HAB/run_od_20260414/trajectories.nc'
+    fname_out='/home/g.rautenbach/Scripts/HAB/run_od_20260414/conc_gridded_trajectories.nc'
+    fname_weights='/home/g.rautenbach/Scripts/HAB/run_od_20260414/particles.nc'
+    grid_particles(fname=fname,
+                   fname_out=fname_out,
+                   grid_type='concentration',
+                   max_depth=-5,
+                   fname_weights=fname_weights
+                   )

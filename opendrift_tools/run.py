@@ -13,7 +13,7 @@ import sys, importlib
 import numpy as np
 from datetime import datetime, timedelta
 import opendrift_tools.preprocess as pre_od
-import xarray as xr
+
 # -----------
 # OCEANDRIFT
 # -----------
@@ -326,73 +326,36 @@ def phytodrift(config_dir):
     # ------------------
     # seed the elements
     # ------------------
+    
+    # date to seed
     time_start = datetime.strptime(config.release_start_time, '%Y%m%d_%H')
-
-    j,i = pre_od.get_flag_indexes(file_in=config.flag_file,
-                                  domain=config.domain)
     
-    ds = xr.open_dataset(config.chl_file).sel(x=slice(config.domain[0],config.domain[1]),
-                                              y=slice(config.domain[3],config.domain[2])
-                                        )
-    chl_conc = ds.chl.values.squeeze()
-    x,y = ds.x.values,ds.y.values
-    X,Y = np.meshgrid(x,y)
-    dx,dy = pre_od.compute_grid_spacing(X,Y, R=6371000.0)
-    dz = 5
-    ds.close()
-
-    Np = pre_od.compute_particle_number(chl_conc[j,i],nmax=1)
-
-    # Extract seeded values
-    C_seed  = chl_conc[j, i]
-    dx_seed = dx[j, i]
-    dy_seed = dy[j, i]
-
-    # Build validity mask
-    valid = (
-        np.isfinite(C_seed) &
-        np.isfinite(dx_seed) &
-        np.isfinite(dy_seed) &
-        np.isfinite(Np) &
-        (Np > 0)
-    )
+    # get seed positions and weights
+    lons, lats, lonp, latp, weightp, Np, i, j = pre_od.seed_particles_from_chlorophyll(
+        config.flag_file,
+        config.chl_file,
+        config.domain,
+        dz=5,
+        nmax=5
+        )
     
-    if valid is not None:
-        # Keep only valid cells
-        j = j[valid]
-        i = i[valid]
-
-        C_seed  = C_seed[valid]
-        dx_seed = dx_seed[valid]
-        dy_seed = dy_seed[valid]
-        Np      = Np[valid]
-
-    weights = pre_od.compute_particle_weight(chl_conc[j, i],dx[j, i],dy[j, i],dz,Np)
-
-    lonp = []
-    latp = []
-    weightp = []
-
-    for n in range(Np.size):
-
-        # Generate random particle locations within each cell
-        lon_rand, lat_rand = pre_od.random_points_in_cell(X, Y,i[n], j[n],Np[n])
-
-        # Store positions
-        lonp.extend(float(x) for x in lon_rand)
-        latp.extend(float(x) for x in lat_rand)
-
-        # Assign weight to EACH particle
-        weight_arr = np.array([weights[n]] * Np[n])
-        weightp.extend(float(x) for x in weight_arr)
-
-    #
+    pre_od.write_seed_particles(
+        outfile=config_dir+'/particles.nc',
+        lonp=lonp,
+        latp=latp,
+        weightp=weightp,
+        grid_lon=lons,
+        grid_lat=lats,
+        release_time=time_start
+        )
+    
+    # if no seed positions we exit the code
     if lonp is None and latp is None and weightp is None:
-        sys.exit()
+        sys.exit()        
         
-    #
-    o.seed_elements(lon=lonp, 
-                    lat=latp,
+    # seed the elements
+    o.seed_elements(lon=lonp[:], 
+                    lat=latp[:],
                     time=time_start,
                     z=0)
     #
@@ -423,7 +386,7 @@ def phytodrift(config_dir):
 
 if __name__ == "__main__":
     import os
-    config_dir='/home/gustav/Scripts/HAB-Advection/run_od_20260414'
+    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20260414'
     if os.path.exists(config_dir+'/trajectories.nc'):
         os.remove(config_dir+'/trajectories.nc')    
     phytodrift(config_dir)

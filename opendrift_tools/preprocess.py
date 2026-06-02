@@ -13,7 +13,305 @@ import numpy as np
 from opendrift.readers import reader_netCDF_CF_generic
 from opendrift.readers import reader_ROMS_native
 from opendrift.readers import reader_global_landmask
-import sys
+import os
+
+def write_seed_particles(
+        outfile,
+        lonp,
+        latp,
+        weightp,
+        grid_lon=None,
+        grid_lat=None,
+        release_time=None):
+    """
+    Write seeded particles to NetCDF.
+
+    Parameters
+    ----------
+    outfile : str
+        Output NetCDF filename.
+
+    lonp : ndarray
+        Particle longitude.
+
+    latp : ndarray
+        Particle latitude.
+
+    weightp : ndarray
+        Particle weight (mg).
+        
+    grid_lon : ndarray (1D)
+        longitudes of the grid
+
+    grid_lat : ndarray (1D)
+        latitudes of the grid
+        
+    release_time : datetime-like, optional
+        Particle release time.
+    """
+    
+    if os.path.exists(outfile):
+        os.remove(outfile)
+
+    n_particles = len(lonp)
+
+    ds = xr.Dataset(
+        data_vars={
+            "lon": (
+                ["particle"],
+                np.asarray(lonp),
+                {
+                    "long_name": "particle longitude",
+                    "units": "degrees_east"
+                }
+            ),
+
+            "lat": (
+                ["particle"],
+                np.asarray(latp),
+                {
+                    "long_name": "particle latitude",
+                    "units": "degrees_north"
+                }
+            ),
+
+            "weight": (
+                ["particle"],
+                np.asarray(weightp),
+                {
+                    "long_name": "chlorophyll mass represented by particle",
+                    "units": "mg"
+                }
+            )
+        },
+
+        coords={
+            "particle": np.arange(n_particles)
+        },
+
+        attrs={
+            "title": "Seeded phytoplankton particles",
+            "Conventions": "CF-1.8"
+        }
+    )
+    
+    if grid_lon is not None:
+        ds["grid_lon"] = xr.DataArray(
+            np.asarray(grid_lon),
+            dims=["x"],
+            attrs={
+                "long_name": "grid longitude",
+                "units": "degrees_east"
+            }
+        )
+
+    if grid_lat is not None:
+        ds["grid_lat"] = xr.DataArray(
+            np.asarray(grid_lat),
+            dims=["y"],
+            attrs={
+                "long_name": "grid latitude",
+                "units": "degrees_north"
+            }
+        )
+
+    if release_time is not None:
+        ds["release_time"] = xr.DataArray(
+            np.repeat(
+                np.datetime64(release_time),
+                n_particles
+            ),
+            dims=["particle"]
+        )
+        
+    ds.to_netcdf(outfile)
+
+    print(f"Saved {n_particles} particles to:")
+    print(outfile)
+
+def seed_particles_from_chlorophyll(
+        flag_file,
+        chl_file,
+        domain,
+        dz=5,
+        nmax=100,
+        earth_radius=6371000.0):
+    """
+    Seed particles from a chlorophyll field using adaptive
+    logarithmic particle densities.
+
+    Parameters
+    ----------
+    flag_file : str
+        Phytoplankton flag file.
+
+    chl_file : str
+        Chlorophyll concentration file.
+
+    domain : list
+        [xmin, xmax, ymax, ymin]
+
+    dz : float
+        Layer thickness (m).
+
+    nmax : int
+        Maximum particles per cell.
+
+    Returns
+    -------
+    lons : ndarray
+        Grid longitudes
+
+    lats : ndarray
+        Grid latitudes
+        
+    lonp : ndarray
+        Particle longitudes.
+
+    latp : ndarray
+        Particle latitudes.
+
+    weightp : ndarray
+        Particle weights.
+
+    Np : ndarray
+        Number of particles per source cell.
+
+    source_i : ndarray
+        Source i-indices.
+
+    source_j : ndarray
+        Source j-indices.
+    """
+
+    # -------------------------------------------------
+    # Get grid cells that are flagged 6 - i.e. Red tide
+    # -------------------------------------------------
+
+    j, i = get_flag_indexes(
+        file_in=flag_file,
+        domain=domain
+    )
+
+    if j is None or len(j) == 0:
+        return (
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            np.array([])
+        )
+
+    # -------------------------------------------------
+    # Read chlorophyll concentration
+    # -------------------------------------------------
+
+    ds = xr.open_dataset(chl_file).sel(
+        x=slice(domain[0], domain[1]),
+        y=slice(domain[3], domain[2])
+    )
+
+    chl_conc = ds.chl.values.squeeze()
+
+    lons = ds.x.values
+    lats = ds.y.values
+
+    LONS, LATS = np.meshgrid(lons, lats)
+
+    ds.close()
+
+    # -------------------------------------------------
+    # Grid spacing
+    # -------------------------------------------------
+
+    dx, dy = compute_grid_spacing(
+        LONS,
+        LATS,
+        R=earth_radius
+    )
+
+    # -------------------------------------------------
+    # Particle numbers
+    # -------------------------------------------------
+
+    Np = compute_particle_number(
+        chl_conc[j, i],nmax=nmax
+    )
+
+    # -------------------------------------------------
+    # Vilidity mask
+    # -------------------------------------------------
+
+    C_seed = chl_conc[j, i]
+    dx_seed = dx[j, i]
+    dy_seed = dy[j, i]
+
+    valid = (
+        np.isfinite(C_seed) &
+        np.isfinite(dx_seed) &
+        np.isfinite(dy_seed) &
+        np.isfinite(Np) &
+        (Np > 0)
+    )
+
+    j = j[valid]
+    i = i[valid]
+
+    C_seed = C_seed[valid]
+    dx_seed = dx_seed[valid]
+    dy_seed = dy_seed[valid]
+
+    Np = Np[valid]
+
+    if len(Np) == 0:
+        return (
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            np.array([])
+        )
+
+    # -------------------------------------------------
+    # Particle weights
+    # -------------------------------------------------
+
+    weights = compute_particle_weight(
+        C_seed,
+        dx_seed,
+        dy_seed,
+        dz,
+        Np
+    )
+
+    # -------------------------------------------------
+    # Create particles
+    # -------------------------------------------------
+
+    lonp = []
+    latp = []
+    weightp = []
+
+    for n in range(len(Np)):
+
+        lon_rand, lat_rand = random_points_in_cell(
+            LONS,
+            LATS,
+            i[n],
+            j[n],
+            Np[n]
+        )
+
+        lonp.extend(lon_rand.tolist())
+        latp.extend(lat_rand.tolist())
+
+        weightp.extend(
+            [weights[n]] * Np[n]
+        )
+
+    return lons,  lats, np.asarray(lonp), np.asarray(latp), np.asarray(weightp), Np, i, j
 
 def get_flag_indexes(file_in,domain=None):
     #
@@ -39,7 +337,7 @@ def get_flag_indexes(file_in,domain=None):
     
     return j,i
 
-def compute_particle_number(C,cmin=0.1,cmax=300.0,nmin=1,nmax=100):
+def compute_particle_number(C,cmin=0.1,cmax=300,nmin=1,nmax=100):
     """
     Compute number of particles per grid cell to seed based on chlorophyll concentration. 
     A greater number of particles are assigned to a grid cell with a high 
