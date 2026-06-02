@@ -20,7 +20,7 @@ jobs:
             -v /home/somisana/ops/hab-advection/20260414_00:/mnt/tmp \
             ghcr.io/saeon/somisana-opendrift_hab-advection:latest \
               run_model \
-                --config_dir /home/somisana/ops/hab-advection/20260414_00 \
+                --config_dir /mnt/tmp \
                 --model_type phytodrift
           # change ownership to somisana user
           sudo chown -R somisana:somisana /home/somisana/ops/hab-advection/20260414_00
