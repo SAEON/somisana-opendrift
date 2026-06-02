@@ -65,6 +65,6 @@ jobs:
                 --extents 16.5,19,-33,-31 \
                 --ticks 0,2,4,6,8,10,15 \
                 --cbar_label 'chl concentration [mg.m-3]' \
-                --cmap cm.algae \
+                --cmap cmo.algae \
                 --gif_out /mnt/tmp/particles.gif \
                 --source False
