@@ -11,7 +11,6 @@ from xhistogram.xarray import histogram
 import glob
 import opendrift_tools.preprocess as pre_od
 
-
 def fill_deactivated(ds):
     '''
     data for deactivated particles are assigned to being missing, so this function
@@ -182,9 +181,9 @@ def grid_particles(fname,fname_out,
     
     if fname_weights is not None:
         ds_weights = xr.open_dataset(fname_weights)
-        x,y = ds_weights.x.values, ds_weights.y.values
-        lonbin = 0.5 * (x[:-1] + x[1:])
-        latbin = 0.5 * (y[:-1] + y[1:])
+        lons, lats = ds_weights.grid_lon.values, ds_weights.grid_lat.values
+        lonbin = 0.5 * (lons[:-1] + lons[1:])
+        latbin = 0.5 * (lats[:-1] + lats[1:])
         weights = ds_weights.weight.values
         ds_weights.close()
     else:
@@ -197,14 +196,24 @@ def grid_particles(fname,fname_out,
                                  + grid_cell_area[:-1, 1:] 
                                  + grid_cell_area[1:, 1:])
         # Calculate dx_m from the provided bins
-        # dx_m = 111000 * np.abs(np.mean(np.diff(latbin)))
+        dx_m = 111000 * np.abs(np.mean(np.diff(latbin)))
     elif dx_m is None:
         num_x = 50 # default number of grid points in each direction
         lonbin = np.linspace(extents[0], extents[1], num=num_x)
         latbin = np.linspace(extents[2], extents[3], num=num_x)
         dx_m = (extents[1] - extents[0]) * np.cos(np.radians((extents[2] + extents[3]) / 2)) * 111000 / num_x
+        grid_cell_area = compute_grid_area(lonbin, latbin)
+        grid_cell_area = 0.25 * (grid_cell_area[:-1, :-1] 
+                                 + grid_cell_area[1:, :-1] 
+                                 + grid_cell_area[:-1, 1:] 
+                                 + grid_cell_area[1:, 1:])
     else:
         lonbin, latbin = get_lonlat_bins(extents,dx_m)
+        grid_cell_area = compute_grid_area(lonbin, latbin)
+        grid_cell_area = 0.25 * (grid_cell_area[:-1, :-1] 
+                                 + grid_cell_area[1:, :-1] 
+                                 + grid_cell_area[:-1, 1:] 
+                                 + grid_cell_area[1:, 1:])
     
     if grid_type == 'density':
         # compute the histogram of the particle locations
@@ -247,8 +256,8 @@ def grid_particles(fname,fname_out,
             )
         # compute the histogram of the particle locations
         # this will add up all the particles in each bin
-        # lonbin = np.sort(np.unique(lonbin))
-        # latbin = np.sort(np.unique(latbin))
+        lonbin = np.sort(np.unique(lonbin))
+        latbin = np.sort(np.unique(latbin))
         h = histogram(ds.lon,
                       ds.lat,
                       bins=[lonbin, latbin],

@@ -339,6 +339,8 @@ def phytodrift(config_dir):
         nmax=5
         )
     
+    lonp, latp, weightp, Np, i, j = lonp[::100], latp[::100], weightp[::100], Np[::100], i[::100], j[::100]
+        
     pre_od.write_seed_particles(
         outfile=config_dir+'/particles.nc',
         lonp=lonp,
@@ -348,7 +350,7 @@ def phytodrift(config_dir):
         grid_lat=lats,
         release_time=time_start
         )
-    
+        
     # if no seed positions we exit the code
     if lonp is None and latp is None and weightp is None:
         sys.exit()        
@@ -375,6 +377,8 @@ def phytodrift(config_dir):
           time_step_output=timedelta(minutes=config.time_step_output), 
           outfile=fname
           )
+    plot_out='/home/g.rautenbach/Scripts/HAB/run_od_20260414/plot.png'
+    o.plot(filename=plot_out)
     #
     # --------
     # cleanup

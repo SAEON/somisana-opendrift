@@ -97,17 +97,17 @@ def write_seed_particles(
     
     if grid_lon is not None:
         ds["grid_lon"] = xr.DataArray(
-            np.asarray(grid_lon),
+            np.array(grid_lon),
             dims=["x"],
             attrs={
                 "long_name": "grid longitude",
                 "units": "degrees_east"
             }
         )
-
+            
     if grid_lat is not None:
         ds["grid_lat"] = xr.DataArray(
-            np.asarray(grid_lat),
+            np.array(grid_lat),
             dims=["y"],
             attrs={
                 "long_name": "grid latitude",
