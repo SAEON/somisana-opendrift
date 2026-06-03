@@ -47,7 +47,7 @@ jobs:
           sudo chown -R somisana:somisana /home/somisana/ops/hab-advection/20260414_00
 
   plot_model:
-    needs: [build_cli]
+    needs: [build_cli,run_model,grid_model]
     runs-on: mims3
     steps:
       - name: plot the model
