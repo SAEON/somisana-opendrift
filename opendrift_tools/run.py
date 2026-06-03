@@ -377,8 +377,6 @@ def phytodrift(config_dir):
           time_step_output=timedelta(minutes=config.time_step_output), 
           outfile=fname
           )
-    plot_out='/home/g.rautenbach/Scripts/HAB/run_od_20260414/plot.png'
-    o.plot(filename=plot_out)
     #
     # --------
     # cleanup
