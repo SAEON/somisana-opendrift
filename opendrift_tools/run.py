@@ -339,8 +339,6 @@ def phytodrift(config_dir):
         nmax=5
         )
     
-    lonp, latp, weightp, Np, i, j = lonp[::100], latp[::100], weightp[::100], Np[::100], i[::100], j[::100]
-        
     pre_od.write_seed_particles(
         outfile=config_dir+'/particles.nc',
         lonp=lonp,
