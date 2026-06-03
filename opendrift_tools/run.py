@@ -336,7 +336,7 @@ def phytodrift(config_dir):
         config.chl_file,
         config.domain,
         dz=5,
-        nmax=50
+        nmax=10
         )
     
     pre_od.write_seed_particles(
