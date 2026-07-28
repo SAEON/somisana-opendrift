@@ -344,8 +344,8 @@ def phytodrift(config_dir):
         sys.exit()
     #
     # Seed the Lagrangian particles
-    o.seed_elements(lon=lonp[:1],
-                    lat=latp[:1],
+    o.seed_elements(lon=lonp[:],
+                    lat=latp[:],
                     time=time_start
                     )
     #
