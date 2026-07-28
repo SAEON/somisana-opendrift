@@ -541,7 +541,7 @@ def oil_massbal(fname,fname_out):
     budget.to_netcdf(fname_out)
     
 if __name__ == "__main__":
-    config_dir="/home/g.rautenbach/Scripts/HAB/run_od_20260414/"
+    config_dir="/home/g.rautenbach/Scripts/HAB/run_od_20250522/"
     fname=config_dir+"trajectories.nc"
     fname_out=config_dir+"gridded_trajectories.nc"
     
@@ -551,7 +551,7 @@ if __name__ == "__main__":
     grid_particles(fname,
                    fname_out,
                    grid_type="density",
-                   extents=[16.,19.5,-35,-29],
+                   extents=[14,20,-36,-29],
                    lons=config_dir+"lons.txt",
                    lats=config_dir+"lats.txt",
                    mass_per_particle=config_dir+"chl_mass.txt",

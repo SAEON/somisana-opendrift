@@ -32,6 +32,19 @@ flag_file='/mnt/tmp/downloaded_data/PHYTOPLANKTON_FLAGS/PHYTO_'+run_date+'.nc'
 # start time of release, in format YYYYMMDD_HH, in UTC
 release_start_time='20260507_00'
 #
+#
+# start time of release, in format YYYYMMDD_HH, in UTC
+release_start_time='20250522_00'
+#
+# max number of particles to release
+max_part = 15000
+#
+# path to phytoplankton flags
+flag_file='/mnt/tmp/downloaded_data/PHYTOPLANKTON_FLAGS/PHYTO_'+run_date+'.nc'
+#
+# path to chlorophyl file
+chl_file='/mnt/tmp/downloaded_data/CHLOROPHYL/CHL_'+run_date+'.nc'
+#
 # -------------
 # forcing files
 # -------------
@@ -55,6 +68,18 @@ use_croco=True
 croco_files = ['/mnt/tmp2/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
                '/mnt/tmp2/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
                ]
+#
+#
+# switch to turn on/off use of croco grid.
+# used to ensure all the correct variables are imported that may have been dropped
+# during operational workflow. 
+# NB: The number and order of croco_grid files must match the number and order of the of croco_files.
+#
+use_croco_grid=True 
+#
+croco_grid = ['/home/somisana/code/somisana-croco/configs/sa_southeast_01/croco_v1.3.1/GRID/croco_grd.nc',
+              '/home/somisana/code/somisana-croco/configs/sa_west_02/croco_v1.3.1/GRID/croco_grd.nc']
+#
 # switch to turn on/off use of OGCM as input
 use_ogcm=True
 #
@@ -72,6 +97,7 @@ use_waves=True
 #
 wave_files = ['/mnt/tmp/downloaded_data/CMEMS/CMEMS_'+run_date+'.nc'
               ]
+#
 #
 # -------------------
 # physical processes

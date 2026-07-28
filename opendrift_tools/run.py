@@ -344,8 +344,8 @@ def phytodrift(config_dir):
         sys.exit()
     #
     # Seed the Lagrangian particles
-    o.seed_elements(lon=lonp[:],
-                    lat=latp[:],
+    o.seed_elements(lon=lonp[:1],
+                    lat=latp[:1],
                     time=time_start
                     )
     #
@@ -377,7 +377,7 @@ def phytodrift(config_dir):
 
 if __name__ == "__main__":
     import os
-    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20260414'
+    config_dir='/home/g.rautenbach/Scripts/HAB/run_od_20250522/'
     if os.path.exists(config_dir+'/trajectories.nc'):
         os.remove(config_dir+'/trajectories.nc')    
     phytodrift(config_dir)

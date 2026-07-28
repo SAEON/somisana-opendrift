@@ -101,8 +101,6 @@ def get_particle_positions(flag_file,chl_file,config_dir,domain=None,Max_particl
         # Mask all chlorophyll values that are not flagged 6
         chl_concentration[np.isnan(chl_concentration)] = 0
         chl_concentration[flags<6] = 0
-        print(grid_cell_area.shape)
-        print(chl_concentration.shape)
     
         # Compute the chlorophyll mass each grid cell
         chl_mass = chl_concentration * grid_cell_area
@@ -257,20 +255,31 @@ def add_readers(o,config):
     if getattr(config, "use_croco", False):
         print('\nAdding CROCO\n')
         croco_files = config.croco_files
-        for croco_file in croco_files:
-            if getattr(config, "use_croco_grid", False):
-                croco_grid = config.croco_grid
-                reader_croco = reader_ROMS_native.Reader(croco_file,gridfile=croco_grid)
-                croco_ref_time = datetime(config.croco_Yorig,1,1)
-                reader_croco = set_croco_time(reader_croco,croco_ref_time)
+        
+        if getattr(config, "use_croco_grid", False):
+            croco_grids = config.croco_grid
+            
+            if len(croco_files) != len(croco_grids):
+                print(len(croco_files))
+                print(len(croco_grids))
+                raise ValueError("The number of CROCO data files and grid files must match.")
+                
+            for croco_file, croco_grid in zip(croco_files, croco_grids):
+                reader_croco = reader_ROMS_native.Reader(croco_file, gridfile=croco_grid)
+                croco_ref_time = datetime(config.croco_Yorig, 1, 1)
+                reader_croco = set_croco_time(reader_croco, croco_ref_time)
                 o.add_reader(reader_croco)
-                print('\n We added CROCO successfully. \n')
-            else:
+                print(f'\n We added CROCO successfully: {croco_file} \n')
+                
+        else:
+            # Standard loop if no grids are provided
+            for croco_file in croco_files:
                 reader_croco = reader_ROMS_native.Reader(croco_file)
-                croco_ref_time = datetime(config.croco_Yorig,1,1)
-                reader_croco = set_croco_time(reader_croco,croco_ref_time)
+                croco_ref_time = datetime(config.croco_Yorig, 1, 1)
+                reader_croco = set_croco_time(reader_croco, croco_ref_time)
                 o.add_reader(reader_croco)
-                print('\n We added CROCO successfully. \n')
+                print(f'\n We added CROCO successfully: {croco_file} \n')
+                
     else:
         print('CROCO file(s) not defined - running without CROCO input')
     
