@@ -4,94 +4,85 @@ on:
   workflow_dispatch:
     inputs:
       model_type:
-        description: "The kind of model to run"
+        description: 'The kind of model to run'
         required: true
-        default: oceandrift
+        default: 'oceandrift'
         type: choice
-        options: [oceandrift, oil, leeway, phytodrift]
+        options:
+          - oceandrift
+          - oil
+          - leeway
+          - phytodrift
       run_model:
-        description: "run the model?"
+        description: 'run the model?'
         required: true
         type: boolean
         default: true
       do_post:
-        description: "do the postprocessing?"
+        description: 'do the postprocessing?'
         required: true
         type: boolean
         default: true
       extents:
-        description: "lon0,lon1,lat0,lat1 or None"
+        description: 'spatial extent of the gridded output and plot, in format lon0,lon1,lat0,lat1. If None, then this is dynamically determined from the geographic extent of the particles'
         required: true
         default: None
         type: string
       dx_m:
-        description: "grid size (m) or None"
+        description: 'grid size (m) used to grid particle output. If None, If None, then a 50 x 50 regular grid is generated'
         required: true
         default: None
         type: string
 
-###############################################################################
-# Detect branch
-###############################################################################
+# Many of the env variables reference the current branch,
+# which is set dynamically in the branch-ref job below
+# So the env variables are mostly set in the envs job below the branch-ref job
+env:
+  REGISTRY: ghcr.io
+
 
 jobs:
+  # Dynamically set the branch ref to the currently executing branch
   branch-ref:
     runs-on: ubuntu-latest
     outputs:
-      value: ${{ steps.branch.outputs.value }}
-
+      value: ${{ steps.BRANCH_REF.outputs.value }}
     steps:
-      - id: branch
-        run: echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
-
-###############################################################################
-# Load derived config (single source of truth)
-###############################################################################
-
+      - name: Set the BRANCH_REF
+        id: BRANCH_REF
+        run: |
+          echo "value=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+  
+  # set some environment variables
   envs:
-    needs: branch-ref
+    needs: [branch-ref]
     runs-on: ubuntu-latest
-
     outputs:
       BRANCH_REF: ${{ needs.branch-ref.outputs.value }}
-      CONFIG_NAME: ${{ steps.config.outputs.value }}
-      RUN_DATE: ${{ steps.rundate.outputs.value }}
-      MODEL_TYPE: ${{ github.event.inputs.model_type }}
-      RUN_MODEL: ${{ github.event.inputs.run_model }}
-      DO_POST: ${{ github.event.inputs.do_post }}
-      EXTENTS: ${{ github.event.inputs.extents }}
-      DX_M: ${{ github.event.inputs.dx_m }}
-
+      RUN_DATE: ${{ steps.run_date.outputs.value }}
+      CONFIG_NAME: ${{ steps.config_name.outputs.value }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out source code so have access to the files in the repo
+        uses: actions/checkout@main
         with:
           ref: ${{ needs.branch-ref.outputs.value }}
-
-      - name: Read config_name
-        id: config
+      - name: configuration name
+        id: config_name
         run: |
+          # Use grep to find the line where the variable is defined
           line=$(grep -m 1 -w config_name configs/config_${{ github.event.inputs.model_type }}.py)
-          value=$(echo "$line" | awk -F "=" '{print $2}' | sed 's/^[[:space:]]*//' | sed "s/^['\"]//;s/['\"]$//")
-          echo "value=$value" >> $GITHUB_OUTPUT
-
-      - name: Read run_date
-        id: rundate
+          # Use awk to extract the value of the variable from the line (thanks chatgpt)
+          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+      - name: run date 
+        id: run_date
         run: |
+          # Use grep to find the line where the variable is defined
           line=$(grep -m 1 -w run_date configs/config_${{ github.event.inputs.model_type }}.py)
-          value=$(echo "$line" | awk -F "=" '{print $2}' | sed "s/^[[:space:]]*//" | sed "s/^['\"]//;s/['\"]$//")
-          echo "value=$value" >> $GITHUB_OUTPUT
-
-
-###############################################################################
-# Build image
-###############################################################################
+          # Use awk to extract the value of the variable from the line (thanks chatgpt)
+          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
 
   build_image:
     uses: ./.github/workflows/build_image.yml
-
-###############################################################################
-# Check available models
-###############################################################################
 
   check_models:
     needs: envs
@@ -111,44 +102,32 @@ jobs:
           [ -d "$BASE/MERCATOR-SAWS" ] && echo "RUN_SAWS_MERCATOR=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_MERCATOR=false" >> $GITHUB_OUTPUT
           [ -d "$BASE/HYCOM-GFS" ] && echo "RUN_GFS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_GFS_HYCOM=false" >> $GITHUB_OUTPUT
           [ -d "$BASE/HYCOM-SAWS" ] && echo "RUN_SAWS_HYCOM=true" >> $GITHUB_OUTPUT || echo "RUN_SAWS_HYCOM=false" >> $GITHUB_OUTPUT
-
-###############################################################################
-# Download phytoplankton flags
-###############################################################################
   
   download_phytoplankton_flags: 
     needs: [build_image, envs]
     uses: ./.github/workflows/download_phytoplankton_flags.yml
     with:
-      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
       RUNNER_NAME: mims3
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
     secrets: inherit
-
-###############################################################################
-# Download chlorophyll concentrations
-###############################################################################
   
   download_chlorophyll_conc: 
     needs: [build_image, envs]
     uses: ./.github/workflows/download_chlorophyll_conc.yml
     with:
-      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
       RUNNER_NAME: mims3
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
     secrets: inherit
 
-###############################################################################
-# Download CMEMS waves
-###############################################################################
-
   download_cmems_waves:
     needs: [build_image, envs]
     uses: ./.github/workflows/download_cmems_waves.yml
     with:
-      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
       RUNNER_NAME: mims3
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
@@ -156,16 +135,12 @@ jobs:
       FDAYS: 5
     secrets: inherit
 
-# ###############################################################################
-# # RUN MODELS
-# ###############################################################################
-
   run_GFS_MERCATOR:
     needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: needs.check_models.outputs.RUN_GFS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
@@ -175,16 +150,15 @@ jobs:
       WAVES: CMEMS
       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
       DO_POST: ${{ needs.envs.outputs.DO_POST }}
-      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-      DX_M: ${{ needs.envs.outputs.DX_M }}
-
+      EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}
 
   run_SAWS_MERCATOR:
     needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: needs.check_models.outputs.RUN_SAWS_MERCATOR == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
@@ -194,16 +168,15 @@ jobs:
       WAVES: CMEMS
       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
       DO_POST: ${{ needs.envs.outputs.DO_POST }}
-      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-      DX_M: ${{ needs.envs.outputs.DX_M }}
-
+      EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}
 
   run_GFS_HYCOM:
     needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: needs.check_models.outputs.RUN_GFS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
@@ -213,16 +186,15 @@ jobs:
       WAVES: CMEMS
       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
       DO_POST: ${{ needs.envs.outputs.DO_POST }}
-      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-      DX_M: ${{ needs.envs.outputs.DX_M }}
-
+      EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}
 
   run_SAWS_HYCOM:
     needs: [envs, check_models, build_image, download_phytoplankton_flags, download_cmems_waves]
     if: needs.check_models.outputs.RUN_SAWS_HYCOM == 'true'
     uses: ./.github/workflows/run_model.yml
     with:
-      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
@@ -232,23 +204,19 @@ jobs:
       WAVES: CMEMS
       RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
       DO_POST: ${{ needs.envs.outputs.DO_POST }}
-      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-      DX_M: ${{ needs.envs.outputs.DX_M }}
-
-###############################################################################
-# Combine output
-###############################################################################
-
+      EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}
+      
   combine_output:
     needs: [envs, run_GFS_MERCATOR, run_SAWS_MERCATOR, run_GFS_HYCOM, run_SAWS_HYCOM]
     if: ${{ always() && needs.envs.outputs.DO_POST == 'true' }}
 
     uses: ./.github/workflows/combine_output.yml
     with:
-      MODEL_TYPE: ${{ needs.envs.outputs.MODEL_TYPE }}
+      MODEL_TYPE: ${{ github.event.inputs.model_type }}
       BRANCH_REF: ${{ needs.envs.outputs.BRANCH_REF }}
       CONFIG_NAME: ${{ needs.envs.outputs.CONFIG_NAME }}
       RUN_DATE: ${{ needs.envs.outputs.RUN_DATE }}
       RUNNER_NAME: mims3
-      EXTENTS: ${{ needs.envs.outputs.EXTENTS }}
-      DX_M: ${{ needs.envs.outputs.DX_M }}
+      EXTENTS: ${{ github.event.inputs.extents }}
+      DX_M: ${{ github.event.inputs.dx_m }}
