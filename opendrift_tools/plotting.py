@@ -113,6 +113,7 @@ def add_text(ax,
 
 def plot_cbar(ax,var_plt,
              ticks=[],
+             tick_labels=None,
              tick_font = 12,
              label='values',
              label_font=14,
@@ -136,6 +137,9 @@ def plot_cbar(ax,var_plt,
                         orientation=orientation)
     cbar_plt.set_label(label, fontsize=label_font)
     cbar_plt.ax.tick_params(labelsize=tick_font)
+    
+    if tick_labels is not None:
+        cbar_plt.set_ticklabels(tick_labels)
     
     return cbar_plt
 
@@ -344,6 +348,7 @@ def plot_gridded(fname,
         size_release = 50,
         # options relating to the dispaly of data, colormap and colorbar
         ticks = [0,1,2,3,5,10,15], # np.linspace(0,0.2,num=11), # the ticks to plot relating to the colormap (can be irregularly spaced)
+        tick_labels = None,
         cmap = 'Spectral_r', # colormap to use
         add_cbar = True,
         cbar_loc = None, # where on the plot to put the colorbar
@@ -419,8 +424,10 @@ def plot_gridded(fname,
     time_plt = add_text(ax,tx_time,loc=[0.5,1.01])
     
     if add_cbar:
-        plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
-        
+        if tick_labels is None:
+            plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,loc=cbar_loc)
+        else:
+            plot_cbar(ax,var_plt,label=cbar_label,ticks=ticks,tick_labels=tick_labels,loc=cbar_loc)
     # write a jpg if specified
     if write_jpg:
         if jpg_out is None:
@@ -638,7 +645,16 @@ def plot_stochastic_budget(fname, fname_out,
     
     plt.savefig(fname_out,dpi=500,bbox_inches = 'tight')
 
-# if __name__ == "__main__":
-    
-
-    
+if __name__ == "__main__":
+    plot_gridded(fname='/home/g.rautenbach/Scripts/HAB/run_od_20260414/gridded_trajectories.nc',
+                 fname_particles='/home/g.rautenbach/Scripts/HAB/run_od_20260413/trajectories.nc',
+                 var_str='particle_density',
+                 ticks = [0, 75, 150, 225, 300],
+                 tick_labels = ['very low', 'low', 'medium', 'high', 'very high'],
+                 extents=[15,20,-35,-29],
+                 cmap = cm.algae,
+                 skip_time=3,
+                 cbar_label = 'chlorophyll levels',
+                 gif_out='/home/g.rautenbach/Scripts/HAB/run_od_20260413/gif_out.gif', # filename of the gif file
+                 write_gif=True,
+                 source=False)

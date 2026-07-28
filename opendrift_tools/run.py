@@ -316,7 +316,7 @@ def phytodrift(config_dir):
     # ...but add hz diffusivity
     o.set_config('drift:horizontal_diffusivity', config.hz_diff)
     #
-    # Disable vertical Advection, but we include vertical mixing
+    # Enable vertical advection and vertical mixing
     o.set_config('drift:vertical_advection', config.vert_adv)
     o.set_config('drift:vertical_mixing', config.vert_mix)
     o.set_config('vertical_mixing:diffusivitymodel','environment')
@@ -326,38 +326,28 @@ def phytodrift(config_dir):
     # ------------------
     # seed the elements
     # ------------------
-    
+    #
     # date to seed
     time_start = datetime.strptime(config.release_start_time, '%Y%m%d_%H')
-    
-    # get seed positions and weights
-    lons, lats, lonp, latp, weightp, Np, i, j = pre_od.seed_particles_from_chlorophyll(
-        config.flag_file,
-        config.chl_file,
-        config.domain,
-        dz=5,
-        nmax=5
-        )
-    
-    pre_od.write_seed_particles(
-        outfile=config_dir+'/particles.nc',
-        lonp=lonp,
-        latp=latp,
-        weightp=weightp,
-        grid_lon=lons,
-        grid_lat=lats,
-        release_time=time_start
-        )
-        
-    # if no seed positions we exit the code
-    if lonp is None and latp is None and weightp is None:
-        sys.exit()        
-        
-    # seed the elements
-    o.seed_elements(lon=lonp[:], 
+    # 
+    # Define particle positions
+    lonp, latp = pre_od.get_particle_positions(config.flag_file,
+                                               config.chl_file,
+                                               config_dir,
+                                               config.domain,
+                                               config.max_part)
+    #
+    # if no particle positions we exit the code
+    if lonp is None and latp is None:
+        print('\nError extracting particle seed positions.')
+        print('\nPossibly no positions flagged in the flag dataset.\n')
+        sys.exit()
+    #
+    # Seed the Lagrangian particles
+    o.seed_elements(lon=lonp[:],
                     lat=latp[:],
-                    time=time_start,
-                    z=0)
+                    time=time_start
+                    )
     #
     # --------------
     # run the model
@@ -375,6 +365,7 @@ def phytodrift(config_dir):
           time_step_output=timedelta(minutes=config.time_step_output), 
           outfile=fname
           )
+    o.plot(fast=True)
     #
     # --------
     # cleanup
