@@ -15,7 +15,7 @@
 config_name='test'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20260511_00'
+run_date='20260812_00'
 
 # -------------
 # release info
@@ -36,7 +36,7 @@ z=0
 radius=3000
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
-release_start_time='20260511_00'
+release_start_time='20260812_00'
 #
 # duration of the release of particles in hours
 release_dur=0
@@ -83,7 +83,7 @@ wind_files = ['/mnt/tmp/downloaded_data/WIND/for_croco/U-component_of_wind_Y9999
 # -------------------
 #
 # coastline interaction - 'stranding' or 'previous'
-coastline_action='stranding'
+coastline_action='previous'
 #
 # seafloor_action - ‘previous’: particles are moved back to previous location - ‘deactivate’: particles are deactivated - ‘lift_to_seafloor’: particles are lifted vertically to seafloor level
 seafloor_action='lift_to_seafloor'
