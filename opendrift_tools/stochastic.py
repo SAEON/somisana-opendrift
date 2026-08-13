@@ -173,6 +173,8 @@ class gridded_stats(base_stochastic):
         self.stats.attrs["no_grid_cells_over_threshold"] = []
         self.run_ids = []
         self.stats.attrs["run_ids"] = []
+        self.min_times = []
+        self.stats.attrs["min_times"] = []
     
     def update_stats(self):
         '''
@@ -192,27 +194,30 @@ class gridded_stats(base_stochastic):
         # check where iteration max exceeds threshold and assign a value of 1
         iteration_exceed = np.zeros_like(iteration_max)
         iteration_exceed[iteration_max>self.threshold]=1
+        # update the minimum time
+        iteration_minimum_time = xr.where(iteration_exceed==1,iteration_mintime,10e6) 
+        # update minimum time if data from this iteration is smaller
+        previous_minimum_time=self.stats.minimum_time.data
+        self.stats.minimum_time.data=np.minimum(iteration_minimum_time,previous_minimum_time)
+        
         # add up all the grid cells where the threshold is exceeded
         if len(self.no_grid_cells_over_threshold)==0:
             self.no_grid_cells_over_threshold=np.atleast_1d(np.sum(iteration_exceed))
             self.run_ids=np.atleast_1d(self.run_id)
+            self.min_times=np.atleast_1d(np.min(iteration_minimum_time))
         else:
             self.no_grid_cells_over_threshold=np.concatenate((self.no_grid_cells_over_threshold,np.atleast_1d(np.sum(iteration_exceed))),axis=0)
             self.run_ids=np.concatenate((self.run_ids,np.atleast_1d(self.run_id)),axis=0)
+            self.min_times=np.concatenate((self.min_times,np.atleast_1d(np.min(iteration_minimum_time))),axis=0)
         self.stats.attrs["no_grid_cells_over_threshold"] = self.no_grid_cells_over_threshold # so that it is accessible in the output netcdf file we save later
         self.stats.attrs["run_ids"] =  self.run_ids
+        self.stats.attrs["min_times"] = self.min_times
         # update count where threshold is exceeded
         self.stats.count_exceed.data += iteration_exceed
         # update probability of exceedance
         prob=self.stats.count_exceed.data/self.num_it
         # prob[prob==0]=np.nan
         self.stats.probability.data = prob
-        
-        # update the minimum time
-        iteration_minimum_time = xr.where(iteration_exceed==1,iteration_mintime,10e6) 
-        # update minimum time if data from this iteration is smaller
-        previous_minimum_time=self.stats.minimum_time.data
-        self.stats.minimum_time.data=np.minimum(iteration_minimum_time,previous_minimum_time)
     
     def update_stats_all(self):
         '''
