@@ -54,7 +54,7 @@ on:
 
 env:
   # the directory to get mounted when running the docker image
-  DATE_DIR0: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}
+  # DATE_DIR0: /home/somisana/ops/${{ inputs.BRANCH_REF }}/${{ inputs.RUN_DATE }}
   DATE_DIR: /home/somisana/ops/main/${{ inputs.RUN_DATE }} 
   # path to the run directory, as seen inside the running docker container
   # RUN_DIR_DOCKER: /mnt/tmp/opendrift_${{ inputs.MODEL_TYPE }}/${{ inputs.CONFIG_NAME }}/${{ inputs.OGCM }}_${{ inputs.WIND }}
@@ -158,7 +158,7 @@ jobs:
             --rm \
             --user root \
             -v ${{ env.DATE_DIR }}:/mnt/tmp \
-            -v ${{ env.DATE_DIR0 }}:/mnt/tmp0 \
+            # -v ${{ env.DATE_DIR0 }}:/mnt/tmp0 \
            ghcr.io/saeon/somisana-opendrift_${{ inputs.BRANCH_REF }}:latest \
               run_model \
                 --model_type ${{ inputs.MODEL_TYPE }} \
