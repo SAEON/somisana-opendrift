@@ -146,7 +146,8 @@ jobs:
      
   run_model:
     needs: [setup_config,check_input_files]
-    if: ${{ inputs.RUN_MODEL == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
+    # if: ${{ inputs.RUN_MODEL == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
+    if: (inputs.RUN_MODEL == 'true' || inputs.RUN_MODEL == true) && needs.check_input_files.outputs.files_ok == 'true'
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
       - name: run the model
