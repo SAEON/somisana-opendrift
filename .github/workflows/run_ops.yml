@@ -148,8 +148,8 @@ jobs:
       WIND: GFS
       OGCM: MERCATOR
       WAVES: CMEMS
-      RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
-      DO_POST: ${{ needs.envs.outputs.DO_POST }}
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
+      DO_POST: ${{ github.event.inputs.do_post }}
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
 
@@ -166,8 +166,8 @@ jobs:
       WIND: SAWS
       OGCM: MERCATOR
       WAVES: CMEMS
-      RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
-      DO_POST: ${{ needs.envs.outputs.DO_POST }}
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
+      DO_POST: ${{ github.event.inputs.do_post }}
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
 
@@ -184,8 +184,8 @@ jobs:
       WIND: GFS
       OGCM: HYCOM
       WAVES: CMEMS
-      RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
-      DO_POST: ${{ needs.envs.outputs.DO_POST }}
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
+      DO_POST: ${{ github.event.inputs.do_post }}
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
 
@@ -202,14 +202,14 @@ jobs:
       WIND: SAWS
       OGCM: HYCOM
       WAVES: CMEMS
-      RUN_MODEL: ${{ needs.envs.outputs.RUN_MODEL }}
-      DO_POST: ${{ needs.envs.outputs.DO_POST }}
+      RUN_MODEL: ${{ github.event.inputs.run_model }}
+      DO_POST: ${{ github.event.inputs.do_post }}
       EXTENTS: ${{ github.event.inputs.extents }}
       DX_M: ${{ github.event.inputs.dx_m }}
       
   combine_output:
     needs: [envs, run_GFS_MERCATOR, run_SAWS_MERCATOR, run_GFS_HYCOM, run_SAWS_HYCOM]
-    if: ${{ always() && needs.envs.outputs.DO_POST == 'true' }}
+    if: ${{ always() && github.event.inputs.do_post == 'true' }}
 
     uses: ./.github/workflows/combine_output.yml
     with:
