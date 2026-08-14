@@ -72,14 +72,16 @@ jobs:
           # Use grep to find the line where the variable is defined
           line=$(grep -m 1 -w config_name configs/config_${{ github.event.inputs.model_type }}.py)
           # Use awk to extract the value of the variable from the line (thanks chatgpt)
-          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+          # echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//' -e "s/['\"]//g")" >> $GITHUB_OUTPUT
       - name: run date 
         id: run_date
         run: |
           # Use grep to find the line where the variable is defined
           line=$(grep -m 1 -w run_date configs/config_${{ github.event.inputs.model_type }}.py)
           # Use awk to extract the value of the variable from the line (thanks chatgpt)
-          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+          # echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//')" >> $GITHUB_OUTPUT
+          echo "value=$(echo "$line" | awk -F "=" '{print $2}' | sed -e 's/^[[:space:]]*//' -e "s/['\"]//g")" >> $GITHUB_OUTPUT
 
   build_image:
     uses: ./.github/workflows/build_image.yml
