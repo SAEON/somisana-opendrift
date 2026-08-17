@@ -77,8 +77,8 @@ croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/o
 #
 use_croco_grid=True 
 #
-croco_grid = ['/home/somisana/code/somisana-croco/configs/sa_southeast_01/croco_v1.3.1/GRID/croco_grd.nc',
-              '/home/somisana/code/somisana-croco/configs/sa_west_02/croco_v1.3.1/GRID/croco_grd.nc']
+croco_grid = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/GRID/croco_grd.nc',
+              '/mnt/tmp/sa_west_02/croco_v1.3.1/GRID/croco_grd.nc']
 #
 # switch to turn on/off use of OGCM as input
 use_ogcm=True
