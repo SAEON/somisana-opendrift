@@ -97,10 +97,10 @@ def main():
     parser_grid_particles.add_argument('--dx_m', required=False, type=parse_float, default=None, help='grid size in meters. If None, then a 50 x 50 regular grid is generated')
     parser_grid_particles.add_argument('--max_only', required=False, type=parse_bool, default=False,
             help='option to only write the maximum over the entire file to save disk space (set to true or false)')
-    parser_grid_particles.add_argument('--lonbin', required=False, default=None,
-            help='the lonbins')
-    parser_grid_particles.add_argument('--latbin', required=False, default=None,
-            help='the latbins')
+    parser_grid_particles.add_argument('--lons', required=False, default=None,
+            help='the lons to grid the particles onto.')
+    parser_grid_particles.add_argument('--lats', required=False, default=None,
+            help='the lats to grid the particles onto.')
     parser_grid_particles.add_argument('--max_depth', required=False, default=None,type=float,
             help='max depth to grid the particles.')
     parser_grid_particles.add_argument('--fname_weights', required=False, default=None,
@@ -114,8 +114,8 @@ def main():
                        extents=args.extents,
                        dx_m=args.dx_m,
                        max_only=args.max_only,
-                       lonbin=args.lonbin,
-                       latbin=args.latbin,
+                       lons=args.lons,
+                       lats=args.lats,
                        max_depth=args.max_depth,
                        fname_weights=args.fname_weights)
     parser_grid_particles.set_defaults(func=grid_particles_handler)

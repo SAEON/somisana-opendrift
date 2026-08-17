@@ -151,7 +151,7 @@ def grid_particles(fname,fname_out,
     extents = the spatial extent of the grid [lon0,lon1,lat0,lat1]. If None, then this is automatically determined from the geographic extent of the particles
     dx_m = grid size in meters, if None, then a 50 x 50 regular grid is generated
     max_only = option to only write the maximum over the entire file to save disk space (boolean)
-    lonbin,latbin=longitude and latitude bins used for binning the data. If None, it makes the bins using dx_m when it greates the grid.
+    lons,lats=longitudes and latitudes to grid the particles onto.
     mass_per_particle=output txt file saved when running OpenDrift for a Harful Algal Event. 
     '''
     
