@@ -28,12 +28,12 @@ jobs:
     # checks to see if files have maybe already been downloaded as part of a previous running of this workflow
     runs-on: ${{ inputs.RUNNER_NAME }}
     outputs:
-      CHLORO_OK: ${{ steps.check_chloro.outputs.value }}
+      CHL_OK: ${{ steps.check_chl.outputs.value }}
     steps:
       - name: Check if Chlorophyll file is already downloaded
-        id: check_chloro
+        id: check_chl
         run: |
-          FILE_PATH=${{ env.DATA_DIR }}/CHLOROPHYLL/CHLORO_${{ inputs.RUN_DATE }}.nc
+          FILE_PATH=${{ env.DATA_DIR }}/CHLOROPHYLL/CHL_${{ inputs.RUN_DATE }}.nc
           # could have an additional check on file size here?
           if [ -f "$FILE_PATH" ]; then
             echo "value=1" >> $GITHUB_OUTPUT
@@ -42,10 +42,10 @@ jobs:
           fi
 
   # Download chlorophyl concentration
-  download_chloro:
+  download_chl:
     runs-on: ${{ inputs.RUNNER_NAME }}
     needs: [check_files]
-    if: ${{ needs.check_files.outputs.CHLORO_OK == '0' }}
+    if: ${{ needs.check_files.outputs.CHL_OK == '0' }}
     steps:
       - name: Skip unless phytodrift
         if: ${{ inputs.MODEL_TYPE != 'phytodrift' }}
@@ -64,7 +64,7 @@ jobs:
           sudo mkdir -p ${{ env.DATA_DIR }}/CHLOROPHYLL
           sudo chown -R :runners ${{ env.DATA_DIR }}/CHLOROPHYLL
           sudo chmod -R 774 ${{ env.DATA_DIR }}/CHLOROPHYLL
-      - name: Download CHLORO
+      - name: Download CHL
         if: ${{ inputs.MODEL_TYPE == 'phytodrift' }}
         uses: nick-fields/retry@master
         with:
@@ -88,7 +88,7 @@ jobs:
   
   archive_ocims:
     # copy the data to an archive directory on ocims infrastructure, mounted to the mims compute server
-    needs: [download_chloro]
+    needs: [download_chl]
     runs-on: ${{ inputs.RUNNER_NAME }}
     # only archive if we are on the main branch
     if: ${{ always() && inputs.BRANCH_REF == 'main' }}
@@ -103,11 +103,11 @@ jobs:
           run_date_hh=${run_date:9:2}
           archive_dir=/mnt/somisana_safe/models/sa-forcing/${run_date_yyyymm}/${run_date}
           # make the archive directory
-          sudo mkdir -p ${archive_dir}/CHLORO
+          sudo mkdir -p ${archive_dir}/CHL
           # only archive one run per day (initialised at 00)
           # the archiving is really for validation purposes, and I think one run per day is sufficient for this
           if [ "${run_date_hh}" == "00" ]; then 
             # We need to use sudo in the lines below because the target dir is owned by root
             # Not an issue since we have ensured no password is needed for this command 
-            sudo cp ${{ env.DATA_DIR }}/CHLOROPHYLL/CHLORO_${{ inputs.RUN_DATE }}.nc ${archive_dir}/CHLORO/
+            sudo cp ${{ env.DATA_DIR }}/CHLOROPHYLL/CHL_${{ inputs.RUN_DATE }}.nc ${archive_dir}/CHL/
           fi
