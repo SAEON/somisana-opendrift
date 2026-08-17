@@ -75,7 +75,7 @@ croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/o
 # during operational workflow. 
 # NB: The number and order of croco_grid files must match the number and order of the of croco_files.
 #
-use_croco_grid=True 
+use_croco_grid=False 
 #
 croco_grid = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/GRID/croco_grd.nc',
               '/mnt/tmp/sa_west_02/croco_v1.3.1/GRID/croco_grd.nc']
