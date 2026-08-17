@@ -104,7 +104,6 @@ jobs:
           archive_dir=/mnt/somisana_safe/models/sa-forcing/${run_date_yyyymm}/${run_date}
           # make the archive directory
           sudo mkdir -p ${archive_dir}/PHYTO
-          sudo mkdir -p ${archive_dir_public}/PHYTO
           # only archive one run per day (initialised at 00)
           # the archiving is really for validation purposes, and I think one run per day is sufficient for this
           if [ "${run_date_hh}" == "00" ]; then 
