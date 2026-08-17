@@ -260,9 +260,32 @@ def add_readers(o,config):
             croco_grids = config.croco_grid
             
             if len(croco_files) != len(croco_grids):
-                print(len(croco_files))
-                print(len(croco_grids))
                 raise ValueError("The number of CROCO data files and grid files must match.")
+
+            # There seems to be some mismatch between variables
+            # So we force the merge - probably not the best
+            # We first store the original merge function
+            original_merge = xr.merge 
+            
+            # Create a wrapper function that forces 'override'
+            def override_merge(*args, **kwargs):
+                kwargs['compat'] = 'override'
+                return original_merge(*args, **kwargs)
+                
+            for croco_file, croco_grid in zip(croco_files, croco_grids):
+                # Apply the patch so OpenDrift ignores the slight differences
+                xr.merge = override_merge 
+                
+                reader_croco = reader_ROMS_native.Reader(croco_file, gridfile=croco_grid)
+                
+                # Revert the patch immediately so we don't break anything else!
+                xr.merge = original_merge 
+                
+                croco_ref_time = datetime(config.croco_Yorig, 1, 1)
+                reader_croco = set_croco_time(reader_croco, croco_ref_time)
+                o.add_reader(reader_croco)
+                print(f'\n We added CROCO successfully: {croco_file} \n')
+
                 
             for croco_file, croco_grid in zip(croco_files, croco_grids):
                 reader_croco = reader_ROMS_native.Reader(croco_file, gridfile=croco_grid)
