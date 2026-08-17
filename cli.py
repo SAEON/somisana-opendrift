@@ -103,7 +103,7 @@ def main():
             help='the lats to grid the particles onto.')
     parser_grid_particles.add_argument('--max_depth', required=False, default=None,type=float,
             help='max depth to grid the particles.')
-    parser_grid_particles.add_argument('--fname_weights', required=False, default=None,
+    parser_grid_particles.add_argument('--mass_per_particle', required=False, default=None,
             help='particle file that is saved when running the hab-advection config.')
     def grid_particles_handler(args):
         fname = os.path.join(args.config_dir,args.fname)
@@ -117,7 +117,7 @@ def main():
                        lons=args.lons,
                        lats=args.lats,
                        max_depth=args.max_depth,
-                       fname_weights=args.fname_weights)
+                       mass_per_particle=args.mass_per_particle)
     parser_grid_particles.set_defaults(func=grid_particles_handler)
     
     # ----------------------------------------------------

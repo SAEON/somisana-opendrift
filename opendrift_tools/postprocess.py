@@ -152,7 +152,7 @@ def grid_particles(fname,fname_out,
     dx_m = grid size in meters, if None, then a 50 x 50 regular grid is generated
     max_only = option to only write the maximum over the entire file to save disk space (boolean)
     lons,lats=longitudes and latitudes to grid the particles onto.
-    mass_per_particle=output txt file saved when running OpenDrift for a Harful Algal Event. 
+    mass_per_particle=mass per particles which is saved as a txt file when running OpenDrift for a Harful Algal Event. 
     '''
     
     def get_time_min(h):
