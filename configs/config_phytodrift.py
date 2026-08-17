@@ -84,7 +84,7 @@ croco_grid = ['/home/somisana/code/somisana-croco/configs/sa_southeast_01/croco_
 use_ogcm=True
 #
 # ogcm file, as downloaded using the somisana pre-processing tools
-ogcm_files = ['/mnt/tmp2/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
+ogcm_files = ['/mnt/tmp/downloaded_data/OGCM/OGCM_'+run_date+'.nc']
 #
 # switch to turn on/off use of wind as input
 use_wind=False
