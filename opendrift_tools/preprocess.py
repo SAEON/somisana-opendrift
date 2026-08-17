@@ -100,7 +100,7 @@ def get_particle_positions(flag_file,chl_file,config_dir,domain=None,Max_particl
 
         # Mask all chlorophyll values that are not flagged 6
         chl_concentration[np.isnan(chl_concentration)] = 0
-        chl_concentration[flags!=6] = 0
+        chl_concentration[flags!=3] = 0
     
         # Compute the chlorophyll mass each grid cell
         chl_mass = chl_concentration * grid_cell_area
