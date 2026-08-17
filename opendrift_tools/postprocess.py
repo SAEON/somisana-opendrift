@@ -207,9 +207,20 @@ def grid_particles(fname,fname_out,
                                  + grid_cell_area[:-1, 1:] 
                                  + grid_cell_area[1:, 1:])
     elif dx_m is None:
+        # we contruct a grid
         num_x = 50 # default number of grid points in each direction
         lonbin = np.linspace(extents[0], extents[1], num=num_x)
         latbin = np.linspace(extents[2], extents[3], num=num_x)
+
+        # we compute a rough estimate of the grid spacing
+        dx_deg = (extents[1] - extents[0]) / (num_x - 1)
+        dy_deg = (extents[3] - extents[2]) / (num_x - 1)
+
+        mean_lat = np.radians((extents[2] + extents[3]) / 2.0)
+
+        dx_m = dx_deg * 111320 * np.cos(mean_lat)
+        dy_m = dy_deg * 111320
+
     else:
         lonbin, latbin = get_lonlat_bins(extents,dx_m)
     
