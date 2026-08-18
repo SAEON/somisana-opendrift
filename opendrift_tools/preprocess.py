@@ -92,7 +92,8 @@ def get_particle_positions(flag_file,chl_file,config_dir,domain=None,Max_particl
         flags = ds_flags.phytoplankton.values
         LON,LAT = np.meshgrid(lon,lat)
         ds_flags.close()
-        
+        print(f'\n Saving lons to: {config_dir}+/lons.txt \n')
+        print(f'\n Saving lats to: {config_dir}+/lats.txt \n')
         array_to_txt(lon,config_dir + '/lons.txt'), array_to_txt(lat,config_dir + '/lats.txt')
 
         # compute grid area
@@ -126,6 +127,7 @@ def get_particle_positions(flag_file,chl_file,config_dir,domain=None,Max_particl
         # This number is important for when we regrid back to a Eularian field. 
         array_to_txt(np.array([chl_budget / Nparticles]),
                      config_dir + '/chl_mass.txt')
+        print(f'\n Saving particle mass to: {config_dir}+/chl_mass.txt \n')
         
         # we get the indices of the gridcells which contains particles
         idx = np.argwhere(Nparticles_gc >= 1)
@@ -144,7 +146,8 @@ def get_particle_positions(flag_file,chl_file,config_dir,domain=None,Max_particl
                                                                                      n_points
                                                                                      )
             i_start=i_start+n_points
-
+        
+        print(f'\n lon_rand: {lon_rand} \n'),print(f'\n lat_rand: {lat_rand} \n')
         return lon_rand,lat_rand
     
     except:
