@@ -278,7 +278,10 @@ jobs:
                 --fname_gridded gridded_particle_density.nc \
                 --grid_type density \
                 --extents ${{ inputs.EXTENTS }} \
-                --dx_m ${{ inputs.DX_M }}
+                --dx_m ${{ inputs.DX_M }} \
+                --lons ${{ env.RUN_DIR_DOCKER }}/lons.txt \
+                --lats ${{ env.RUN_DIR_DOCKER }}/lats.txt \
+                --max_depth -5
 
       - name: animate the gridded particle density
         run: |
@@ -295,7 +298,7 @@ jobs:
                 --gif_out gridded_particle_density.gif \
                 --source False \
                 --cmap cmo.algae \
-                --ticks 0,2,4,6,8,10
+                --ticks 0,0.03,0.06,0.09,0.12,0.15
 
       - name: plot maximum gridded particle density
         run: |
