@@ -148,19 +148,8 @@ jobs:
             fi
           fi
 
-  debug_variables:
-    needs: [setup_config, check_input_files]
-    runs-on: ${{ inputs.RUNNER_NAME }}
-    steps:
-      - name: Print condition values
-        run: |
-          echo "--- DEBUG OUTPUT ---"
-          echo "inputs.RUN_MODEL value: '${{ inputs.RUN_MODEL }}'"
-          echo "files_ok output value: '${{ needs.check_input_files.outputs.files_ok }}'"
-          echo "--------------------"
-
   run_model:
-    needs: [setup_config,check_input_files,debug_variables]
+    needs: [setup_config,check_input_files]
     if: ${{ inputs.RUN_MODEL == 'true' && needs.check_input_files.outputs.files_ok == 'true' }}
     runs-on: ${{ inputs.RUNNER_NAME }}
     steps:
