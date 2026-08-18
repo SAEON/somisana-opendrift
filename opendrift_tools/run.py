@@ -338,6 +338,8 @@ def phytodrift(config_dir):
     time_start = datetime.strptime(config.release_start_time, '%Y%m%d_%H')
     # 
     # Define particle positions
+    print(f'\nflag_file: {config.flag_file}\n')
+    print(f'\nchl_file: {config.chl_file}\n')
     lonp, latp = pre_od.get_particle_positions(config.flag_file,
                                                config.chl_file,
                                                config_dir,
