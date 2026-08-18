@@ -26,8 +26,6 @@ domain=[14,20,-36,-29]
 # -------------
 # release info
 # -------------
-# path to phytoplankton flags.
-flag_file='/mnt/tmp/downloaded_data/PHYTOPLANKTON_FLAGS/PHYTO_'+run_date+'.nc'           
 #
 # start time of release, in format YYYYMMDD_HH, in UTC
 release_start_time='20260812_00'
@@ -43,7 +41,7 @@ max_part = 5000
 flag_file='/mnt/tmp/downloaded_data/PHYTOPLANKTON_FLAGS/PHYTO_'+run_date+'.nc'
 #
 # path to chlorophyl file
-chl_file='/mnt/tmp/downloaded_data/CHLOROPHYL/CHL_'+run_date+'.nc'
+chl_file='/mnt/tmp/downloaded_data/CHLOROPHYLL/CHL_'+run_date+'.nc'
 #
 # -------------
 # forcing files
