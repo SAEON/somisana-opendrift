@@ -15,15 +15,15 @@
 config_name='test_leeway'
 #
 # define the date when the croco runs were initialised, in format YYYYMMDD_HH 
-run_date='20260812_00'
+run_date='20260819_00'
 
 # ------------
 # object info
 # ------------
 #
 # coordinates of the release (in geographical degrees)
-lon_release=18
-lat_release=-34
+lon_release=30.81
+lat_release=-30.27
 #
 # radius to be used in initialising the particles
 # particles will be initialised around 'lon_release,lat_release' using a standard deviation of 'radius'
@@ -34,10 +34,10 @@ radius=3000
 # see references here - https://opendrift.github.io/autoapi/opendrift/models/leeway/index.html#module-opendrift.models.leeway
 # and object types here - https://github.com/OpenDrift/opendrift/blob/master/opendrift/models/OBJECTPROP.DAT
 # user must specify an integer corresponding to the object type number in the table
-object_type=26
+object_type=1
 
 # start time of spill, in format YYYYMMDD_HH, in UTC
-release_start_time='20260812_00'
+release_start_time='20260819_00'
 
 # -------------
 # forcing files
