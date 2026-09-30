@@ -68,10 +68,11 @@ croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/o
                ]
 #
 #
-# switch to turn on/off use of croco grid.
-# used to ensure all the correct variables are imported that may have been dropped
-# during operational workflow. 
-# NB: The number and order of croco_grid files must match the number and order of the of croco_files.
+# switch to turn on/off use of croco grid files
+# needed if the croco_files have been stripped of their grid variables (e.g. lon_rho, lat_rho, mask_rho, h) 
+# during the operational workflow. Any missing vertical coordinate variables (Cs_r, hc, Vtransform) 
+# are taken from the global attributes of the croco_files, so these don't need to be specified.
+# NB: The number and order of croco_grid files must match the number and order of the croco_files.
 #
 use_croco_grid=False 
 #

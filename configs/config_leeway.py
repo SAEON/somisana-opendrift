@@ -62,6 +62,18 @@ use_croco=True
 croco_files = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc',
         '/mnt/tmp/sa_west_02/croco_v1.3.1/C06_I99_OGCM_WIND_TPXO10/output/croco_avg.nc'
         ]
+#
+# switch to turn on/off use of croco grid files
+# needed if the croco_files have been stripped of their grid variables (e.g. lon_rho, lat_rho, mask_rho, h) 
+# during the operational workflow. Any missing vertical coordinate variables (Cs_r, hc, Vtransform) 
+# are taken from the global attributes of the croco_files, so these don't need to be specified.
+# NB: The number and order of croco_grid files must match the number and order of the croco_files.
+#
+use_croco_grid=False 
+#
+croco_grid = ['/mnt/tmp/sa_southeast_01/croco_v1.3.1/GRID/croco_grd.nc',
+              '/mnt/tmp/sa_west_02/croco_v1.3.1/GRID/croco_grd.nc']
+#
 
 # switch to turn on/off use of OGCM as input
 use_ogcm=True 

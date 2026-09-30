@@ -232,6 +232,55 @@ def set_croco_time(reader_filename,date_ref):
     reader_filename.end_time = reader_filename.times[-1]
     return reader_filename
 
+def get_croco_suppl(croco_file, grid_file=None):
+    # Create a supplementary dataset to pass to reader_ROMS_native as its 'gridfile'
+    # This allows us to use croco output files which have been stripped of their grid
+    # and/or vertical coordinate variables (Cs_r, hc, Vtransform) during the operational workflow
+    # The reader crashes if Cs_r or hc are missing, and silently uses Vtransform=1 if Vtransform is missing,
+    # so we need to check this before initialising the reader
+    #
+    # Missing vertical coordinate variables are taken from the global attributes of the croco file, 
+    # which croco always writes (see put_global_atts.F in the croco source code)
+    #   Cs_r and hc are written as global attributes
+    #   VertCoordType='NEW' is written if NEW_S_COORD is defined (Vtransform=2), otherwise it's absent (Vtransform=1)
+    #
+    # croco_file - croco output file
+    # grid_file - croco grid file (optional)
+    #
+    # returns the supplementary dataset as in-memory netcdf bytes, or None if it isn't needed
+    # (the reader opens gridfile with xr.open_dataset, which accepts bytes but not an xarray dataset)
+    #
+    # NB: this relies on reader_ROMS_native merging everything in gridfile into its dataset,
+    # so check this still holds when upgrading OpenDrift
+
+    ds = xr.open_dataset(croco_file, decode_times=False)
+
+    if grid_file is None:
+        ds_suppl = xr.Dataset()
+    else:
+        ds_suppl = xr.open_dataset(grid_file)
+        # only keep grid variables which aren't already in the croco file
+        # (avoids merge conflicts in the reader e.g. due to float32 vs float64 precision)
+        ds_suppl = ds_suppl.drop_vars([v for v in ds_suppl.variables if v in ds.variables])
+
+    # get any missing vertical coordinate variables from the global attributes
+    if 's_rho' in ds.dims:
+        for name, dims in [('Cs_r', ('s_rho',)), ('hc', ())]:
+            if name not in ds.variables:
+                if name not in ds.attrs:
+                    raise ValueError(f"{name} not found as a variable or global attribute in {croco_file}")
+                print(f'{name} not found as a variable in {croco_file} - using the global attribute')
+                ds_suppl[name] = (dims, np.squeeze(ds.attrs[name]))
+        if 'Vtransform' not in ds.variables:
+            Vtransform = 2 if ds.attrs.get('VertCoordType') == 'NEW' else 1
+            print(f'Vtransform not found as a variable in {croco_file} - using Vtransform={Vtransform} based on the VertCoordType global attribute')
+            ds_suppl['Vtransform'] = ((), float(Vtransform))
+
+    ds.close()
+    if len(ds_suppl.variables) == 0:
+        return None
+    return ds_suppl.to_netcdf()
+
 def add_readers(o,config):
     # add the somisana readers
     # o - OpenDrift object to add the readers to
@@ -258,29 +307,22 @@ def add_readers(o,config):
     if getattr(config, "use_croco", False):
         print('\nAdding CROCO\n')
         croco_files = config.croco_files
-        
+
         if getattr(config, "use_croco_grid", False):
             croco_grids = config.croco_grid
-            
-            if len(croco_files) != len(croco_grids):
+            if len(croco_grids) != len(croco_files):
                 raise ValueError("The number of CROCO data files and grid files must match.")
-
-            for croco_file, croco_grid in zip(croco_files, croco_grids):
-                reader_croco = reader_ROMS_native.Reader(croco_file, gridfile=croco_grid)
-                croco_ref_time = datetime(config.croco_Yorig, 1, 1)
-                reader_croco = set_croco_time(reader_croco, croco_ref_time)
-                o.add_reader(reader_croco)
-                print(f'\n We added CROCO successfully: {croco_file} \n')
-                
         else:
-            # Standard loop if no grids are provided
-            for croco_file in croco_files:
-                reader_croco = reader_ROMS_native.Reader(croco_file)
-                croco_ref_time = datetime(config.croco_Yorig, 1, 1)
-                reader_croco = set_croco_time(reader_croco, croco_ref_time)
-                o.add_reader(reader_croco)
-                print(f'\n We added CROCO successfully: {croco_file} \n')
-                
+            croco_grids = [None]*len(croco_files)
+
+        for croco_file, croco_grid in zip(croco_files, croco_grids):
+            croco_suppl = get_croco_suppl(croco_file, grid_file=croco_grid)
+            reader_croco = reader_ROMS_native.Reader(croco_file, gridfile=croco_suppl)
+            croco_ref_time = datetime(config.croco_Yorig, 1, 1)
+            reader_croco = set_croco_time(reader_croco, croco_ref_time)
+            o.add_reader(reader_croco)
+            print(f'\n We added CROCO successfully: {croco_file} \n')
+
     else:
         print('CROCO file(s) not defined - running without CROCO input')
     
